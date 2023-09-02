@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"fmt"
 	"os"
@@ -9,10 +10,12 @@ import (
 	"path/filepath"
 )
 
-var envFilePath string
+//go:embed audius.conf
+var confExample string
+var confFilePath string
 
 func main() {
-	flag.StringVar(&envFilePath, "c", "", "Path to the .env file")
+	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
 
 	cmdName := "up"
 	if len(os.Args) > 1 {
@@ -34,22 +37,18 @@ func main() {
 }
 
 func checkConfigFile() {
-	if envFilePath == "" {
+	if confFilePath == "" {
 		usr, err := user.Current()
 		if err == nil {
 			defaultConfig := filepath.Join(usr.HomeDir, ".audius", "audius.conf")
 			if _, err := os.Stat(defaultConfig); !os.IsNotExist(err) {
-				envFilePath = defaultConfig
+				confFilePath = defaultConfig
 				fmt.Println("Using default config at", defaultConfig)
 			} else {
 				fmt.Printf("Config not found at default location:\n\t%s\n", defaultConfig)
 				fmt.Println("\nPlace your config there, or provide a valid config using the -c flag.")
 				fmt.Println("\ti.e ./audius -c audius.conf")
-				fmt.Println("\n# minimum required audius.conf")
-				fmt.Println("creatorNodeEndpoint=")
-				fmt.Println("delegateOwnerWallet=")
-				fmt.Println("delegatePrivateKey=")
-				fmt.Println("spOwnerWallet=")
+				fmt.Printf("\n# minimum required .conf\n%s\n", confExample)
 				os.Exit(1)
 			}
 		} else {
@@ -71,8 +70,8 @@ func runUp() {
 	}
 
 	volumeFlag := ""
-	if envFilePath != "" {
-		volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/creator-node/override.env", envFilePath)
+	if confFilePath != "" {
+		volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/creator-node/override.env", confFilePath)
 	}
 
 	cmd := fmt.Sprintf(`docker run \

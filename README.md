@@ -29,12 +29,7 @@ run
 ## build
 
 ```
-# if building on arm, it is much faster to build go binary first
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o audius main.go
-
-# then build docker image
-DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build --build-arg NETWORK=stage -t endliine/audius-docker-compose:linux .
-docker push endliine/audius-docker-compose:linux
+make
 ```
 
 ## todo
