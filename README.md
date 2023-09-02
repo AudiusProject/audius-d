@@ -5,38 +5,39 @@ because running audius should look like this
 ./audius
 ```
 
+## run
+
+on an x86 linux machine that has docker installed
+```
+curl -o audius https://raw.githubusercontent.com/AudiusProject/dot-slash-audius/main/audius && chmod +x audius
+```
+
+minimal required config, can mount at this location or pass via `-c` flag at runtime
+```
+# ~/.audius/audius.conf
+creatorNodeEndpoint=
+delegateOwnerWallet=
+delegatePrivateKey=
+spOwnerWallet=
+```
+
+run
+```
+./audius [-c audius.conf]
+```
+
 ## build
 
-build and copy the go binary to server
 ```
+# if building on arm, it is much faster to build go binary first
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o audius main.go
-scp audius ubuntu@stage-creator-10:~/audius
-```
 
-build and push the docker image
-```
-DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t endliine/audius-docker-compose:linux .
+# then build docker image
+DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build --build-arg NETWORK=stage -t endliine/audius-docker-compose:linux .
 docker push endliine/audius-docker-compose:linux
 ```
 
-## run on instance
+## todo
 
-example running on stage cn 10
-```
-ssh stage-creator-10
-```
-
-stop the old
-```
-audius-cli down
-```
-
-run the new
-```
-./audius -c ~/path/to/override.env
-```
-
-down the new
-```
-./audius down
-```
+- docker buildx manifests for multi arch
+- make work for discovery nodes also

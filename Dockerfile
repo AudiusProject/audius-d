@@ -1,5 +1,7 @@
 FROM docker:dind
 
+ARG NETWORK=prod
+
 RUN apk add bash git
 
 VOLUME /var/k8s/creator-node-db
@@ -12,5 +14,5 @@ WORKDIR /root
 RUN git clone --single-branch --branch dev https://github.com/AudiusProject/audius-docker-compose.git ./audius-docker-compose
 
 WORKDIR /root/audius-docker-compose/creator-node
-COPY ./.env ./.env
-# COPY ./override.env ./override.env
+
+RUN echo "NETWORK='$NETWORK'" > ./.env
