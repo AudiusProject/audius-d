@@ -13,6 +13,6 @@ RUN chmod +x /usr/local/bin/audius
 WORKDIR /root
 RUN git clone --single-branch --branch dev https://github.com/AudiusProject/audius-docker-compose.git ./audius-docker-compose
 
-WORKDIR /root/audius-docker-compose/creator-node
-
-RUN echo "NETWORK='$NETWORK'" > ./.env
+WORKDIR /root/audius-docker-compose
+RUN echo "NETWORK='$NETWORK'" > ./creator-node/.env
+RUN echo "NETWORK='$NETWORK'" > ./discovery-provider/.env
