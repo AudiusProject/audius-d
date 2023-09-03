@@ -16,17 +16,16 @@ minimal required config, can mount at this location or pass via `-c` flag at run
 ```
 # ~/.audius/audius.conf
 
-# content node
+# creator-node
 creatorNodeEndpoint=
 delegateOwnerWallet=
 delegatePrivateKey=
 spOwnerWallet=
 
-# discovery node
+# discovery-provider
 audius_discprov_url=
 audius_delegate_owner_wallet=
 audius_delegate_private_key=
-
 ```
 
 run
