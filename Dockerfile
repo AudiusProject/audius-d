@@ -9,7 +9,7 @@ VOLUME /var/k8s/mediorum
 VOLUME /var/k8s/discovery-provider-db
 VOLUME /var/k8s/discovery-provider-chain
 
-COPY ./audius /usr/local/bin/
+COPY ./audius-linux /usr/local/bin/audius
 RUN chmod +x /usr/local/bin/audius
 
 WORKDIR /root

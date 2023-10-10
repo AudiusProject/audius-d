@@ -44,7 +44,8 @@ func checkConfigFile() string {
 	}
 
 	if _, err := os.Stat(confFilePath); os.IsNotExist(err) {
-		exitWithError("Config not found at provided location:", confFilePath, confExample)
+		exitWithError("Config not found at provided location:", confFilePath, fmt.Sprintf("\n\n%s", confExample))
+
 	}
 
 	file, err := os.Open(confFilePath)
