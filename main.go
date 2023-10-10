@@ -70,7 +70,7 @@ func checkConfigFile() string {
 func runUp(nodeType string) {
 	ensureDirectory("/tmp/dind")
 
-	if err := runCommand("docker", "pull", "endliine/audius-docker-compose:linux"); err != nil {
+	if err := runCommand("docker", "pull", "audius/dot-slash:dev"); err != nil {
 		exitWithError("Error pulling image:", err)
 	}
 
