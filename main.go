@@ -70,7 +70,7 @@ func checkConfigFile() string {
 func runUp(nodeType string) {
 	ensureDirectory("/tmp/dind")
 
-	if err := runCommand("docker", "pull", "endliine/audius-docker-compose:linux"); err != nil {
+	if err := runCommand("docker", "pull", "audius/dot-slash:dev"); err != nil {
 		exitWithError("Error pulling image:", err)
 	}
 
@@ -88,13 +88,13 @@ func runUp(nodeType string) {
         -v /var/k8s/mediorum:/var/k8s/mediorum \
         -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
         -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
-        endliine/audius-docker-compose:linux`)
+        audius/dot-slash:dev`)
 	} else {
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-        endliine/audius-docker-compose:linux`)
+        audius/dot-slash:dev`)
 	}
 
 	execCmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done && cd %s && docker compose up -d"`, nodeType, nodeType)

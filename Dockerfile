@@ -9,9 +9,6 @@ VOLUME /var/k8s/mediorum
 VOLUME /var/k8s/discovery-provider-db
 VOLUME /var/k8s/discovery-provider-chain
 
-COPY ./audius /usr/local/bin/
-RUN chmod +x /usr/local/bin/audius
-
 WORKDIR /root
 RUN git clone --single-branch --branch main https://github.com/AudiusProject/audius-docker-compose.git ./audius-docker-compose
 

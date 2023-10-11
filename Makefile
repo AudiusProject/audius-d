@@ -1,15 +1,16 @@
-.PHONY: build-go build-docker
+.PHONY: audius
 
-all: build-go build-docker
-
-# Build Go binary
-build-go:
+audius: main.go
 	@echo "Building Go binary..."
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o audius main.go
+	CGO_ENABLED=0 go build -o bin/audius main.go
 
-# Build Docker image and push
-build-docker: build-go
+build-docker:
 	@echo "Building Docker image..."
-	DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build --build-arg NETWORK=stage -t endliine/audius-docker-compose:linux .
+	docker buildx build --load --build-arg NETWORK=stage -t audius/dot-slash:dev .
+
+push-docker:
 	@echo "Pushing Docker image..."
-	docker push endliine/audius-docker-compose:linux
+	docker buildx build --platform linux/amd64,linux/arm64 --push --build-arg NETWORK=stage -t audius/dot-slash:dev .
+
+clean:
+	rm -f bin/*
