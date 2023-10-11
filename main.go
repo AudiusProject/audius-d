@@ -41,7 +41,13 @@ func checkConfigFile() string {
 		} else {
 			confFilePath = filepath.Join(usr.HomeDir, ".audius", "audius.conf")
 		}
-	}
+	} else {
+        if absPath, err := filepath.Abs(confFilePath); err != nil {
+            exitWithError("Error creating absolute path to config file:", err)
+        } else {
+            confFilePath = absPath
+        }
+    }
 
 	if _, err := os.Stat(confFilePath); os.IsNotExist(err) {
 		exitWithError("Config not found at provided location:", confFilePath, confExample)
