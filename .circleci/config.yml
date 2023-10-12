@@ -10,7 +10,7 @@ jobs:
           path: ~/dot-slash-audius
       - run:
           name: build dot-slash-audius
-          command: cd ~/dot-slash-audius && make build-docker-ci
+          command: cd ~/dot-slash-audius && make build-docker
       - run:
           name: populate config
           command: |
@@ -26,9 +26,9 @@ jobs:
           name: start audius nodes
           command: |
             cd ~/dot-slash-audius
-            ./audius -c ~/.audius/creator.conf -t ci --local
+            ./audius -c ~/.audius/creator.conf --local
             # Disabled temporarily
-            # ./audius -c ~/.audius/discovery.conf -t ci --local --port 8080 --tls 8081
+            # ./audius -c ~/.audius/discovery.conf --local --port 8080 --tls 8081
       - run:
           name: check audius node health
           command: |
