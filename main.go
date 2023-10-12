@@ -9,15 +9,28 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+    "regexp"
 	"strings"
 )
 
 //go:embed audius.conf
 var confExample string
 var confFilePath string
+var imageTag string
+var localImage bool
+var port int
+var tlsPort int
 
 func main() {
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
+	flag.StringVar(&imageTag, "t", "dev", "docker image tag to use when turning up")
+	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
+	flag.IntVar(&port, "port", 80, "specify a custom http port")
+	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
+    
+    if ! regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
+		exitWithError("Invalid image tag:", imageTag)
+    }
 	cmdName := "up"
 	if len(os.Args) > 1 {
 		cmdName = os.Args[1]
@@ -76,9 +89,11 @@ func checkConfigFile() string {
 func runUp(nodeType string) {
 	ensureDirectory("/tmp/dind")
 
-	if err := runCommand("docker", "pull", "audius/dot-slash:dev"); err != nil {
-		exitWithError("Error pulling image:", err)
-	}
+    if !localImage {
+        if err := runCommand("docker", "pull", "audius/dot-slash:" + imageTag); err != nil {
+            exitWithError("Error pulling image:", err)
+        }
+    }
 
 	volumeFlag := ""
 	if confFilePath != "" {
@@ -86,7 +101,7 @@ func runUp(nodeType string) {
 	}
 
 	var cmd string
-	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p 80:80 -p 443:443`, volumeFlag)
+	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
 	if nodeType == "creator-node" {
 		cmd = fmt.Sprintf(baseCmd + ` \
@@ -94,13 +109,13 @@ func runUp(nodeType string) {
         -v /var/k8s/mediorum:/var/k8s/mediorum \
         -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
         -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
-        audius/dot-slash:dev`)
+        audius/dot-slash:` + imageTag)
 	} else {
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-        audius/dot-slash:dev`)
+        audius/dot-slash:` + imageTag)
 	}
 
 	execCmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done && cd %s && docker compose up -d"`, nodeType, nodeType)
