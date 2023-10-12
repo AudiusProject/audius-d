@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
-    "regexp"
+	"regexp"
 	"strings"
 )
 
@@ -27,10 +27,10 @@ func main() {
 	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
-    
-    if ! regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
+	
+	if ! regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
-    }
+	}
 	cmdName := "up"
 	if len(os.Args) > 1 {
 		cmdName = os.Args[1]
@@ -55,12 +55,12 @@ func checkConfigFile() string {
 			confFilePath = filepath.Join(usr.HomeDir, ".audius", "audius.conf")
 		}
 	} else {
-        if absPath, err := filepath.Abs(confFilePath); err != nil {
-            exitWithError("Error creating absolute path to config file:", err)
-        } else {
-            confFilePath = absPath
-        }
-    }
+		if absPath, err := filepath.Abs(confFilePath); err != nil {
+			exitWithError("Error creating absolute path to config file:", err)
+		} else {
+			confFilePath = absPath
+		}
+	}
 
 	if _, err := os.Stat(confFilePath); os.IsNotExist(err) {
 		exitWithError("Config not found at provided location:", confFilePath, confExample)
@@ -89,11 +89,11 @@ func checkConfigFile() string {
 func runUp(nodeType string) {
 	ensureDirectory("/tmp/dind")
 
-    if !localImage {
-        if err := runCommand("docker", "pull", "audius/dot-slash:" + imageTag); err != nil {
-            exitWithError("Error pulling image:", err)
-        }
-    }
+	if !localImage {
+		if err := runCommand("docker", "pull", "audius/dot-slash:" + imageTag); err != nil {
+			exitWithError("Error pulling image:", err)
+		}
+	}
 
 	volumeFlag := ""
 	if confFilePath != "" {
