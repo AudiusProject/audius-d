@@ -1,0 +1,13 @@
+version: 2.1
+
+jobs:
+  - test-job:
+      docker:
+        - image: cimg/base:stable
+      steps:
+        - checkout
+
+workflows:
+  - no-op-test-job:
+      jobs:
+        - test-job
