@@ -27,8 +27,8 @@ func main() {
 	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
-	
-	if ! regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
+
+	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
 	}
 	cmdName := "up"
@@ -90,7 +90,7 @@ func runUp(nodeType string) {
 	ensureDirectory("/tmp/dind")
 
 	if !localImage {
-		if err := runCommand("docker", "pull", "audius/dot-slash:" + imageTag); err != nil {
+		if err := runCommand("docker", "pull", "audius/dot-slash:"+imageTag); err != nil {
 			exitWithError("Error pulling image:", err)
 		}
 	}
@@ -115,6 +115,10 @@ func runUp(nodeType string) {
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
+		-v /chain/spec.json:/config/spec.json
+        -v /chain/static-nodes.json:/nethermind/Data/static-nodes.json
+        -v /chain/config.cfg:/nethermind/configs/config.cfg
+        -v /chain/NLog.config:/nethermind/NLog.config
         audius/dot-slash:` + imageTag)
 	}
 
