@@ -115,10 +115,10 @@ func runUp(nodeType string) {
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-		-v /chain/spec.json:/config/spec.json
-        -v /chain/static-nodes.json:/nethermind/Data/static-nodes.json
-        -v /chain/config.cfg:/nethermind/configs/config.cfg
-        -v /chain/NLog.config:/nethermind/NLog.config
+		-v ./chain/spec.json:/config/spec.json
+        -v ./chain/static-nodes.json:/nethermind/Data/static-nodes.json
+        -v ./chain/config.cfg:/nethermind/configs/config.cfg
+        -v ./chain/NLog.config:/nethermind/NLog.config
         audius/dot-slash:` + imageTag)
 	}
 
