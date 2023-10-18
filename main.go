@@ -125,11 +125,11 @@ func runUp(nodeType string) {
 	execCmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done && cd %s && docker compose up -d"`, nodeType, nodeType)
 
 	if err := runCommand("/bin/sh", "-c", cmd+" && "+execCmd); err != nil {
-		exitWithError("Error executing command:", err)
+		fmt.Println(err)
 	}
 
 	if nodeType == "discovery-provider" {
-		execCmd := fmt.Sprintf(`docker exec discovery-provider sh -c "cd discovery-provider && docker compose --profile chain -d"`)
+		execCmd := fmt.Sprintf(`docker exec discovery-provider sh -c "cd discovery-provider && docker compose --profile chain up -d"`)
 		if err := runCommand(execCmd); err != nil {
 			exitWithError("Error executing command:", err)
 		}
