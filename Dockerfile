@@ -3,7 +3,7 @@ FROM docker:dind
 ARG NETWORK=prod
 ARG BRANCH=main
 
-RUN apk add bash git
+RUN apk add bash git curl
 
 VOLUME /var/k8s/creator-node-db
 VOLUME /var/k8s/mediorum
