@@ -23,7 +23,7 @@ func ConnectDocker() *client.Client {
 }
 
 // downs the existing container, creates, and starts the new one
-func Run(dc *client.Client, imageName, imageTag, containerName string) {
+func Run(dc *client.Client, imageName, imageTag, containerName string, containerConfig *container.Config) {
 	ensureDirectory("/tmp/dind")
 
 	image := imageName + ":" + imageTag
@@ -39,17 +39,28 @@ func Run(dc *client.Client, imageName, imageTag, containerName string) {
 	}
 
 	// pull latest image
-	reader, err := dc.ImagePull(ctx, image, types.ImagePullOptions{})
-	if err != nil {
-		exitWithError("Error pulling image:", err)
+	if !localImage {
+		reader, err := dc.ImagePull(ctx, image, types.ImagePullOptions{})
+		if err != nil {
+			exitWithError("Error pulling image:", err)
+		}
+		defer reader.Close()
 	}
-	defer reader.Close()
 
 	// create container
-	resp, err := dc.ContainerCreate(ctx, &container.Config{
-		Image:   image,
-		Volumes: map[string]struct{}{},
-	}, nil, nil, nil, "creator-node")
+	var conf *container.Config
+	if containerConfig != nil {
+		conf = containerConfig
+		conf.Image = image
+	} else {
+		conf = &container.Config{
+			Image: image,
+		}
+	}
+
+	hostConf := &container.HostConfig{Privileged: true}
+
+	resp, err := dc.ContainerCreate(ctx, conf, hostConf, nil, nil, "creator-node")
 
 	if err != nil {
 		exitWithError("Creating creator-node container failed:", err)
@@ -85,5 +96,21 @@ func ensureDirectory(path string) {
 		if err := os.MkdirAll(path, 0755); err != nil {
 			exitWithError("Failed to create directory:", err)
 		}
+	}
+}
+
+// downs all known node types
+func DownAll(dc *client.Client) {
+	creator := FindRunningContainer(dc, "creator-node")
+	discovery := FindRunningContainer(dc, "discovery-provider")
+
+	if creator != nil {
+		fmt.Println("removing creator-node")
+		dc.ContainerRemove(ctx, *creator, types.ContainerRemoveOptions{Force: true})
+	}
+
+	if discovery != nil {
+		fmt.Println("removing discovery-provider")
+		dc.ContainerRemove(ctx, *discovery, types.ContainerRemoveOptions{Force: true})
 	}
 }
