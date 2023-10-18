@@ -100,6 +100,8 @@ func runUp(nodeType string) {
 		volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/%s/override.env", confFilePath, nodeType)
 	}
 
+	fmt.Printf("volume flag %s", volumeFlag)
+
 	var cmd string
 	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
