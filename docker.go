@@ -29,9 +29,11 @@ func Run(dc *client.Client, imageName, imageTag, containerName string, container
 	image := imageName + ":" + imageTag
 
 	// removing running container if name exists
-	runningContainerId := FindRunningContainer(dc, containerName)
-	if runningContainerId != nil {
-		err := dc.ContainerRemove(ctx, *runningContainerId, types.ContainerRemoveOptions{})
+	runningContainer := FindRunningContainer(dc, containerName)
+	if runningContainer != nil {
+
+		runningContainerId := runningContainer.ID
+		err := dc.ContainerRemove(ctx, runningContainerId, types.ContainerRemoveOptions{Force: true})
 
 		if err != nil {
 			exitWithError("Could not remove container"+image+":", err)
@@ -58,7 +60,9 @@ func Run(dc *client.Client, imageName, imageTag, containerName string, container
 		}
 	}
 
+	// config all node types require
 	hostConf := &container.HostConfig{Privileged: true}
+	hostConf.Binds = append(hostConf.Binds, "/tmp/dind:/var/lib/docker")
 
 	resp, err := dc.ContainerCreate(ctx, conf, hostConf, nil, nil, "creator-node")
 
@@ -75,7 +79,7 @@ func Run(dc *client.Client, imageName, imageTag, containerName string, container
 }
 
 // finds a container id given an image name and tag
-func FindRunningContainer(dc *client.Client, containerName string) *string {
+func FindRunningContainer(dc *client.Client, containerName string) *types.Container {
 	containers, err := dc.ContainerList(ctx, types.ContainerListOptions{All: true})
 
 	if err != nil {
@@ -85,7 +89,7 @@ func FindRunningContainer(dc *client.Client, containerName string) *string {
 	for _, container := range containers {
 		runningContainerName := container.Names[0][1:]
 		if runningContainerName == containerName {
-			return &container.ID
+			return &container
 		}
 	}
 	return nil
@@ -106,11 +110,11 @@ func DownAll(dc *client.Client) {
 
 	if creator != nil {
 		fmt.Println("removing creator-node")
-		dc.ContainerRemove(ctx, *creator, types.ContainerRemoveOptions{Force: true})
+		dc.ContainerRemove(ctx, creator.ID, types.ContainerRemoveOptions{Force: true})
 	}
 
 	if discovery != nil {
 		fmt.Println("removing discovery-provider")
-		dc.ContainerRemove(ctx, *discovery, types.ContainerRemoveOptions{Force: true})
+		dc.ContainerRemove(ctx, discovery.ID, types.ContainerRemoveOptions{Force: true})
 	}
 }

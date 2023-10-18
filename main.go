@@ -112,7 +112,7 @@ func runUp(dc *client.Client) {
 	Run(dc, "audius/dot-slash", imageTag, nodeType, nodeConf)
 
 	// var cmd string
-	// baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
+	// baseCmd := fmt.Sprintf(`docker run -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
 	// if nodeType == "creator-node" {
 	// 	cmd = fmt.Sprintf(baseCmd + ` \
