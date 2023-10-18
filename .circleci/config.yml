@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  gh: circleci/github-cli@2.2.0
+
 jobs:
   standup-dot-slash:
     machine:
@@ -11,9 +14,6 @@ jobs:
       - run:
           name: make
           command: cd ~/dot-slash-audius && make
-      # - run:
-      #     name: build push audius-docker-compose
-      #     command: cd ~/dot-slash-audius && make build-push
       - run:
           name: populate config
           command: |
@@ -29,9 +29,9 @@ jobs:
           name: start audius nodes
           command: |
             cd ~/dot-slash-audius
-            ./audius -c ~/.audius/creator.conf --local
+            ./bin/audius-x86 -c ~/.audius/creator.conf --local
             # Disabled temporarily
-            # ./audius -c ~/.audius/discovery.conf --local --port 8080 --tls 8081
+            # ./bin/audius-x86 -c ~/.audius/discovery.conf --local --port 8080 --tls 8081
       - run:
           name: check audius node health
           command: |
@@ -47,9 +47,55 @@ jobs:
             [ "$cresult" = true ] || [ "$cresult" = false ]
             # [ "$dresult" = true ] || [ "$dresult" = false ]
 
+  build-pub-go:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - checkout:
+          path: ~/dot-slash-audius
+      - gh/setup:
+          version: 2.23.0
+      - add_ssh_keys:
+            fingerprints:
+              - "7a:85:bb:bf:30:0e:99:c9:d5:ba:9e:a5:05:c8:cf:12"
+      - run:
+          name: set git config
+          command: |
+            git config --global user.email "audius-infra@audius.co"
+            git config --global user.name "audius-infra"
+      - run:
+            name: docker login
+            command: echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+      - run:
+          name: build push audius-docker-compose
+          command: |
+            cd ~/dot-slash-audius
+            docker buildx create --use
+            make build-push
+      - run:
+          name: build and publish go binaries
+          command: |
+            cd ~/dot-slash-audius
+            make
+            git add bin/*
+            git commit -m "Update golang bin $CIRCLE_SHA1"
+            git push origin main
 
 workflows:
-  test-dot-slash:
+  test:
     jobs:
       - standup-dot-slash:
           context: dot-slash-audius
+          filters:
+            branches:
+              ignore:
+                - main
+  publish:
+    jobs:
+      - build-pub-go:
+          context: github
+          filters:
+            branches:
+              only:
+                - main
