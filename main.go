@@ -100,8 +100,6 @@ func runUp(nodeType string) {
 		volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/%s/override.env", confFilePath, nodeType)
 	}
 
-	fmt.Printf("volume flag %s", volumeFlag)
-
 	var cmd string
 	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
@@ -119,8 +117,6 @@ func runUp(nodeType string) {
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
 		-v ./root/audius-docker-compose/discovery-provider/chain/spec.json:/chain/spec.json \
         -v ./root/audius-docker-compose/discovery-provider/chain/static-nodes.json:/chain/static-nodes.json \
-        -v ./root/audius-docker-compose/discovery-provider/chain/static-nodes.json/config.cfg:/chain/config.cfg \
-        -v ./root/audius-docker-compose/discovery-provider/chain/static-nodes.json/NLog.config:/chain/NLog.config \
         audius/dot-slash:` + imageTag)
 	}
 
