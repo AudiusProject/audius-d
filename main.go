@@ -115,10 +115,10 @@ func runUp(nodeType string) {
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-		-v ./chain/spec.json:/config/spec.json \
-        -v ./chain/static-nodes.json:/nethermind/Data/static-nodes.json \
-        -v ./chain/config.cfg:/nethermind/configs/config.cfg \
-        -v ./chain/NLog.config:/nethermind/NLog.config \
+		-v ./root/audius-docker-compose/discovery-provider/chain/spec.json:/chain/spec.json \
+        -v ./root/audius-docker-compose/discovery-provider/chain/static-nodes.json:/chain/static-nodes.json \
+        -v ./root/audius-docker-compose/discovery-provider/chain/static-nodes.json/config.cfg:/chain/config.cfg \
+        -v ./root/audius-docker-compose/discovery-provider/chain/static-nodes.json/NLog.config:/chain/NLog.config \
         audius/dot-slash:` + imageTag)
 	}
 
