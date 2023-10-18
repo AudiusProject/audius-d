@@ -68,6 +68,12 @@ func Run(dc *client.Client, imageName, imageTag, containerName string, container
 		Target: "/var/lib/docker",
 	})
 
+	mounts = append(mounts, mount.Mount{
+		Type:   mount.TypeBind,
+		Source: confFilePath,
+		Target: fmt.Sprintf("/root/audius-docker-compose/%s/override.env", containerName),
+	})
+
 	// config all node types require
 	hostConf := &container.HostConfig{
 		Privileged: true,
@@ -88,7 +94,7 @@ func Run(dc *client.Client, imageName, imageTag, containerName string, container
 		Mounts: mounts,
 	}
 
-	resp, err := dc.ContainerCreate(ctx, conf, hostConf, nil, nil, "creator-node")
+	resp, err := dc.ContainerCreate(ctx, conf, hostConf, nil, nil, containerName)
 
 	if err != nil {
 		exitWithError("Creating creator-node container failed:", err)
@@ -102,14 +108,20 @@ func Run(dc *client.Client, imageName, imageTag, containerName string, container
 	fmt.Printf("%s %s started \n", image, containerName)
 
 	execResp, err := dc.ContainerExecCreate(ctx, resp.ID, types.ExecConfig{
-		Cmd: []string{"cd creator-node && docker compose up"},
+		Cmd: []string{fmt.Sprintf("cd %s && docker compose up", containerName)},
 	})
 
 	if err != nil {
 		exitWithError("Error exec failed:", err)
 	}
 
-	fmt.Printf("%s", execResp.ID)
+	err = dc.ContainerExecStart(ctx, execResp.ID, types.ExecStartCheck{})
+
+	if err != nil {
+		exitWithError("Error exec start failed:", err)
+	}
+
+	fmt.Println("docker compose up ran")
 }
 
 // finds a container id given an image name and tag

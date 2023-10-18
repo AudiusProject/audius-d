@@ -98,12 +98,6 @@ func runUp(dc *client.Client) {
 
 	mounts := []mount.Mount{}
 
-	mounts = append(mounts, mount.Mount{
-		Type:   mount.TypeBind,
-		Source: confFilePath,
-		Target: fmt.Sprintf("/root/audius-docker-compose/%s/override.env", nodeType),
-	})
-
 	// separate config per node type
 	if nodeType == "creator-node" {
 		mounts = append(mounts, mount.Mount{
