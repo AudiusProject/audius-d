@@ -9,8 +9,11 @@ jobs:
       - checkout:
           path: ~/dot-slash-audius
       - run:
-          name: build dot-slash-audius
-          command: cd ~/dot-slash-audius && make build-docker
+          name: make
+          command: cd ~/dot-slash-audius && make
+      # - run:
+      #     name: build push audius-docker-compose
+      #     command: cd ~/dot-slash-audius && make build-push
       - run:
           name: populate config
           command: |

@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-//go:embed audius.conf
+//go:embed sample.audius.conf
 var confExample string
 var confFilePath string
 var imageTag string
