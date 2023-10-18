@@ -93,15 +93,16 @@ func determineNodeType() string {
 }
 
 func runUp(dc *client.Client) {
-	// volumeFlag := ""
-	// if confFilePath != "" {
-	// 	volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/%s/override.env", confFilePath, nodeType)
-	// }
-
 	nodeType := determineNodeType()
 	nodeConf := &container.Config{}
 
 	mounts := []mount.Mount{}
+
+	mounts = append(mounts, mount.Mount{
+		Type:   mount.TypeBind,
+		Source: confFilePath,
+		Target: fmt.Sprintf("/root/audius-docker-compose/%s/override.env", nodeType),
+	})
 
 	// separate config per node type
 	if nodeType == "creator-node" {
@@ -136,27 +137,6 @@ func runUp(dc *client.Client) {
 	}
 
 	Run(dc, "audius/dot-slash", imageTag, nodeType, nodeConf, mounts)
-
-	// if nodeType == "creator-node" {
-	// 	cmd = fmt.Sprintf(baseCmd + ` \
-	//     --name creator-node \
-	//     -v /var/k8s/mediorum:/var/k8s/mediorum \
-	//     -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
-	//     -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
-	//     audius/dot-slash:` + imageTag)
-	// } else {
-	// 	cmd = fmt.Sprintf(baseCmd + ` \
-	//     --name discovery-provider \
-	//     -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
-	//     -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-	//     audius/dot-slash:` + imageTag)
-	// }
-
-	// execCmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done && cd %s && docker compose up -d"`, nodeType, nodeType)
-
-	// if err := runCommand("/bin/sh", "-c", cmd+" && "+execCmd); err != nil {
-	// 	exitWithError("Error executing command:", err)
-	// }
 }
 
 func exitWithError(msg ...interface{}) {

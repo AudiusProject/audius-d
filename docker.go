@@ -100,6 +100,16 @@ func Run(dc *client.Client, imageName, imageTag, containerName string, container
 	}
 
 	fmt.Printf("%s %s started \n", image, containerName)
+
+	execResp, err := dc.ContainerExecCreate(ctx, resp.ID, types.ExecConfig{
+		Cmd: []string{"cd creator-node && docker compose up"},
+	})
+
+	if err != nil {
+		exitWithError("Error exec failed:", err)
+	}
+
+	fmt.Printf("%s", execResp.ID)
 }
 
 // finds a container id given an image name and tag
