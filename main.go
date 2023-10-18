@@ -4,18 +4,15 @@ import (
 	"bufio"
 	"context"
 	_ "embed"
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 )
 
 //go:embed audius.conf
@@ -27,27 +24,29 @@ var port int
 var tlsPort int
 
 func main() {
-	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
-	flag.StringVar(&imageTag, "t", "dev", "docker image tag to use when turning up")
-	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
-	flag.IntVar(&port, "port", 80, "specify a custom http port")
-	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
+	dc := ConnectDocker()
+	Run(dc, "audius/dot-slash", "dev", "creator-node")
+	// flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
+	// flag.StringVar(&imageTag, "t", "dev", "docker image tag to use when turning up")
+	// flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
+	// flag.IntVar(&port, "port", 80, "specify a custom http port")
+	// flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
 
-	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
-		exitWithError("Invalid image tag:", imageTag)
-	}
-	cmdName := "up"
-	if len(os.Args) > 1 {
-		cmdName = os.Args[1]
-	}
-	flag.Parse()
+	// if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
+	// 	exitWithError("Invalid image tag:", imageTag)
+	// }
+	// cmdName := "up"
+	// if len(os.Args) > 1 {
+	// 	cmdName = os.Args[1]
+	// }
+	// flag.Parse()
 
-	switch cmdName {
-	case "down":
-		runDown()
-	default:
-		runUp(checkConfigFile())
-	}
+	// switch cmdName {
+	// case "down":
+	// 	runDown()
+	// default:
+	// 	runUp(checkConfigFile())
+	// }
 }
 
 func checkConfigFile() string {
@@ -96,11 +95,7 @@ func runUp(nodeType string) {
 	ensureDirectory("/tmp/dind")
 
 	ctx := context.Background()
-	docker, err := client.NewClientWithOpts(client.FromEnv)
-
-	if err != nil {
-		exitWithError("Error connecting to docker", err)
-	}
+	docker := ConnectDocker()
 
 	audiusDotSlashImageName := "audius/dot-slash:" + imageTag
 
@@ -118,7 +113,8 @@ func runUp(nodeType string) {
 	// }
 
 	resp, err := docker.ContainerCreate(ctx, &container.Config{
-		Image: audiusDotSlashImageName,
+		Image:   audiusDotSlashImageName,
+		Volumes: map[string]struct{}{},
 	}, nil, nil, nil, "creator-node")
 
 	if err != nil {
@@ -158,14 +154,6 @@ func runUp(nodeType string) {
 
 func runDown() {
 	runCommand("docker", "rm", "-f", "creator-node", "discovery-provider")
-}
-
-func ensureDirectory(path string) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := os.MkdirAll(path, 0755); err != nil {
-			exitWithError("Failed to create directory:", err)
-		}
-	}
 }
 
 func runCommand(name string, args ...string) error {
