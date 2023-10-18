@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	_ "embed"
 	"flag"
 	"fmt"
@@ -11,6 +12,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
 )
 
 //go:embed audius.conf
@@ -27,8 +32,8 @@ func main() {
 	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
-	
-	if ! regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
+
+	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
 	}
 	cmdName := "up"
@@ -67,10 +72,11 @@ func checkConfigFile() string {
 	}
 
 	file, err := os.Open(confFilePath)
-	defer file.Close()
 	if err != nil {
 		exitWithError("Error opening config file:", err)
 	}
+
+	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -89,40 +95,65 @@ func checkConfigFile() string {
 func runUp(nodeType string) {
 	ensureDirectory("/tmp/dind")
 
+	ctx := context.Background()
+	docker, err := client.NewClientWithOpts(client.FromEnv)
+
+	if err != nil {
+		exitWithError("Error connecting to docker", err)
+	}
+
+	audiusDotSlashImageName := "audius/dot-slash:" + imageTag
+
 	if !localImage {
-		if err := runCommand("docker", "pull", "audius/dot-slash:" + imageTag); err != nil {
+		reader, err := docker.ImagePull(ctx, audiusDotSlashImageName, types.ImagePullOptions{})
+		if err != nil {
 			exitWithError("Error pulling image:", err)
 		}
+		reader.Close()
 	}
 
-	volumeFlag := ""
-	if confFilePath != "" {
-		volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/%s/override.env", confFilePath, nodeType)
+	// //volumeFlag := ""
+	// if confFilePath != "" {
+	// 	volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/%s/override.env", confFilePath, nodeType)
+	// }
+
+	resp, err := docker.ContainerCreate(ctx, &container.Config{
+		Image: audiusDotSlashImageName,
+	}, nil, nil, nil, "creator-node")
+
+	if err != nil {
+		exitWithError("Creating creator-node container failed:", err)
 	}
 
-	var cmd string
-	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
-
-	if nodeType == "creator-node" {
-		cmd = fmt.Sprintf(baseCmd + ` \
-        --name creator-node \
-        -v /var/k8s/mediorum:/var/k8s/mediorum \
-        -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
-        -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
-        audius/dot-slash:` + imageTag)
-	} else {
-		cmd = fmt.Sprintf(baseCmd + ` \
-        --name discovery-provider \
-        -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
-        -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-        audius/dot-slash:` + imageTag)
+	if err := docker.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		exitWithError(err)
 	}
 
-	execCmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done && cd %s && docker compose up -d"`, nodeType, nodeType)
+	fmt.Println("creator-node started")
 
-	if err := runCommand("/bin/sh", "-c", cmd+" && "+execCmd); err != nil {
-		exitWithError("Error executing command:", err)
-	}
+	// var cmd string
+	// baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
+
+	// if nodeType == "creator-node" {
+	// 	cmd = fmt.Sprintf(baseCmd + ` \
+	//     --name creator-node \
+	//     -v /var/k8s/mediorum:/var/k8s/mediorum \
+	//     -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
+	//     -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
+	//     audius/dot-slash:` + imageTag)
+	// } else {
+	// 	cmd = fmt.Sprintf(baseCmd + ` \
+	//     --name discovery-provider \
+	//     -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
+	//     -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
+	//     audius/dot-slash:` + imageTag)
+	// }
+
+	// execCmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done && cd %s && docker compose up -d"`, nodeType, nodeType)
+
+	// if err := runCommand("/bin/sh", "-c", cmd+" && "+execCmd); err != nil {
+	// 	exitWithError("Error executing command:", err)
+	// }
 }
 
 func runDown() {
