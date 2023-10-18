@@ -128,7 +128,7 @@ func runUp(nodeType string) {
 
 	if nodeType == "discovery-provider" {
 		execCmd := fmt.Sprintf(`docker exec discovery-provider sh -c "cd discovery-provider && docker compose --profile chain up -d"`)
-		if err := runCommand(execCmd); err != nil {
+		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
 			exitWithError("Error executing command:", err)
 		}
 	}
