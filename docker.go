@@ -7,7 +7,9 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
 // global var
@@ -23,7 +25,7 @@ func ConnectDocker() *client.Client {
 }
 
 // downs the existing container, creates, and starts the new one
-func Run(dc *client.Client, imageName, imageTag, containerName string, containerConfig *container.Config) {
+func Run(dc *client.Client, imageName, imageTag, containerName string, containerConfig *container.Config, mounts []mount.Mount) {
 	ensureDirectory("/tmp/dind")
 
 	image := imageName + ":" + imageTag
@@ -60,9 +62,31 @@ func Run(dc *client.Client, imageName, imageTag, containerName string, container
 		}
 	}
 
+	mounts = append(mounts, mount.Mount{
+		Type:   mount.TypeBind,
+		Source: "/tmp/dind",
+		Target: "/var/lib/docker",
+	})
+
 	// config all node types require
-	hostConf := &container.HostConfig{Privileged: true}
-	hostConf.Binds = append(hostConf.Binds, "/tmp/dind:/var/lib/docker")
+	hostConf := &container.HostConfig{
+		Privileged: true,
+		PortBindings: nat.PortMap{
+			nat.Port(fmt.Sprintf("%d", port)): []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: fmt.Sprintf("%d", port),
+				},
+			},
+			nat.Port(fmt.Sprintf("%d", tlsPort)): []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: fmt.Sprintf("%d", tlsPort),
+				},
+			},
+		},
+		Mounts: mounts,
+	}
 
 	resp, err := dc.ContainerCreate(ctx, conf, hostConf, nil, nil, "creator-node")
 

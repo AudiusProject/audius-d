@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 )
 
@@ -92,7 +93,7 @@ func determineNodeType() string {
 }
 
 func runUp(dc *client.Client) {
-	// //volumeFlag := ""
+	// volumeFlag := ""
 	// if confFilePath != "" {
 	// 	volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/%s/override.env", confFilePath, nodeType)
 	// }
@@ -100,19 +101,41 @@ func runUp(dc *client.Client) {
 	nodeType := determineNodeType()
 	nodeConf := &container.Config{}
 
+	mounts := []mount.Mount{}
+
 	// separate config per node type
 	if nodeType == "creator-node" {
-
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: "/var/k8s/mediorum",
+			Target: "/var/k8s/mediorum",
+		})
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: "/var/k8s/creator-node-backend",
+			Target: "/var/k8s/creator-node-backend",
+		})
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: "/var/k8s/creator-node-db",
+			Target: "/var/k8s/creator-node-db",
+		})
 	}
 
 	if nodeType == "discovery-provider" {
-
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: "/var/k8s/discovery-provider-db",
+			Target: "/var/k8s/discovery-provider-db",
+		})
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: "/var/k8s/discovery-provider-chain",
+			Target: "/var/k8s/discovery-provider-chain",
+		})
 	}
 
-	Run(dc, "audius/dot-slash", imageTag, nodeType, nodeConf)
-
-	// var cmd string
-	// baseCmd := fmt.Sprintf(`docker run -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
+	Run(dc, "audius/dot-slash", imageTag, nodeType, nodeConf, mounts)
 
 	// if nodeType == "creator-node" {
 	// 	cmd = fmt.Sprintf(baseCmd + ` \
