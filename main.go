@@ -20,6 +20,7 @@ var imageTag string
 var localImage bool
 var port int
 var tlsPort int
+var identity bool
 
 func main() {
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
@@ -27,8 +28,9 @@ func main() {
 	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
-	
-	if ! regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
+	flag.BoolVar(&identity, "id", false, "start identity service")
+
+	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
 	}
 	cmdName := "up"
@@ -72,6 +74,11 @@ func checkConfigFile() string {
 		exitWithError("Error opening config file:", err)
 	}
 
+	// short circuit if identity configured
+	if identity {
+		return "identity-service"
+	}
+
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		if strings.Contains(scanner.Text(), "creatorNodeEndpoint") {
@@ -90,7 +97,7 @@ func runUp(nodeType string) {
 	ensureDirectory("/tmp/dind")
 
 	if !localImage {
-		if err := runCommand("docker", "pull", "audius/dot-slash:" + imageTag); err != nil {
+		if err := runCommand("docker", "pull", "audius/dot-slash:"+imageTag); err != nil {
 			exitWithError("Error pulling image:", err)
 		}
 	}
@@ -103,19 +110,25 @@ func runUp(nodeType string) {
 	var cmd string
 	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
-	if nodeType == "creator-node" {
+	switch nodeType {
+	case "creator-node":
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name creator-node \
         -v /var/k8s/mediorum:/var/k8s/mediorum \
         -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
         -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
         audius/dot-slash:` + imageTag)
-	} else {
+	case "discovery-provider":
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
         audius/dot-slash:` + imageTag)
+	case "identity-service":
+		cmd = fmt.Sprintf(baseCmd + ` \
+        --name identity-service \
+        audius/dot-slash:` + imageTag)
+	default:
 	}
 
 	execCmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done && cd %s && docker compose up -d"`, nodeType, nodeType)
@@ -126,7 +139,7 @@ func runUp(nodeType string) {
 }
 
 func runDown() {
-	runCommand("docker", "rm", "-f", "creator-node", "discovery-provider")
+	runCommand("docker", "rm", "-f", "creator-node", "discovery-provider", "identity-service")
 }
 
 func ensureDirectory(path string) {
