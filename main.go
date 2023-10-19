@@ -140,9 +140,8 @@ func runUp(nodeType string) {
 
 	audiusCli("set-network", "stage")
 
-	// run these concurrently
-	go audiusCli(launchCmd...)
-	go audiusCli("launch-chain")
+	audiusCli(launchCmd...)
+	audiusCli("launch-chain")
 }
 
 func runDown() {
