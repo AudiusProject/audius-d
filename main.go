@@ -20,15 +20,17 @@ var imageTag string
 var localImage bool
 var port int
 var tlsPort int
+var seed bool
 
 func main() {
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
 	flag.StringVar(&imageTag, "t", "dev", "docker image tag to use when turning up")
-	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
+	flag.BoolVar(&localImage, "local", true, "when specified, will use docker image from local repository")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
-	
-	if ! regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
+	flag.BoolVar(&seed, "seed", false, "seed data for discovery provider")
+
+	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
 	}
 	cmdName := "up"
@@ -90,7 +92,7 @@ func runUp(nodeType string) {
 	ensureDirectory("/tmp/dind")
 
 	if !localImage {
-		if err := runCommand("docker", "pull", "audius/dot-slash:" + imageTag); err != nil {
+		if err := runCommand("docker", "pull", "audius/dot-slash:"+imageTag); err != nil {
 			exitWithError("Error pulling image:", err)
 		}
 	}
@@ -103,6 +105,7 @@ func runUp(nodeType string) {
 	var cmd string
 	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
+	// TODO: break out creator node into its own func
 	if nodeType == "creator-node" {
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name creator-node \
@@ -110,19 +113,33 @@ func runUp(nodeType string) {
         -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
         -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
         audius/dot-slash:` + imageTag)
-	} else {
-		cmd = fmt.Sprintf(baseCmd + ` \
+
+		execCmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done && cd %s && docker compose up -d"`, nodeType, nodeType)
+
+		if err := runCommand("/bin/sh", "-c", cmd+" && "+execCmd); err != nil {
+			exitWithError("Error executing command:", err)
+		}
+		return
+	}
+
+	// discovery path, also TODO break out into its own func
+	cmd = fmt.Sprintf(baseCmd + ` \
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
         audius/dot-slash:` + imageTag)
-	}
 
-	execCmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done && cd %s && docker compose up -d"`, nodeType, nodeType)
-
-	if err := runCommand("/bin/sh", "-c", cmd+" && "+execCmd); err != nil {
+	if err := runCommand("/bin/sh", "-c", cmd+" && "+`docker exec discovery-provider sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`); err != nil {
 		exitWithError("Error executing command:", err)
 	}
+
+	audiusCli("set-network", "stage")
+	if seed {
+		audiusCli("launch", "discovery-provider", "-y", "--seed")
+	} else {
+		audiusCli("launch", "discovery-provider", "-y")
+	}
+	audiusCli("launch-chain")
 }
 
 func runDown() {
@@ -134,6 +151,15 @@ func ensureDirectory(path string) {
 		if err := os.MkdirAll(path, 0755); err != nil {
 			exitWithError("Failed to create directory:", err)
 		}
+	}
+}
+
+func audiusCli(args ...string) {
+	audCli := []string{"exec", "discovery-provider", "audius-cli"}
+	cmds := append(audCli, args...)
+	err := runCommand("docker", cmds...)
+	if err != nil {
+		exitWithError("Error with audius-cli:", err)
 	}
 }
 
