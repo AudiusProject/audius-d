@@ -7,15 +7,8 @@ because running audius should look like this
 
 ## install
 
-**x86**
 ```
-curl -o audius https://raw.githubusercontent.com/AudiusProject/dot-slash-audius/main/bin/audius-x86 && chmod +x audius
-```
-
-**arm**
-
-```
-curl -o audius https://raw.githubusercontent.com/AudiusProject/dot-slash-audius/main/bin/audius-arm && chmod +x audius
+curl -sSL https://raw.githubusercontent.com/AudiusProject/dot-slash-audius/main/install.sh | sh
 ```
 
 ## quickstart
