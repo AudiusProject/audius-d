@@ -133,15 +133,13 @@ func runUp(nodeType string) {
 		exitWithError("Error executing command:", err)
 	}
 
+	audiusCli("set-network", "stage")
+	audiusCli("launch-chain")
+
 	launchCmd := []string{"launch", "discovery-provider", "-y"}
 	if seed {
 		launchCmd = append(launchCmd, "--seed")
 	}
-
-	audiusCli("set-network", "stage")
-
-	// this will create the right files first
-	audiusCli("launch-chain")
 	audiusCli(launchCmd...)
 }
 
