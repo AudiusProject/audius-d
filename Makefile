@@ -1,5 +1,3 @@
-.PHONY: audius
-
 build-go:
 	@echo "Building Go binary..."
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/audius-x86 main.go

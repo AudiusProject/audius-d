@@ -68,12 +68,6 @@ jobs:
             name: docker login
             command: echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
       - run:
-          name: build push audius-docker-compose
-          command: |
-            cd ~/dot-slash-audius
-            docker buildx create --use
-            make build-push
-      - run:
           name: build and publish go binaries
           command: |
             cd ~/dot-slash-audius
@@ -81,6 +75,25 @@ jobs:
             git add bin/*
             git commit -m "Update golang bin $CIRCLE_SHA1"
             git push origin main
+      - run:
+          name: build push audius-docker-compose
+          command: |
+            REPO_OWNER="AudiusProject"
+            REPO_NAME="audius-docker-compose"
+            BRANCH_NAME="stage"
+            COMMIT_SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/branches/$BRANCH_NAME" | \
+              jq -r '.commit.sha')
+            DOCKER_IMAGE="audius/audius-docker-compose:$COMMIT_SHA"
+            
+            if docker manifest inspect $DOCKER_IMAGE >/dev/null 2>&1; then
+              echo "Docker image $DOCKER_IMAGE already exists. Skipping build."
+            else
+              echo "Docker image $DOCKER_IMAGE not found. Building and pushing..."
+              cd ~/dot-slash-audius
+              docker buildx create --use
+              make build-push
+            fi
 
 workflows:
   test:
