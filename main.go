@@ -140,6 +140,9 @@ func runUp(nodeType string) {
 
 	audiusCli("set-network", "stage")
 
+	runCommand("/bin/sh", "-c", `docker exec discovery-provider sh -c "[ -d "/discovery-provider/chain/spec.json" ] && rm -r "/discovery-provider/chain/spec.json""`)
+	runCommand("/bin/sh", "-c", `docker exec discovery-provider sh -c "[ -d "/discovery-provider/chain/static-nodes.json" ] && rm -r "/discovery-provider/chain/static-nodes.json""`)
+
 	audiusCli(launchCmd...)
 	audiusCli("launch-chain")
 }
