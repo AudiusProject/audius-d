@@ -17,10 +17,5 @@ WORKDIR /root/audius-docker-compose
 RUN echo "NETWORK='$NETWORK'" > ./creator-node/.env
 RUN echo "NETWORK='$NETWORK'" > ./discovery-provider/.env
 
-# docker volumes will initially create these as dirs if they don't exist
-# create them here since this is a new audius-docker-compose clone
-RUN touch discovery-provider/chain/spec.json
-RUN touch discovery-provider/chain/static-nodes.json
-
 RUN python3 -m pip install -r requirements.txt
 RUN ln -sf $PWD/audius-cli /usr/local/bin/audius-cli

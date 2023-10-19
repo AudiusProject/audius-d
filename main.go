@@ -133,13 +133,16 @@ func runUp(nodeType string) {
 		exitWithError("Error executing command:", err)
 	}
 
-	audiusCli("set-network", "stage")
+	launchCmd := []string{"launch", "discovery-provider", "-y"}
 	if seed {
-		audiusCli("launch", "discovery-provider", "-y", "--seed")
-	} else {
-		audiusCli("launch", "discovery-provider", "-y")
+		launchCmd = append(launchCmd, "--seed")
 	}
-	audiusCli("launch-chain")
+
+	audiusCli("set-network", "stage")
+
+	// run these concurrently
+	go audiusCli(launchCmd...)
+	go audiusCli("launch-chain")
 }
 
 func runDown() {
