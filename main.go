@@ -143,6 +143,7 @@ func runUp() {
 		}
 		audiusCli(launchCmd...)
 	case "identity-service":
+		audiusCli("launch", "identity-service", "-y")
 	default:
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
