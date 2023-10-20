@@ -1,7 +1,10 @@
 version: 2.1
 
+orbs:
+  gh: circleci/github-cli@2.2.0
+
 jobs:
-  standup-dot-slash:
+  build-job:
     machine:
       image: ubuntu-2204:current
     resource_class: large
@@ -9,26 +12,66 @@ jobs:
       - checkout:
           path: ~/dot-slash-audius
       - run:
-          name: build dot-slash-audius
-          command: cd ~/dot-slash-audius && make build-docker
-      - run:
-          name: populate config
+          name: install go
           command: |
-            mkdir ~/.audius
-            echo "creatorNodeEndpoint=https://localhost" >> ~/.audius/creator.conf
-            echo "delegateOwnerWallet=$delegateOwnerWallet" >> ~/.audius/creator.conf
-            echo "delegatePrivateKey=$delegatePrivateKey" >> ~/.audius/creator.conf
-            echo "spOwnerWallet=$spOwnerWallet" >> ~/.audius/creator.conf
-            echo "audius_discprov_url=https://localhost" >> ~/.audius/discovery.conf
-            echo "audius_delegate_owner_wallet=$audius_delegate_owner_wallet" >> ~/.audius/discovery.conf
-            echo "audius_delegate_private_key=$audius_delegate_private_key" >> ~/.audius/discovery.conf
+            sudo apt-get update
+            sudo apt-get install -y golang
       - run:
-          name: start audius nodes
+          name: audius-docker-compose
           command: |
             cd ~/dot-slash-audius
-            ./audius -c ~/.audius/creator.conf --local
-            # Disabled temporarily
-            # ./audius -c ~/.audius/discovery.conf --local --port 8080 --tls 8081
+
+            REPO_OWNER="AudiusProject"
+            REPO_NAME="audius-docker-compose"
+            BRANCH_NAME="stage"
+            COMPOSE_COMMIT_SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/branches/$BRANCH_NAME" | \
+              jq -r '.commit.sha')
+            DOCKER_IMAGE="audius/audius-docker-compose:$COMPOSE_COMMIT_SHA"
+
+            echo "export COMPOSE_COMMIT_SHA=$COMPOSE_COMMIT_SHA" >> $BASH_ENV
+
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            
+            if docker buildx imagetools inspect $DOCKER_IMAGE >/dev/null 2>&1; then
+              echo "Docker image $DOCKER_IMAGE already exists. Skipping build."
+            else
+              echo "Docker image $DOCKER_IMAGE not found. Building and pushing..."
+              docker buildx create --use
+              make build-push TAG=$COMPOSE_COMMIT_SHA
+            fi
+      - run:
+          name: make
+          command: |
+            cd ~/dot-slash-audius
+            make TAG=$COMPOSE_COMMIT_SHA
+      - persist_to_workspace:
+          root: ~/dot-slash-audius
+          paths:
+            - bin/audius-arm
+            - bin/audius-x86
+
+  test-job:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - checkout:
+          path: ~/dot-slash-audius
+      - attach_workspace:
+          at: ~/dot-slash-audius
+      - run:
+          name: Add binaries to PATH
+          command: |
+            echo 'export PATH=~/dot-slash-audius/bin:$PATH' >> $BASH_ENV
+            source $BASH_ENV
+      - run:
+          name: standup and test audius
+          command: |
+            cd ~/dot-slash-audius
+            mkdir ~/.audius
+            cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
+            audius-x86 -c ~/.audius/creator.conf
       - run:
           name: check audius node health
           command: |
@@ -38,15 +81,76 @@ jobs:
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
             done
-
             cresult="$(curl -Lkv https://localhost/health_check | jq '.data.healthy')"
-            # dresult="$(curl -Lkv https://localhost:8081/health_check | jq '.data.healthy')"
             [ "$cresult" = true ] || [ "$cresult" = false ]
-            # [ "$dresult" = true ] || [ "$dresult" = false ]
 
+  publish-job:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - checkout:
+          path: ~/dot-slash-audius
+      - gh/setup:
+          version: 2.23.0
+      - add_ssh_keys:
+          fingerprints:
+            - "7a:85:bb:bf:30:0e:99:c9:d5:ba:9e:a5:05:c8:cf:12"
+      - run:
+          name: git config
+          command: |
+            git config --global user.email "audius-infra@audius.co"
+            git config --global user.name "audius-infra"
+      - attach_workspace:
+          at: ~/dot-slash-audius
+      - run:
+          name: commit go binaries
+          command: |
+            cd ~/dot-slash-audius
+            git add bin/*
+            git commit -m "Update golang bin $CIRCLE_SHA1"
+            git push origin main
 
 workflows:
-  test-dot-slash:
+  version: 2
+  build-test:
     jobs:
-      - standup-dot-slash:
-          context: dot-slash-audius
+      - build-job:
+          context: github
+          filters:
+            branches:
+              ignore:
+                - main
+      - test-job:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              ignore:
+                - main
+
+  build-test-publish:
+    jobs:
+      - build-job:
+          context: github
+          filters:
+            branches:
+              only:
+                - main
+      - test-job:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              only:
+                - main
+      - publish-job:
+          context: github
+          requires:
+            - test-job
+          filters:
+            branches:
+              only:
+                - main
