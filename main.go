@@ -10,7 +10,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
-	"strings"
 )
 
 //go:embed audius.conf
@@ -20,6 +19,8 @@ var imageTag string
 var localImage bool
 var port int
 var tlsPort int
+var network string
+var nodeType string
 
 func main() {
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
@@ -27,6 +28,8 @@ func main() {
 	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
+	flag.StringVar(&network, "network", "prod", "specify the network to run on")
+	flag.StringVar(&nodeType, "node", "discovery-provider", "specify the node type to run")
 
 	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
@@ -41,13 +44,13 @@ func main() {
 	case "down":
 		runDown()
 	default:
-		runUp(checkConfigFile())
+		fmt.Printf("standing up %s on network %s\n", nodeType, network)
+		readConfigFile()
+		runUp()
 	}
 }
 
-func checkConfigFile() string {
-	nodeType := "discovery-provider"
-
+func readConfigFile() {
 	if confFilePath == "" {
 		if usr, err := user.Current(); err != nil {
 			exitWithError("Error retrieving current user:", err)
@@ -73,20 +76,12 @@ func checkConfigFile() string {
 	}
 
 	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		if strings.Contains(scanner.Text(), "creatorNodeEndpoint") {
-			nodeType = "creator-node"
-			break
-		}
-	}
 	if err := scanner.Err(); err != nil {
 		exitWithError("Error reading config file:", err)
 	}
-
-	return nodeType
 }
 
-func runUp(nodeType string) {
+func runUp() {
 	ensureDirectory("/tmp/dind")
 
 	if !localImage {
@@ -103,30 +98,43 @@ func runUp(nodeType string) {
 	var cmd string
 	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
-	if nodeType == "creator-node" {
+	switch nodeType {
+	case "creator-node":
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name creator-node \
         -v /var/k8s/mediorum:/var/k8s/mediorum \
         -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
         -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
         audius/dot-slash:` + imageTag)
-	} else {
+	case "discovery-provider":
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
         audius/dot-slash:` + imageTag)
+	case "identity-service":
+		cmd = fmt.Sprintf(baseCmd + ` \
+        --name identity-service \
+        audius/dot-slash:` + imageTag)
+	default:
+		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
 
-	execCmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done && cd %s && docker compose up -d"`, nodeType, nodeType)
+	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
+		exitWithError("Error executing command:", err)
+	}
 
-	if err := runCommand("/bin/sh", "-c", cmd+" && "+execCmd); err != nil {
+	awaitDockerStart()
+	audiusCli("set-network", network)
+
+	execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
+	if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
 		exitWithError("Error executing command:", err)
 	}
 }
 
 func runDown() {
-	runCommand("docker", "rm", "-f", "creator-node", "discovery-provider")
+	runCommand("docker", "rm", "-f", "creator-node", "discovery-provider", "identity-service")
 }
 
 func ensureDirectory(path string) {
@@ -138,12 +146,20 @@ func ensureDirectory(path string) {
 }
 
 func audiusCli(args ...string) {
-	audCli := []string{"exec", "discovery-provider", "audius-cli"}
+	audCli := []string{"exec", nodeType, "audius-cli"}
 	cmds := append(audCli, args...)
 	err := runCommand("docker", cmds...)
 	if err != nil {
 		exitWithError("Error with audius-cli:", err)
 	}
+}
+
+func awaitDockerStart() {
+	cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, nodeType)
+	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
+		exitWithError("Error awaiting docker start:", err)
+	}
+
 }
 
 func runCommand(name string, args ...string) error {
