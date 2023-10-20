@@ -6,7 +6,7 @@ audius: main.go
 
 build-docker:
 	@echo "Building Docker image..."
-	docker buildx build --load --build-arg NETWORK=stage -t audius/dot-slash:dev .
+	docker buildx build --load --build-arg NETWORK=stage BRANCH=as/dot-slash-audius -t audius/dot-slash:dev .
 
 push-docker:
 	@echo "Pushing Docker image..."

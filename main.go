@@ -21,6 +21,7 @@ var port int
 var tlsPort int
 var network string
 var nodeType string
+var seed bool
 
 func main() {
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
@@ -30,6 +31,7 @@ func main() {
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
 	flag.StringVar(&network, "network", "prod", "specify the network to run on")
 	flag.StringVar(&nodeType, "node", "discovery-provider", "specify the node type to run")
+	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
 
 	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
@@ -127,9 +129,22 @@ func runUp() {
 	awaitDockerStart()
 	audiusCli("set-network", network)
 
-	execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
-	if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
-		exitWithError("Error executing command:", err)
+	switch nodeType {
+	case "creator-node":
+		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
+		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
+			exitWithError("Error executing command:", err)
+		}
+	case "discovery-provider":
+		audiusCli("launch-chain")
+		launchCmd := []string{"launch", "discovery-provider", "-y"}
+		if seed {
+			launchCmd = append(launchCmd, "--seed")
+		}
+		audiusCli(launchCmd...)
+	case "identity-service":
+	default:
+		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
 }
 
