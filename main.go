@@ -27,8 +27,8 @@ func main() {
 	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
-	
-	if ! regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
+
+	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
 	}
 	cmdName := "up"
@@ -90,7 +90,7 @@ func runUp(nodeType string) {
 	ensureDirectory("/tmp/dind")
 
 	if !localImage {
-		if err := runCommand("docker", "pull", "audius/dot-slash:" + imageTag); err != nil {
+		if err := runCommand("docker", "pull", "audius/dot-slash:"+imageTag); err != nil {
 			exitWithError("Error pulling image:", err)
 		}
 	}
@@ -134,6 +134,15 @@ func ensureDirectory(path string) {
 		if err := os.MkdirAll(path, 0755); err != nil {
 			exitWithError("Failed to create directory:", err)
 		}
+	}
+}
+
+func audiusCli(args ...string) {
+	audCli := []string{"exec", "discovery-provider", "audius-cli"}
+	cmds := append(audCli, args...)
+	err := runCommand("docker", cmds...)
+	if err != nil {
+		exitWithError("Error with audius-cli:", err)
 	}
 }
 
