@@ -2,7 +2,7 @@
 
 because running audius should look like this
 ```
-./audius
+audius
 ```
 
 ## install
@@ -18,7 +18,7 @@ run a dev setup
 ```
 mkdir ~/.audius && cp sample.audius.conf ~/.audius/audius.conf
 
-./audius
+audius
 ```
 
 ## run
@@ -44,12 +44,12 @@ audius_delegate_private_key=
 
 **run**
 ```
-./audius [-c audius.conf]
+audius [-c audius.conf]
 ```
 
 ## build
 
-builds required go binaries that are (for now) committed to this repo in `./bin`
+builds required go binaries that are (for now) committed to this repo in `./bin` by CI.
 
 ```
 make
