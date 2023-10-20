@@ -27,4 +27,4 @@ else
     mv "$BINARY_NAME" "$TARGET_DIR/audius"
 fi
 
-echo "$BINARY_NAME has been installed to $TARGET_DIR.\nYou can run it using: $ audius"
+echo "$BINARY_NAME has been installed to $TARGET_DIR/audius\nYou can run it using: $ audius"

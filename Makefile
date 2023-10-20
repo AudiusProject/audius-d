@@ -4,7 +4,7 @@ TAG ?= stage
 build-go:
 	@echo "Building Go binary..."
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audius-x86 main.go
-	CGO_ENABLED=0 GOARCH=arm64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audius-arm main.go
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audius-arm main.go
 
 build-docker:
 	@echo "Building Docker image..."
