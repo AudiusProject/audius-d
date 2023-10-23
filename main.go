@@ -12,20 +12,23 @@ import (
 	"regexp"
 )
 
-//go:embed audius.conf
+//go:embed sample.audius.conf
 var confExample string
 var confFilePath string
-var imageTag string
-var localImage bool
 var port int
 var tlsPort int
 var network string
 var nodeType string
 
+// with the intent of reducing configuration,
+// the latest audius-docker-compose sha (from stage branch) is set at build time via ci.
+// this bakes the (tested) image dependency in, so we know that the built binary will always work.
+var imageTag = "stage"
+
 func main() {
+	fmt.Println(fmt.Sprintf("imageTag: audius/audius-docker-compose:%s", imageTag))
+
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
-	flag.StringVar(&imageTag, "t", "dev", "docker image tag to use when turning up")
-	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
 	flag.StringVar(&network, "network", "prod", "specify the network to run on")
@@ -83,12 +86,6 @@ func readConfigFile() {
 
 func runUp() {
 	ensureDirectory("/tmp/dind")
-
-	if !localImage {
-		if err := runCommand("docker", "pull", "audius/dot-slash:"+imageTag); err != nil {
-			exitWithError("Error pulling image:", err)
-		}
-	}
 
 	volumeFlag := ""
 	if confFilePath != "" {
