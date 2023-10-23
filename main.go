@@ -102,17 +102,17 @@ func runUp() {
         -v /var/k8s/mediorum:/var/k8s/mediorum \
         -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
         -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
-        audius/dot-slash:` + imageTag)
+        audius/audius-docker-compose:` + imageTag)
 	case "discovery-provider":
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-        audius/dot-slash:` + imageTag)
+        audius/audius-docker-compose:` + imageTag)
 	case "identity-service":
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name identity-service \
-        audius/dot-slash:` + imageTag)
+        audius/audius-docker-compose:` + imageTag)
 	default:
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
