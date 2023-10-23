@@ -71,7 +71,7 @@ jobs:
             cd ~/dot-slash-audius
             mkdir ~/.audius
             cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
-            audius-x86 -c ~/.audius/creator.conf
+            audius-x86 -node=creator-node -c=~/.audius/creator.conf -network=stage
       - run:
           name: check audius node health
           command: |
