@@ -103,8 +103,6 @@ func runUp() {
 		baseCmd = baseCmd + " -p 5000:5000"
 	}
 
-	fmt.Printf("image tag %s \n", imageTag)
-
 	switch nodeType {
 	case "creator-node":
 		cmd = fmt.Sprintf(baseCmd + ` \
@@ -126,8 +124,6 @@ func runUp() {
 	default:
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
-
-	fmt.Printf("initial run [%s]\n", cmd)
 
 	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
 		exitWithError("Error executing command:", err)
