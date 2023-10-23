@@ -94,15 +94,9 @@ jobs:
           name: standup and test audius
           command: |
             cd ~/dot-slash-audius
-            REPO_OWNER="AudiusProject"
-            REPO_NAME="audius-docker-compose"
-            BRANCH_NAME="stage"
-            COMPOSE_COMMIT_SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/branches/$BRANCH_NAME" | \
-              jq -r '.commit.sha')
             mkdir ~/.audius
             cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
-            audius-x86 -c ~/.audius/creator.conf -network=stage -t=$COMPOSE_COMMIT_SHA
+            audius-x86 -c ~/.audius/creator.conf
       - run:
           name: check audius node health
           command: |
