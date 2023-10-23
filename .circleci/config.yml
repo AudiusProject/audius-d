@@ -79,7 +79,7 @@ jobs:
           name: standup and test discovery
           command: |
             cd ~/dot-slash-audius
-            mkdir ~/.audius
+            audius-x86 down
             cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
             audius-x86 -c ~/.audius/creator.conf -network=stage -t=$COMPOSE_COMMIT_SHA -node=discovery-provider
       - run:
