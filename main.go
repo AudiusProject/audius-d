@@ -98,6 +98,11 @@ func runUp() {
 	var cmd string
 	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
+	if nodeType == "discovery-provider" {
+		// server nginx runs on port 5000 and we should expose that
+		baseCmd = baseCmd + " -p 5000:5000"
+	}
+
 	switch nodeType {
 	case "creator-node":
 		cmd = fmt.Sprintf(baseCmd + ` \
