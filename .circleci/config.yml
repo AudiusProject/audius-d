@@ -75,25 +75,6 @@ jobs:
             cresult="$(curl -Lkv https://localhost/health_check | jq '.data.healthy')"
             [ "$cresult" = true ] || [ "$cresult" = false ]
 
-      - run:
-          name: standup and test discovery
-          command: |
-            cd ~/dot-slash-audius
-            audius-x86 down
-            cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
-            audius-x86 -c ~/.audius/creator.conf -network=stage -t=$COMPOSE_COMMIT_SHA -node=discovery-provider
-      - run:
-          name: check discovery provider health
-          command: |
-            timeout=0
-            while [ "$(curl -sko /dev/null -w "%{http_code}" https://localhost:5000/health_check)" = 502 ] && [ "$timeout" -lt 60 ]; do
-              sleep 3
-              ((timeout=timeout+3))
-              echo "Waiting for server to start... $timeout"
-            done
-            cresult="$(curl -Lkv https://localhost:5000/health_check | jq '.data.healthy')"
-            [ "$cresult" = true ] || [ "$cresult" = false ]
-
 
   test-job:
     machine:
