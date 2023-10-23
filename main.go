@@ -125,6 +125,8 @@ func runUp() {
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
 
+	fmt.Printf("initial run [%s]\n", cmd)
+
 	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
 		exitWithError("Error executing command:", err)
 	}
@@ -134,6 +136,7 @@ func runUp() {
 
 	switch nodeType {
 	case "creator-node":
+		fmt.Printf("creator ocmpose up\n")
 		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
 		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
 			exitWithError("Error executing command:", err)
