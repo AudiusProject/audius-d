@@ -12,25 +12,28 @@ import (
 	"regexp"
 )
 
-//go:embed audius.conf
+//go:embed sample.audius.conf
 var confExample string
 var confFilePath string
-var imageTag string
-var localImage bool
 var port int
 var tlsPort int
 var network string
 var nodeType string
 var seed bool
 
+// with the intent of reducing configuration,
+// the latest audius-docker-compose sha (from stage branch) is set at build time via ci.
+// this bakes the (tested) image dependency in, so we know that the built binary will always work.
+var imageTag = "stage"
+
 func main() {
+	fmt.Println(fmt.Sprintf("imageTag: audius/audius-docker-compose:%s", imageTag))
+
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
-	flag.StringVar(&imageTag, "t", "dev", "docker image tag to use when turning up")
-	flag.BoolVar(&localImage, "local", false, "when specified, will use docker image from local repository")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
 	flag.StringVar(&network, "network", "prod", "specify the network to run on")
-	flag.StringVar(&nodeType, "node", "discovery-provider", "specify the node type to run")
+	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
 	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
 
 	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
@@ -86,12 +89,6 @@ func readConfigFile() {
 func runUp() {
 	ensureDirectory("/tmp/dind")
 
-	if !localImage {
-		if err := runCommand("docker", "pull", "audius/dot-slash:"+imageTag); err != nil {
-			exitWithError("Error pulling image:", err)
-		}
-	}
-
 	volumeFlag := ""
 	if confFilePath != "" {
 		volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/%s/override.env", confFilePath, nodeType)
@@ -107,17 +104,17 @@ func runUp() {
         -v /var/k8s/mediorum:/var/k8s/mediorum \
         -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
         -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
-        audius/dot-slash:` + imageTag)
+        audius/audius-docker-compose:` + imageTag)
 	case "discovery-provider":
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-        audius/dot-slash:` + imageTag)
+        audius/audius-docker-compose:` + imageTag)
 	case "identity-service":
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name identity-service \
-        audius/dot-slash:` + imageTag)
+        audius/audius-docker-compose:` + imageTag)
 	default:
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
