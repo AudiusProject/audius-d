@@ -19,20 +19,23 @@ var port int
 var tlsPort int
 var network string
 var nodeType string
+var seed bool
 
 // with the intent of reducing configuration,
 // the latest audius-docker-compose sha (from stage branch) is set at build time via ci.
 // this bakes the (tested) image dependency in, so we know that the built binary will always work.
-var imageTag = "stage"
+var imageTag string
 
 func main() {
-	fmt.Println(fmt.Sprintf("imageTag: audius/audius-docker-compose:%s", imageTag))
-
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
 	flag.StringVar(&network, "network", "prod", "specify the network to run on")
+	flag.StringVar(&imageTag, "t", "stage", "docker image tag to use when turning up")
 	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
+	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
+
+	fmt.Println(fmt.Sprintf("imageTag: audius/audius-docker-compose:%s", imageTag))
 
 	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
@@ -95,6 +98,11 @@ func runUp() {
 	var cmd string
 	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
+	if nodeType == "discovery-provider" {
+		// server nginx runs on port 5000 and we should expose that
+		baseCmd = baseCmd + " -p 5000:5000"
+	}
+
 	switch nodeType {
 	case "creator-node":
 		cmd = fmt.Sprintf(baseCmd + ` \
@@ -124,9 +132,23 @@ func runUp() {
 	awaitDockerStart()
 	audiusCli("set-network", network)
 
-	execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
-	if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
-		exitWithError("Error executing command:", err)
+	switch nodeType {
+	case "creator-node":
+		fmt.Printf("creator ocmpose up\n")
+		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
+		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
+			exitWithError("Error executing command:", err)
+		}
+	case "discovery-provider":
+		audiusCli("launch-chain")
+		launchCmd := []string{"launch", "discovery-provider", "-y"}
+		if seed {
+			launchCmd = append(launchCmd, "--seed")
+		}
+		audiusCli(launchCmd...)
+	case "identity-service":
+	default:
+		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
 }
 
