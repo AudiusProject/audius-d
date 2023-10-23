@@ -134,7 +134,6 @@ func runUp() {
 
 	switch nodeType {
 	case "creator-node":
-		fmt.Printf("creator ocmpose up\n")
 		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
 		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
 			exitWithError("Error executing command:", err)
