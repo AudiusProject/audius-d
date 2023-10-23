@@ -27,8 +27,6 @@ var seed bool
 var imageTag string
 
 func main() {
-	fmt.Println(fmt.Sprintf("imageTag: audius/audius-docker-compose:%s", imageTag))
-
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
@@ -36,6 +34,8 @@ func main() {
 	flag.StringVar(&imageTag, "t", "stage", "docker image tag to use when turning up")
 	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
 	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
+
+	fmt.Println(fmt.Sprintf("imageTag: audius/audius-docker-compose:%s", imageTag))
 
 	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
