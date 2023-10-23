@@ -24,7 +24,7 @@ var seed bool
 // with the intent of reducing configuration,
 // the latest audius-docker-compose sha (from stage branch) is set at build time via ci.
 // this bakes the (tested) image dependency in, so we know that the built binary will always work.
-var imageTag string
+var imageTag = "stage"
 
 func main() {
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
