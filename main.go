@@ -103,6 +103,8 @@ func runUp() {
 		baseCmd = baseCmd + " -p 5000:5000"
 	}
 
+	fmt.Printf("image tag %s \n", imageTag)
+
 	switch nodeType {
 	case "creator-node":
 		cmd = fmt.Sprintf(baseCmd + ` \
