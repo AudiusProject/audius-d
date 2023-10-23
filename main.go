@@ -134,6 +134,15 @@ func ensureDirectory(path string) {
 	}
 }
 
+func audiusCli(args ...string) {
+	audCli := []string{"exec", "discovery-provider", "audius-cli"}
+	cmds := append(audCli, args...)
+	err := runCommand("docker", cmds...)
+	if err != nil {
+		exitWithError("Error with audius-cli:", err)
+	}
+}
+
 func runCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
