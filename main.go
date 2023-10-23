@@ -33,6 +33,7 @@ func main() {
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
 	flag.StringVar(&network, "network", "prod", "specify the network to run on")
+	flag.StringVar(&imageTag, "t", "stage", "docker image tag to use when turning up")
 	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
 	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
 
