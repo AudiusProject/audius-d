@@ -32,7 +32,7 @@ func main() {
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
 	flag.StringVar(&network, "network", "prod", "specify the network to run on")
-	flag.StringVar(&nodeType, "node", "discovery-provider", "specify the node type to run")
+	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
 
 	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
@@ -61,11 +61,11 @@ func readConfigFile() {
 			confFilePath = filepath.Join(usr.HomeDir, ".audius", "audius.conf")
 		}
 	} else {
-		// if absPath, err := filepath.Abs(confFilePath); err != nil {
-		// 	exitWithError("Error creating absolute path to config file:", err)
-		// } else {
-		// 	confFilePath = absPath
-		// }
+		if absPath, err := filepath.Abs(confFilePath); err != nil {
+			exitWithError("Error creating absolute path to config file:", err)
+		} else {
+			confFilePath = absPath
+		}
 	}
 
 	if _, err := os.Stat(confFilePath); os.IsNotExist(err) {
