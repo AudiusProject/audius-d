@@ -91,14 +91,14 @@ jobs:
             echo 'export PATH=~/dot-slash-audius/bin:$PATH' >> $BASH_ENV
             source $BASH_ENV
       - run:
-          name: standup and test audius
+          name: standup and test creator
           command: |
             cd ~/dot-slash-audius
             mkdir ~/.audius
             cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
-            audius-x86 -c ~/.audius/creator.conf
+            audius-x86 -c ~/.audius/creator.conf -node=creator-node
       - run:
-          name: check audius node health
+          name: check creator node health
           command: |
             timeout=0
             while [ "$(curl -sko /dev/null -w "%{http_code}" https://localhost/health_check)" = 502 ] && [ "$timeout" -lt 60 ]; do
@@ -107,6 +107,24 @@ jobs:
               echo "Waiting for server to start... $timeout"
             done
             cresult="$(curl -Lkv https://localhost/health_check | jq '.data.healthy')"
+            [ "$cresult" = true ] || [ "$cresult" = false ]
+      - run:
+          name: standup and test discovery
+          command: |
+            cd ~/dot-slash-audius
+            mkdir ~/.audius
+            cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
+            audius-x86 -c ~/.audius/creator.conf -node=discovery-provider
+      - run:
+          name: check discovery provider health
+          command: |
+            timeout=0
+            while [ "$(curl -sko /dev/null -w "%{http_code}" https://localhost:5000/health_check)" = 502 ] && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+            cresult="$(curl -Lkv https://localhost:5000/health_check | jq '.data.healthy')"
             [ "$cresult" = true ] || [ "$cresult" = false ]
 
   publish-job:
