@@ -24,14 +24,13 @@ var seed bool
 // with the intent of reducing configuration,
 // the latest audius-docker-compose sha (from stage branch) is set at build time via ci.
 // this bakes the (tested) image dependency in, so we know that the built binary will always work.
-var imageTag string
+var imageTag = "stage"
 
 func main() {
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
 	flag.StringVar(&network, "network", "prod", "specify the network to run on")
-	flag.StringVar(&imageTag, "t", "stage", "docker image tag to use when turning up")
 	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
 	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
 
@@ -170,6 +169,16 @@ func audiusCli(args ...string) {
 	if err != nil {
 		exitWithError("Error with audius-cli:", err)
 	}
+}
+
+func dockerExec(arg ...string) string {
+	baseCmd := []string{"exec", nodeType}
+	cmds := append(baseCmd, arg...)
+	out, err := exec.Command("docker", cmds...).Output()
+	if err != nil {
+		exitWithError("Error with cmd:", err, cmds)
+	}
+	return string(out)
 }
 
 func awaitDockerStart() {
