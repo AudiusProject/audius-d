@@ -74,7 +74,6 @@ jobs:
           command: |
             cd ~/dot-slash-audius
             mkdir ~/.audius
-            echo $COMPOSE_COMMIT_SHA
             cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
             audius-x86 -c ~/.audius/creator.conf -network=stage -t=$(cat ~/dot-slash-audius/compose-commit-sha)
       - run:
@@ -87,6 +86,39 @@ jobs:
               echo "Waiting for server to start... $timeout"
             done
             cresult="$(curl -Lkv https://localhost/health_check | jq '.data.healthy')"
+            [ "$cresult" = true ] || [ "$cresult" = false ]
+
+  test-discovery-provider:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - checkout:
+          path: ~/dot-slash-audius
+      - attach_workspace:
+          at: ~/dot-slash-audius
+      - run:
+          name: Add binaries to PATH
+          command: |
+            echo 'export PATH=~/dot-slash-audius/bin:$PATH' >> $BASH_ENV
+            source $BASH_ENV
+      - run:
+          name: standup and test audius
+          command: |
+            cd ~/dot-slash-audius
+            mkdir ~/.audius
+            cp ~/dot-slash-audius/sample.audius.conf ~/.audius/discovery.conf
+            audius-x86 -c ~/.audius/discovery.conf -network=stage -t=$(cat ~/dot-slash-audius/compose-commit-sha) -node=discovery-provider
+      - run:
+          name: check audius node health
+          command: |
+            timeout=0
+            while [ "$(curl -sko /dev/null -w "%{http_code}" https://localhost:5000/health_check)" = 502 ] && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+            cresult="$(curl -Lkv https://localhost:5000/health_check | jq '.data.healthy')"
             [ "$cresult" = true ] || [ "$cresult" = false ]
 
   publish-job:
@@ -134,6 +166,14 @@ workflows:
             branches:
               ignore:
                 - main
+      - test-discovery-provider:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              ignore:
+                - main
 
   build-test-publish:
     jobs:
@@ -151,10 +191,19 @@ workflows:
             branches:
               only:
                 - main
+      - test-discovery-provider:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              only:
+                - main
       - publish-job:
           context: github
           requires:
             - test-creator-node
+            - test-discovery-provider
           filters:
             branches:
               only:
