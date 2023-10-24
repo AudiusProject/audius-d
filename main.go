@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -243,5 +244,12 @@ func configureChainSpec() {
 
 	fmt.Println(string(specOutput))
 
-	// specOutputPath := "discovery-provider/chain/spec.json"
+	peersStr := networkEnvMap["audius_static_nodes"]
+	peers := strings.Split(peersStr, ",")
+	peersOutput, err := json.Marshal(peers)
+	if err != nil {
+		exitWithError("Error marshalling peers output:", err)
+	}
+
+	fmt.Println(string(peersOutput))
 }
