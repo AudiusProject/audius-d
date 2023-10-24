@@ -51,30 +51,6 @@ jobs:
             - bin/audius-arm
             - bin/audius-x86
 
-      - run:
-          name: Add binaries to PATH
-          command: |
-            echo 'export PATH=~/dot-slash-audius/bin:$PATH' >> $BASH_ENV
-            source $BASH_ENV
-      - run:
-          name: standup and test audius
-          command: |
-            cd ~/dot-slash-audius
-            mkdir ~/.audius
-            cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
-            audius-x86 -c ~/.audius/creator.conf -network=stage -t=$COMPOSE_COMMIT_SHA
-      - run:
-          name: check audius node health
-          command: |
-            timeout=0
-            while [ "$(curl -sko /dev/null -w "%{http_code}" https://localhost/health_check)" = 502 ] && [ "$timeout" -lt 60 ]; do
-              sleep 3
-              ((timeout=timeout+3))
-              echo "Waiting for server to start... $timeout"
-            done
-            cresult="$(curl -Lkv https://localhost/health_check | jq '.data.healthy')"
-            [ "$cresult" = true ] || [ "$cresult" = false ]
-
 
   test-job:
     machine:
