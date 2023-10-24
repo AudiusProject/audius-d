@@ -55,7 +55,7 @@ jobs:
             - compose-commit-sha
 
 
-  test-job:
+  test-creator-node:
     machine:
       image: ubuntu-2204:current
     resource_class: large
@@ -126,7 +126,7 @@ workflows:
             branches:
               ignore:
                 - main
-      - test-job:
+      - test-creator-node:
           context: github
           requires:
             - build-job
@@ -143,7 +143,7 @@ workflows:
             branches:
               only:
                 - main
-      - test-job:
+      - test-creator-node:
           context: github
           requires:
             - build-job
@@ -154,7 +154,7 @@ workflows:
       - publish-job:
           context: github
           requires:
-            - test-job
+            - test-creator-node
           filters:
             branches:
               only:
