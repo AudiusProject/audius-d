@@ -40,6 +40,8 @@ jobs:
               docker buildx create --use
               make build-push TAG=$COMPOSE_COMMIT_SHA
             fi
+
+            echo $COMPOSE_COMMIT_SHA > ~/dot-slash-audius/compose-commit-sha
       - run:
           name: make
           command: |
@@ -50,6 +52,7 @@ jobs:
           paths:
             - bin/audius-arm
             - bin/audius-x86
+            - compose-commit-sha
 
 
   test-job:
@@ -73,7 +76,7 @@ jobs:
             mkdir ~/.audius
             echo $COMPOSE_COMMIT_SHA
             cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
-            audius-x86 -c ~/.audius/creator.conf -network=stage -t=$COMPOSE_COMMIT_SHA
+            audius-x86 -c ~/.audius/creator.conf -network=stage -t=$(cat ~/dot-slash-audius/compose-commit-sha)
       - run:
           name: check audius node health
           command: |
