@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	_ "embed"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -10,6 +11,8 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+
+	"github.com/joho/godotenv"
 )
 
 //go:embed sample.audius.conf
@@ -33,6 +36,7 @@ func main() {
 	flag.StringVar(&network, "network", "prod", "specify the network to run on")
 	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
 	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
+	configureChainSpec()
 
 	fmt.Println(fmt.Sprintf("imageTag: audius/audius-docker-compose:%s", imageTag))
 
@@ -199,4 +203,45 @@ func runCommand(name string, args ...string) error {
 func exitWithError(msg ...interface{}) {
 	fmt.Println(msg...)
 	os.Exit(1)
+}
+
+// generates relevant nethermind chain configuration files
+// logic ported over from audius-docker-compose https://github.com/AudiusProject/audius-docker-compose/blob/stage/audius-cli#L848
+func configureChainSpec() {
+	extraVanity := "0x22466c6578692069732061207468696e6722202d204166726900000000000000"
+	extraSeal := "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+
+	// gather env config
+	// discovery-provider/stage.env for example
+	networkEnvPath := fmt.Sprintf("discovery-provider/%s.env", network)
+	networkEnv := dockerExec("cat", networkEnvPath)
+	networkEnvMap, err := godotenv.Unmarshal(networkEnv)
+	if err != nil {
+		exitWithError("Error unmarshalling network env:", err)
+	}
+
+	signers := networkEnvMap["audius_genesis_signers"]
+	extraData := fmt.Sprintf("%s%s%s", extraVanity, signers, extraSeal)
+
+	specTemplatePath := fmt.Sprintf("discovery-provider/chain/%s_spec_template.json", network)
+	specInput := dockerExec("cat", specTemplatePath)
+	var specData map[string]interface{}
+	err = json.Unmarshal([]byte(specInput), &specData)
+	if err != nil {
+		exitWithError("Unmarshall error:", err)
+	}
+
+	networkId := specData["params"].(map[string]interface{})["networkID"].(string)
+	fmt.Printf("Network id: %s\n", networkId)
+
+	specData["genesis"].(map[string]interface{})["extraData"] = extraData
+
+	specOutput, err := json.Marshal(specData)
+	if err != nil {
+		exitWithError("Error marshalling specData:", err)
+	}
+
+	fmt.Println(string(specOutput))
+
+	// specOutputPath := "discovery-provider/chain/spec.json"
 }
