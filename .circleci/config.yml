@@ -105,7 +105,7 @@ jobs:
             cd ~/dot-slash-audius
             mkdir ~/.audius
             cp ~/dot-slash-audius/sample.audius.conf ~/.audius/discovery.conf
-            audius-x86 -c ~/.audius/discovery.conf -network=stage
+            audius-x86 -c ~/.audius/discovery.conf -network=stage -node=discovery-provider
       - run:
           name: check audius node health
           command: |
