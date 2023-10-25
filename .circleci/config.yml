@@ -51,7 +51,8 @@ jobs:
             - bin/audius-arm
             - bin/audius-x86
 
-  test-job:
+
+  test-creator-node:
     machine:
       image: ubuntu-2204:current
     resource_class: large
@@ -71,7 +72,7 @@ jobs:
             cd ~/dot-slash-audius
             mkdir ~/.audius
             cp ~/dot-slash-audius/sample.audius.conf ~/.audius/creator.conf
-            audius-x86 -c ~/.audius/creator.conf
+            audius-x86 -c ~/.audius/creator.conf -network=stage
       - run:
           name: check audius node health
           command: |
@@ -82,6 +83,40 @@ jobs:
               echo "Waiting for server to start... $timeout"
             done
             cresult="$(curl -Lkv https://localhost/health_check | jq '.data.healthy')"
+            [ "$cresult" = true ] || [ "$cresult" = false ]
+
+  test-discovery-provider:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - checkout:
+          path: ~/dot-slash-audius
+      - attach_workspace:
+          at: ~/dot-slash-audius
+      - run:
+          name: Add binaries to PATH
+          command: |
+            echo 'export PATH=~/dot-slash-audius/bin:$PATH' >> $BASH_ENV
+            source $BASH_ENV
+      - run:
+          name: standup and test audius
+          command: |
+            cd ~/dot-slash-audius
+            mkdir ~/.audius
+            cp ~/dot-slash-audius/sample.audius.conf ~/.audius/discovery.conf
+            audius-x86 -c ~/.audius/discovery.conf -network=stage -node=discovery-provider
+      - run:
+          name: check audius node health
+          command: |
+            timeout=0
+            while [ "$(curl -sko /dev/null -w "%{http_code}" http://localhost:5000/health_check)" = 502 ] && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+            cresult="$(curl -Lkv http://localhost:5000/health_check | jq '.data.discovery_provider_healthy')"
+            echo $cresult
             [ "$cresult" = true ] || [ "$cresult" = false ]
 
   publish-job:
@@ -121,7 +156,15 @@ workflows:
             branches:
               ignore:
                 - main
-      - test-job:
+      - test-creator-node:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              ignore:
+                - main
+      - test-discovery-provider:
           context: github
           requires:
             - build-job
@@ -138,7 +181,15 @@ workflows:
             branches:
               only:
                 - main
-      - test-job:
+      - test-creator-node:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              only:
+                - main
+      - test-discovery-provider:
           context: github
           requires:
             - build-job
@@ -149,7 +200,8 @@ workflows:
       - publish-job:
           context: github
           requires:
-            - test-job
+            - test-creator-node
+            - test-discovery-provider
           filters:
             branches:
               only:
