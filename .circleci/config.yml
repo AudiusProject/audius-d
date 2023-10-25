@@ -23,7 +23,7 @@ jobs:
 
             REPO_OWNER="AudiusProject"
             REPO_NAME="audius-docker-compose"
-            BRANCH_NAME="as/dot-slash-audius"
+            BRANCH_NAME="stage"
             COMPOSE_COMMIT_SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
               "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/branches/$BRANCH_NAME" | \
               jq -r '.commit.sha')
