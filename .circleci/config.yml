@@ -115,7 +115,7 @@ jobs:
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
             done
-            cresult="$(curl -Lkv http://localhost:5000/health_check | jq '.data')"
+            cresult="$(curl -Lkv http://localhost:5000/health_check | jq '.data.discovery_provider_healthy')"
             echo $cresult
             [ "$cresult" = true ] || [ "$cresult" = false ]
 
