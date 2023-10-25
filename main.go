@@ -37,9 +37,8 @@ func main() {
 	flag.StringVar(&network, "network", "prod", "specify the network to run on")
 	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
 	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
-	configureChainSpec()
 
-	fmt.Println(fmt.Sprintf("imageTag: audius/audius-docker-compose:%s", imageTag))
+	fmt.Printf("imageTag: audius/audius-docker-compose:%s\n", imageTag)
 
 	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
@@ -80,10 +79,10 @@ func readConfigFile() {
 	}
 
 	file, err := os.Open(confFilePath)
-	defer file.Close()
 	if err != nil {
 		exitWithError("Error opening config file:", err)
 	}
+	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	if err := scanner.Err(); err != nil {
@@ -135,6 +134,10 @@ func runUp() {
 
 	awaitDockerStart()
 	audiusCli("set-network", network)
+
+	if nodeType == "discovery-provider" {
+		configureChainSpec()
+	}
 
 	switch nodeType {
 	case "creator-node":
@@ -237,19 +240,46 @@ func configureChainSpec() {
 
 	specData["genesis"].(map[string]interface{})["extraData"] = extraData
 
-	specOutput, err := json.Marshal(specData)
+	specOutput, err := json.MarshalIndent(specData, "", "    ")
 	if err != nil {
 		exitWithError("Error marshalling specData:", err)
 	}
 
-	fmt.Println(string(specOutput))
-
 	peersStr := networkEnvMap["audius_static_nodes"]
 	peers := strings.Split(peersStr, ",")
-	peersOutput, err := json.Marshal(peers)
+	peersOutput, err := json.MarshalIndent(peers, "", "    ")
 	if err != nil {
 		exitWithError("Error marshalling peers output:", err)
 	}
 
-	fmt.Println(string(peersOutput))
+	err = os.WriteFile("spec.json", specOutput, 0644)
+	if err != nil {
+		exitWithError("Error writing spec", err)
+	}
+
+	err = os.WriteFile("static-nodes.json", peersOutput, 0644)
+	if err != nil {
+		exitWithError("Error writing static nodes", err)
+	}
+
+	// docker cp ./spec.json creator-node:/root/audius-docker-compose/discovery-provider/chain
+	err = exec.Command("docker", "cp", "./spec.json", fmt.Sprintf("%s:/root/audius-docker-compose/discovery-provider/chain", nodeType)).Run()
+	if err != nil {
+		exitWithError("Error with spec docker cp:", err)
+	}
+
+	err = exec.Command("docker", "cp", "./static-nodes.json", fmt.Sprintf("%s:/root/audius-docker-compose/discovery-provider/chain", nodeType)).Run()
+	if err != nil {
+		exitWithError("Error with static nodes docker cp:", err)
+	}
+
+	// cleanup, remove temp files from filesystem
+	err = os.Remove("spec.json")
+	if err != nil {
+		exitWithError(err)
+	}
+	err = os.Remove("static-nodes.json")
+	if err != nil {
+		exitWithError(err)
+	}
 }
