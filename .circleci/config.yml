@@ -110,12 +110,12 @@ jobs:
           name: check audius node health
           command: |
             timeout=0
-            while [ "$(curl -sko /dev/null -w "%{http_code}" https://localhost:5000/health_check)" = 502 ] && [ "$timeout" -lt 60 ]; do
+            while [ "$(curl -sko /dev/null -w "%{http_code}" http://localhost:5000/health_check)" = 502 ] && [ "$timeout" -lt 60 ]; do
               sleep 3
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
             done
-            cresult="$(curl -Lkv https://localhost:5000/health_check | jq '.data.healthy')"
+            cresult="$(curl -Lkv http://localhost:5000/health_check | jq '.data.healthy')"
             [ "$cresult" = true ] || [ "$cresult" = false ]
 
   publish-job:
