@@ -49,7 +49,7 @@ audius [-c audius.conf]
 
 ## build
 
-builds required go binaries that are (for now) committed to this repo in `./bin` by CI.
+builds required go binaries that are (for now) committed to this repo on the `bin` branch by CI.
 
 ```
 make
