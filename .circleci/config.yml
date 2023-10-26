@@ -143,8 +143,9 @@ jobs:
           command: |
             cd ~/dot-slash-audius
             git add bin/*
+            git checkout bin origin/bin
             git commit -m "Update golang bin $CIRCLE_SHA1"
-            git push origin main
+            git push origin bin
 
 workflows:
   version: 2

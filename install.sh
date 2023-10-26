@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BASE_URL="https://raw.githubusercontent.com/AudiusProject/dot-slash-audius/main/bin"
+BASE_URL="https://raw.githubusercontent.com/AudiusProject/dot-slash-audius/bin/bin"
 
 ARCH=$(uname -m)
 if [ "$ARCH" = "arm64" ]; then
