@@ -16,6 +16,7 @@ RUN git clone --single-branch --branch "$BRANCH" https://github.com/AudiusProjec
 WORKDIR /root/audius-docker-compose
 RUN echo "NETWORK='$NETWORK'" > ./creator-node/.env
 RUN echo "NETWORK='$NETWORK'" > ./discovery-provider/.env
+RUN echo "NETWORK='$NETWORK'" > ./identity-service/.env
 
 RUN python3 -m pip install -r requirements.txt
 RUN ln -sf $PWD/audius-cli /usr/local/bin/audius-cli

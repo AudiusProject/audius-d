@@ -101,11 +101,6 @@ func runUp() {
 	var cmd string
 	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
-	if nodeType == "discovery-provider" {
-		// server nginx runs on port 5000 and we should expose that
-		baseCmd = baseCmd + " -p 5000:5000"
-	}
-
 	switch nodeType {
 	case "creator-node":
 		cmd = fmt.Sprintf(baseCmd + ` \
@@ -115,12 +110,14 @@ func runUp() {
         -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
         audius/audius-docker-compose:` + imageTag)
 	case "discovery-provider":
+		baseCmd = baseCmd + " -p 5000:5000"
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name discovery-provider \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
         audius/audius-docker-compose:` + imageTag)
 	case "identity-service":
+		baseCmd = baseCmd + " -p 7000:7000"
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name identity-service \
         audius/audius-docker-compose:` + imageTag)
@@ -153,6 +150,7 @@ func runUp() {
 		}
 		audiusCli(launchCmd...)
 	case "identity-service":
+		audiusCli("launch", "identity-service", "-y")
 	default:
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
