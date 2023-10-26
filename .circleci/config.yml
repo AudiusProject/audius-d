@@ -143,8 +143,9 @@ jobs:
           command: |
             cd ~/dot-slash-audius
             git add bin/*
+            git checkout -b bin origin/bin
             git commit -m "Update golang bin $CIRCLE_SHA1"
-            git push origin main
+            git push origin bin
 
 workflows:
   version: 2
@@ -156,6 +157,7 @@ workflows:
             branches:
               ignore:
                 - main
+                - bin
       - test-creator-node:
           context: github
           requires:
@@ -164,6 +166,7 @@ workflows:
             branches:
               ignore:
                 - main
+                - bin
       - test-discovery-provider:
           context: github
           requires:
@@ -172,6 +175,7 @@ workflows:
             branches:
               ignore:
                 - main
+                - bin
 
   build-test-publish:
     jobs:
