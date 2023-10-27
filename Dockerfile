@@ -17,5 +17,8 @@ WORKDIR /root/audius-docker-compose
 RUN echo "NETWORK='$NETWORK'" > ./creator-node/.env
 RUN echo "NETWORK='$NETWORK'" > ./discovery-provider/.env
 
+RUN cp "./discovery-provider/chain/${NETWORK}_spec_template.json" "./discovery-provider/chain/spec.json"
+RUN echo '[]' > ./discovery-provider/chain/static-nodes.json
+
 RUN python3 -m pip install -r requirements.txt
 RUN ln -sf $PWD/audius-cli /usr/local/bin/audius-cli

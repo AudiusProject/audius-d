@@ -213,8 +213,8 @@ func exitWithError(msg ...interface{}) {
 // logic ported over from audius-docker-compose https://github.com/AudiusProject/audius-docker-compose/blob/stage/audius-cli#L848
 func configureChainSpec() {
 	// delete empty dir files if they exist
-	dockerExec(`[ -d "./discovery-provider/chain/spec.json" ] && rm -rf ./discovery-provider/chain/spec.json || echo "already gone"`)
-	dockerExec(`[ -d "./discovery-provider/chain/static-nodes.json" ] && rm -rf ./discovery-provider/chain/static-nodes.json || echo "already gone"`)
+	runCommand("docker", "exec", "discovery-provider", "sh", "-c", `"[  -d './discovery-provider/chain/spec.json' ] && echo 'file is dir' || echo 'file is not'"`)
+	runCommand("docker", `exec discovery-provider sh -c "[  -d './discovery-provider/chain/static-nodes.json' ] && echo 'file is dir' || echo 'file is not'"`)
 
 	extraVanity := "0x22466c6578692069732061207468696e6722202d204166726900000000000000"
 	extraSeal := "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
