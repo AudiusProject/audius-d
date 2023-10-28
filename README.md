@@ -5,7 +5,7 @@ the simpliest way to run and interact with an audius node.
 ## install
 
 ```
-curl -sSL https://raw.githubusercontent.com/AudiusProject/dot-slash-audius/main/install.sh | sh
+curl -sSL https://raw.githubusercontent.com/AudiusProject/audiusd/main/install.sh | sh
 ```
 
 ## quickstart
@@ -15,7 +15,7 @@ run a dev setup
 ```
 mkdir ~/.audius && cp sample.audius.conf ~/.audius/audius.conf
 
-audius
+audiusd
 ```
 
 ## run
@@ -41,7 +41,7 @@ audius_delegate_private_key=
 
 **run**
 ```
-audius [-c audius.conf]
+audiusd [-c audius.conf]
 ```
 
 ## build

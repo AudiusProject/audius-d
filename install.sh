@@ -1,12 +1,12 @@
 #!/bin/sh
 
-BASE_URL="https://raw.githubusercontent.com/AudiusProject/dot-slash-audius/bin/bin"
+BASE_URL="https://raw.githubusercontent.com/AudiusProject/audiusd/bin/bin"
 
 ARCH=$(uname -m)
 if [ "$ARCH" = "arm64" ]; then
-    BINARY_NAME="audius-arm"
+    BINARY_NAME="audiusd-arm"
 else
-    BINARY_NAME="audius-x86"
+    BINARY_NAME="audiusd-x86"
 fi
 
 curl -LO "$BASE_URL/$BINARY_NAME"
@@ -22,9 +22,9 @@ else
 fi
 
 if [ "$TARGET_DIR" = "/usr/local/bin" ]; then
-    sudo mv "$BINARY_NAME" "$TARGET_DIR/audius"
+    sudo mv "$BINARY_NAME" "$TARGET_DIR/audiusd"
 else
-    mv "$BINARY_NAME" "$TARGET_DIR/audius"
+    mv "$BINARY_NAME" "$TARGET_DIR/audiusd"
 fi
 
-echo "$BINARY_NAME has been installed to $TARGET_DIR/audius\nYou can run it using: $ audius"
+echo "$BINARY_NAME has been installed to $TARGET_DIR/audiusd\nYou can run it using: $ audiusd"

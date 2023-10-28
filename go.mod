@@ -1,4 +1,4 @@
-module github.com/AudiusProject/dot-slash-audius
+module github.com/AudiusProject/audiusd
 
 go 1.21.3
 
