@@ -249,6 +249,7 @@ workflows:
           requires:
             - test-creator-node
             - test-discovery-provider
+            - test-identity-service
           filters:
             branches:
               only:
