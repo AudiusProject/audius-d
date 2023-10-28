@@ -1,9 +1,6 @@
-# dot-slash-audius
+# audiusd
 
-because running audius should look like this
-```
-audius
-```
+the simpliest way to run and interact with an audius node.
 
 ## install
 
@@ -54,8 +51,3 @@ builds required go binaries that are (for now) committed to this repo on the `bi
 ```
 make
 ```
-
-# todo
-
-- fix discovery chain
-- build upstream audius images for mac (will resolve: failed to register layer errors)
