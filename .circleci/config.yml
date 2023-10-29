@@ -10,7 +10,7 @@ commands:
       - run:
           name: Add audius binaries to PATH
           command: |
-            echo 'export PATH=~/audiusd/bin:$PATH' >> $BASH_ENV
+            echo 'export PATH=~/audius-d/bin:$PATH' >> $BASH_ENV
             source $BASH_ENV
   standup-node:
     description: 'Stand up an audius node of the provided type'
@@ -21,10 +21,10 @@ commands:
       - run:
           name: standup audius node
           command: |
-            cd ~/audiusd
+            cd ~/audius-d
             mkdir ~/.audius
-            cp ~/audiusd/sample.audius.conf "$HOME/.audius/<< parameters.nodetype >>.conf"
-            audius-x86 -c "$HOME/.audius/<< parameters.nodetype >>.conf" -network=stage -node '<< parameters.nodetype >>'
+            cp ~/audius-d/sample.audius.conf "$HOME/.audius/<< parameters.nodetype >>.conf"
+            audius-d-x86 -c "$HOME/.audius/<< parameters.nodetype >>.conf" -network=stage -node '<< parameters.nodetype >>'
   basic-health-check:
     description: 'Perform a basic health check on an audius node'
     parameters:
@@ -57,7 +57,7 @@ jobs:
     resource_class: large
     steps:
       - checkout:
-          path: ~/audiusd
+          path: ~/audius-d
       - run:
           name: install go
           command: |
@@ -66,7 +66,7 @@ jobs:
       - run:
           name: audius-docker-compose
           command: |
-            cd ~/audiusd
+            cd ~/audius-d
 
             REPO_OWNER="AudiusProject"
             REPO_NAME="audius-docker-compose"
@@ -90,13 +90,13 @@ jobs:
       - run:
           name: make
           command: |
-            cd ~/audiusd
+            cd ~/audius-d
             make TAG=$COMPOSE_COMMIT_SHA
       - persist_to_workspace:
-          root: ~/audiusd
+          root: ~/audius-d
           paths:
-            - bin/audiusd-arm
-            - bin/audiusd-x86
+            - bin/audius-d-arm
+            - bin/audius-d-x86
 
 
   test-creator-node:
@@ -105,9 +105,9 @@ jobs:
     resource_class: large
     steps:
       - checkout:
-          path: ~/audiusd
+          path: ~/audius-d
       - attach_workspace:
-          at: ~/audiusd
+          at: ~/audius-d
       - configure-path
       - standup-node:
           nodetype: 'creator-node'
@@ -119,9 +119,9 @@ jobs:
     resource_class: large
     steps:
       - checkout:
-          path: ~/audiusd
+          path: ~/audius-d
       - attach_workspace:
-          at: ~/audiusd
+          at: ~/audius-d
       - configure-path
       - standup-node:
           nodetype: 'discovery-provider'
@@ -135,9 +135,9 @@ jobs:
     resource_class: large
     steps:
       - checkout:
-          path: ~/audiusd
+          path: ~/audius-d
       - attach_workspace:
-          at: ~/audiusd
+          at: ~/audius-d
       - configure-path
       - standup-node:
           nodetype: 'identity-service'
@@ -151,7 +151,7 @@ jobs:
     resource_class: large
     steps:
       - checkout:
-          path: ~/audiusd
+          path: ~/audius-d
       - gh/setup:
           version: 2.23.0
       - add_ssh_keys:
@@ -163,11 +163,11 @@ jobs:
             git config --global user.email "audius-infra@audius.co"
             git config --global user.name "audius-infra"
       - attach_workspace:
-          at: ~/audiusd
+          at: ~/audius-d
       - run:
           name: commit go binaries
           command: |
-            cd ~/audiusd
+            cd ~/audius-d
             git checkout -b bin origin/bin
             git add bin/*
             git commit -m "Update golang bin $CIRCLE_SHA1" || exit 0
