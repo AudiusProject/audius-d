@@ -24,6 +24,7 @@ var tlsPort int
 var network string
 var nodeType string
 var seed bool
+var autoUpgrade bool
 
 // with the intent of reducing configuration,
 // the latest audius-docker-compose sha (from stage branch) is set at build time via ci.
@@ -37,6 +38,7 @@ func main() {
 	flag.StringVar(&network, "network", "prod", "specify the network to run on")
 	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
 	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
+	flag.BoolVar(&autoUpgrade, "autoUpgrade", true, "runs cron job to keep node on the latest version")
 
 	fmt.Printf("imageTag: audius/audius-docker-compose:%s\n", imageTag)
 
@@ -153,6 +155,10 @@ func runUp() {
 		audiusCli("launch", "identity-service", "-y")
 	default:
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
+	}
+
+	if autoUpgrade {
+		audiusCli("auto-upgrade")
 	}
 }
 
