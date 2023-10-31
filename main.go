@@ -158,7 +158,9 @@ func runUp() {
 	}
 
 	if autoUpgrade {
+		fmt.Println("setting auto-upgrade")
 		audiusCli("auto-upgrade")
+		fmt.Println("auto-upgrade enabled")
 	}
 }
 
