@@ -138,6 +138,12 @@ func runUp() {
 		configureChainSpec()
 	}
 
+	if autoUpgrade {
+		fmt.Println("setting auto-upgrade")
+		audiusCli("auto-upgrade")
+		fmt.Println("auto-upgrade enabled")
+	}
+
 	switch nodeType {
 	case "creator-node":
 		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
@@ -155,12 +161,6 @@ func runUp() {
 		audiusCli("launch", "identity-service", "-y")
 	default:
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
-	}
-
-	if autoUpgrade {
-		fmt.Println("setting auto-upgrade")
-		audiusCli("auto-upgrade")
-		fmt.Println("auto-upgrade enabled")
 	}
 }
 
