@@ -101,7 +101,7 @@ func runUp() {
 	}
 
 	var cmd string
-	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
+	baseCmd := fmt.Sprintf(`docker run --privileged -d %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
 	switch nodeType {
 	case "creator-node":
