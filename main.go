@@ -29,7 +29,7 @@ var autoUpgrade bool
 // with the intent of reducing configuration,
 // the latest audius-docker-compose sha (from stage branch) is set at build time via ci.
 // this bakes the (tested) image dependency in, so we know that the built binary will always work.
-var imageTag = "stage"
+var imageTag string
 
 func main() {
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
@@ -93,15 +93,18 @@ func readConfigFile() {
 }
 
 func runUp() {
-	ensureDirectory("/tmp/dind")
-
 	volumeFlag := ""
 	if confFilePath != "" {
 		volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/%s/override.env", confFilePath, nodeType)
 	}
 
+	// volume create is idempotent
+	if err := runCommand("/bin/sh", "-c", "docker volume create audius-d"); err != nil {
+		exitWithError("Error executing command:", err)
+	}
+
 	var cmd string
-	baseCmd := fmt.Sprintf(`docker run --privileged -d -v /tmp/dind:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
+	baseCmd := fmt.Sprintf(`docker run --privileged -d -v audius-d:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
 	switch nodeType {
 	case "creator-node":
@@ -166,14 +169,6 @@ func runUp() {
 
 func runDown() {
 	runCommand("docker", "rm", "-f", "creator-node", "discovery-provider", "identity-service")
-}
-
-func ensureDirectory(path string) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := os.MkdirAll(path, 0755); err != nil {
-			exitWithError("Failed to create directory:", err)
-		}
-	}
 }
 
 func audiusCli(args ...string) {
