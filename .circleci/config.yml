@@ -86,6 +86,7 @@ jobs:
               echo "Docker image $DOCKER_IMAGE not found. Building and pushing..."
               docker buildx create --use
               make build-push TAG=$COMPOSE_COMMIT_SHA
+              make build-push TAG=latest
             fi
       - run:
           name: make
