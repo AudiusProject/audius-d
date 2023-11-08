@@ -1,5 +1,5 @@
 NETWORK ?= stage
-TAG ?= stage
+TAG ?= latest
 
 build-go:
 	@echo "Building Go binary..."
