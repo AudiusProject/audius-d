@@ -151,7 +151,6 @@ func runUp() {
 			exitWithError("Error executing command:", err)
 		}
 	case "discovery-provider":
-		audiusCli("launch-chain")
 		launchCmd := []string{"launch", "discovery-provider", "-y"}
 		if seed {
 			launchCmd = append(launchCmd, "--seed")
@@ -179,6 +178,7 @@ func ensureDirectory(path string) {
 func audiusCli(args ...string) {
 	audCli := []string{"exec", nodeType, "audius-cli"}
 	cmds := append(audCli, args...)
+	fmt.Printf("audius-cli: '%s'\n", strings.Join(cmds, " "))
 	err := runCommand("docker", cmds...)
 	if err != nil {
 		exitWithError("Error with audius-cli:", err)
