@@ -1,0 +1,11 @@
+#!/bin/sh
+make
+
+ARCH=$(uname -m)
+if [ "$ARCH" = "arm64" ]; then
+    BINARY_NAME="audius-d-arm"
+else
+    BINARY_NAME="audius-d-x86"
+fi
+
+./bin/$BINARY_NAME "$@"

@@ -54,11 +54,17 @@ func main() {
 	switch cmdName {
 	case "down":
 		runDown()
+	case "devnet":
+		startDevnet()
 	default:
 		fmt.Printf("standing up %s on network %s\n", nodeType, network)
 		readConfigFile()
 		runUp()
 	}
+}
+
+func startDevnet() {
+	fmt.Println("starting devnet")
 }
 
 func readConfigFile() {
