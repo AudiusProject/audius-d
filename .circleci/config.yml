@@ -162,6 +162,7 @@ jobs:
           command: |
             cd ~/audius-d
             audius-d-x86 devnet
+      - run: docker ps
       - run:
           name: acdc-ganache
           command: |
