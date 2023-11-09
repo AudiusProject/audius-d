@@ -150,7 +150,7 @@ jobs:
     machine:
       image: ubuntu-2204:current
     # audius-compose builds with arm
-    resource_class: arm.medium
+    resource_class: large
     steps:
       - checkout:
           path: ~/audius-d
@@ -161,7 +161,7 @@ jobs:
           name: standup devnet dependencies
           command: |
             cd ~/audius-d
-            audius-d-arm devnet
+            audius-d-x86 devnet
       - run:
           name: acdc-ganache
           command: |
@@ -178,7 +178,7 @@ jobs:
           name: tear down devnet dependencies
           command: |
             cd ~/audius-d
-            audius-d-arm down
+            audius-d-x86 down
 
 
   publish-job:
