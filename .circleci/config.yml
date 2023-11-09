@@ -298,15 +298,15 @@ workflows:
             - build-job
           filters:
             branches:
-              ignore:
+              only:
                 - main
-                - bin
       - publish-job:
           context: github
           requires:
             - test-creator-node
             - test-discovery-provider
             - test-identity-service
+            - test-devnet-deps
           filters:
             branches:
               only:
