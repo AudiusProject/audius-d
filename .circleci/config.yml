@@ -149,7 +149,6 @@ jobs:
   test-devnet-deps:
     machine:
       image: ubuntu-2204:current
-    # audius-compose builds with arm
     resource_class: large
     steps:
       - checkout:
