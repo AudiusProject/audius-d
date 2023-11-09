@@ -21,4 +21,7 @@ services:
     image: audius/acdc-ganache:latest
     ports:
       - "8545:8545"
+
+  networks:
+    discovery-provider-network:
     

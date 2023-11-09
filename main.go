@@ -115,6 +115,10 @@ func runUp() {
 		exitWithError("Error executing command:", err)
 	}
 
+	if err := runCommand("/bin/sh", "-c", "docker network create discovery-provider-network"); err != nil {
+		fmt.Println(err)
+	}
+
 	var cmd string
 	baseCmd := fmt.Sprintf(`docker run --privileged -d -v audius-d:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
@@ -130,6 +134,7 @@ func runUp() {
 		baseCmd = baseCmd + " -p 5000:5000"
 		cmd = fmt.Sprintf(baseCmd + ` \
         --name discovery-provider \
+		--network=discovery-provider-network \
         -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
         -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
         audius/audius-docker-compose:` + imageTag)
@@ -166,12 +171,10 @@ func runUp() {
 			exitWithError("Error executing command:", err)
 		}
 	case "discovery-provider":
-		audiusCli("launch-chain")
-		launchCmd := []string{"launch", "discovery-provider", "-y"}
-		if seed {
-			launchCmd = append(launchCmd, "--seed")
+		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
+		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
+			exitWithError("Error executing command:", err)
 		}
-		audiusCli(launchCmd...)
 	case "identity-service":
 		audiusCli("launch", "identity-service", "-y")
 	default:
