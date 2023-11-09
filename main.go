@@ -54,6 +54,7 @@ func main() {
 	switch cmdName {
 	case "down":
 		runDown()
+		downDevnet()
 	case "devnet":
 		startDevnet()
 	default:
@@ -66,6 +67,10 @@ func main() {
 func startDevnet() {
 	fmt.Println("starting devnet")
 	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "up", "-d")
+}
+
+func downDevnet() {
+	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "down")
 }
 
 func readConfigFile() {
