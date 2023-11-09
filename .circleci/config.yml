@@ -146,7 +146,7 @@ jobs:
           port: 7000
           jqkey: '.healthy'
 
-  test-devnet:
+  test-devnet-deps:
     machine:
       image: ubuntu-2204:current
     resource_class: arm.medium
@@ -242,7 +242,7 @@ workflows:
               ignore:
                 - main
                 - bin
-      - test-devnet:
+      - test-devnet-deps:
           context: github
           requires:
             - build-job
@@ -284,7 +284,7 @@ workflows:
             branches:
               only:
                 - main
-      - test-devnet:
+      - test-devnet-deps:
           context: github
           requires:
             - build-job
