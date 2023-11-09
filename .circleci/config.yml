@@ -146,10 +146,10 @@ jobs:
           port: 7000
           jqkey: '.healthy'
 
-  test-devnet:
+  test-devnet-deps:
     machine:
       image: ubuntu-2204:current
-    resource_class: arm.medium
+    resource_class: large
     steps:
       - checkout:
           path: ~/audius-d
@@ -158,22 +158,30 @@ jobs:
       - configure-path
       - run: 
           name: standup devnet dependencies
-          command: ./bin/audius-d-arm devnet
+          command: |
+            cd ~/audius-d
+            audius-d-x86 devnet
+      - run: docker ps
       - run:
           name: acdc-ganache
           command: |
+            sleep 3
             curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545
       - run:
           name: mainnet-ganache
           command: |
+            sleep 3
             curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8546
       - run:
           name: mainnet-solana
           command: |
+            sleep 3
             curl http://localhost:8899 -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}'
       - run:
           name: tear down devnet dependencies
-          command: ./bin/audius-d-arm down
+          command: |
+            cd ~/audius-d
+            audius-d-x86 down
 
 
   publish-job:
@@ -242,7 +250,7 @@ workflows:
               ignore:
                 - main
                 - bin
-      - test-devnet:
+      - test-devnet-deps:
           context: github
           requires:
             - build-job
@@ -284,7 +292,7 @@ workflows:
             branches:
               only:
                 - main
-      - test-devnet:
+      - test-devnet-deps:
           context: github
           requires:
             - build-job
