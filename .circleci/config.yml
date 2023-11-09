@@ -165,14 +165,17 @@ jobs:
       - run:
           name: acdc-ganache
           command: |
+            sleep 3
             curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545
       - run:
           name: mainnet-ganache
           command: |
+            sleep 3
             curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8546
       - run:
           name: mainnet-solana
           command: |
+            sleep 3
             curl http://localhost:8899 -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}'
       - run:
           name: tear down devnet dependencies
