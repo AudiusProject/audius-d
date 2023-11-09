@@ -149,7 +149,7 @@ jobs:
   test-devnet-deps:
     machine:
       image: ubuntu-2204:current
-    resource_class: arm.medium
+    resource_class: large
     steps:
       - checkout:
           path: ~/audius-d
@@ -160,7 +160,7 @@ jobs:
           name: standup devnet dependencies
           command: |
             cd ~/audius-d
-            ./bin/audius-d-arm devnet
+            audius-d-x86 devnet
       - run:
           name: acdc-ganache
           command: |
@@ -177,7 +177,7 @@ jobs:
           name: tear down devnet dependencies
           command: |
             cd ~/audius-d
-            ./bin/audius-d-arm down
+            audius-d-x86 down
 
 
   publish-job:
