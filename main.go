@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	_ "embed"
 	"encoding/json"
 	"flag"
@@ -14,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/AudiusProject/audius-d/register"
 )
 
 //go:embed sample.audius.conf
@@ -45,11 +45,11 @@ func main() {
 	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
 		exitWithError("Invalid image tag:", imageTag)
 	}
-	cmdName := "up"
-	if len(os.Args) > 1 {
-		cmdName = os.Args[1]
-	}
 	flag.Parse()
+	cmdName := "up"
+	if len(flag.Args()) > 0 {
+		cmdName = flag.Args()[0]
+	}
 
 	switch cmdName {
 	case "down":
@@ -57,9 +57,25 @@ func main() {
 		downDevnet()
 	case "devnet":
 		startDevnet()
+	case "register":
+		config := readConfigFile()
+		switch nodeType {
+		case "creator-node":
+			register.RegisterNode(
+				"content-node",
+				config["creatorNodeEndpoint"],
+				config["ethereumProviderUrl"],
+				config["ethTokenAddress"],
+				config["ethRegistryAddress"],
+				config["delegateOwnerWallet"],
+				config["delegatePrivateKey"],
+			)
+		default:
+			exitWithError("Unsupported node type for registration:", nodeType)
+		}
 	default:
-		fmt.Printf("standing up %s on network %s\n", nodeType, network)
 		readConfigFile()
+		fmt.Printf("standing up %s on network %s\n", nodeType, network)
 		runUp()
 	}
 }
@@ -73,7 +89,7 @@ func downDevnet() {
 	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "down")
 }
 
-func readConfigFile() {
+func readConfigFile() map[string]string {
 	if confFilePath == "" {
 		if usr, err := user.Current(); err != nil {
 			exitWithError("Error retrieving current user:", err)
@@ -98,10 +114,11 @@ func readConfigFile() {
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	if err := scanner.Err(); err != nil {
+	envMap, err := godotenv.Read(confFilePath)
+	if err != nil {
 		exitWithError("Error reading config file:", err)
 	}
+	return envMap
 }
 
 func runUp() {
@@ -121,23 +138,24 @@ func runUp() {
 	switch nodeType {
 	case "creator-node":
 		cmd = fmt.Sprintf(baseCmd + ` \
-        --name creator-node \
-        -v /var/k8s/mediorum:/var/k8s/mediorum \
-        -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
-        -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
-        audius/audius-docker-compose:` + imageTag)
+		--name creator-node \
+		-v /var/k8s/mediorum:/var/k8s/mediorum \
+		-v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
+		-v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
+		audius/audius-docker-compose:` + imageTag)
 	case "discovery-provider":
 		baseCmd = baseCmd + " -p 5000:5000"
+		baseCmd = baseCmd + " -p 8545:8545"
 		cmd = fmt.Sprintf(baseCmd + ` \
-        --name discovery-provider \
-        -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
-        -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-        audius/audius-docker-compose:` + imageTag)
+		--name discovery-provider \
+		-v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
+		-v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
+		audius/audius-docker-compose:` + imageTag)
 	case "identity-service":
 		baseCmd = baseCmd + " -p 7000:7000"
 		cmd = fmt.Sprintf(baseCmd + ` \
-        --name identity-service \
-        audius/audius-docker-compose:` + imageTag)
+		--name identity-service \
+		audius/audius-docker-compose:` + imageTag)
 	default:
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
@@ -253,7 +271,7 @@ func configureChainSpec() {
 
 	specData["genesis"].(map[string]interface{})["extraData"] = extraData
 
-	specOutput, err := json.MarshalIndent(specData, "", "    ")
+	specOutput, err := json.MarshalIndent(specData, "", "	 ")
 	if err != nil {
 		exitWithError("Error marshalling specData:", err)
 	}
