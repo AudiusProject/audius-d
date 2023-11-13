@@ -145,7 +145,6 @@ func runUp() {
 		audius/audius-docker-compose:` + imageTag)
 	case "discovery-provider":
 		baseCmd = baseCmd + " -p 5000:5000"
-		baseCmd = baseCmd + " -p 8545:8545"
 		cmd = fmt.Sprintf(baseCmd + ` \
 		--name discovery-provider \
 		-v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
