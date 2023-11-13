@@ -4,15 +4,15 @@ import (
 	"bufio"
 	_ "embed"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"regexp"
 	"strings"
 
+	"github.com/AudiusProject/audius-d/conf"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/joho/godotenv"
 )
 
@@ -32,36 +32,39 @@ var autoUpgrade bool
 var imageTag string
 
 func main() {
-	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
-	flag.IntVar(&port, "port", 80, "specify a custom http port")
-	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
-	flag.StringVar(&network, "network", "prod", "specify the network to run on")
-	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
-	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
-	flag.BoolVar(&autoUpgrade, "autoUpgrade", true, "runs cron job to keep node on the latest version")
+	fmt.Println("again")
+	toml := conf.ReadTomlUnsafe("devnet.toml")
+	spew.Dump(toml)
+	// flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
+	// flag.IntVar(&port, "port", 80, "specify a custom http port")
+	// flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
+	// flag.StringVar(&network, "network", "prod", "specify the network to run on")
+	// flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
+	// flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
+	// flag.BoolVar(&autoUpgrade, "autoUpgrade", true, "runs cron job to keep node on the latest version")
 
-	fmt.Printf("imageTag: audius/audius-docker-compose:%s\n", imageTag)
+	// fmt.Printf("imageTag: audius/audius-docker-compose:%s\n", imageTag)
 
-	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
-		exitWithError("Invalid image tag:", imageTag)
-	}
-	cmdName := "up"
-	if len(os.Args) > 1 {
-		cmdName = os.Args[1]
-	}
-	flag.Parse()
+	// if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
+	// 	exitWithError("Invalid image tag:", imageTag)
+	// }
+	// cmdName := "up"
+	// if len(os.Args) > 1 {
+	// 	cmdName = os.Args[1]
+	// }
+	// flag.Parse()
 
-	switch cmdName {
-	case "down":
-		runDown()
-		downDevnet()
-	case "devnet":
-		startDevnet()
-	default:
-		fmt.Printf("standing up %s on network %s\n", nodeType, network)
-		readConfigFile()
-		runUp()
-	}
+	// switch cmdName {
+	// case "down":
+	// 	runDown()
+	// 	downDevnet()
+	// case "devnet":
+	// 	startDevnet()
+	// default:
+	// 	fmt.Printf("standing up %s on network %s\n", nodeType, network)
+	// 	readConfigFile()
+	// 	runUp()
+	// }
 }
 
 func startDevnet() {
