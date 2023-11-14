@@ -283,9 +283,8 @@ workflows:
             - build-job
           filters:
             branches:
-              ignore:
-                - main
-                - bin
+              only:
+                - dummy-branch-disable-test  # temporarily disabled while we figure out host.docker.internal alternative
 
   build-test-publish:
     jobs:
