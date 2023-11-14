@@ -5,8 +5,6 @@ services:
   eth-ganache:
     container_name: eth-ganache
     image: audius/eth-ganache:latest
-    networks:
-      - discovery-provider-network
     ports:
       - "8546:8545"
   
@@ -14,8 +12,6 @@ services:
   sol-validator:
     container_name: solana-test-validator
     image: audius/solana-programs:latest
-    networks:
-      - discovery-provider-network
     ports:
       - "8899:8899"
 
@@ -23,11 +19,6 @@ services:
   acdc-ganache:
     container_name: acdc-ganache
     image: audius/acdc-ganache:latest
-    networks:
-      - discovery-provider-network
     ports:
       - "8545:8545"
-
-networks:
-  discovery-provider-network:
     
