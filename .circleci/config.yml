@@ -25,6 +25,14 @@ commands:
             mkdir ~/.audius
             cp ~/audius-d/sample.audius.conf "$HOME/.audius/<< parameters.nodetype >>.conf"
             audius-d-x86 -c "$HOME/.audius/<< parameters.nodetype >>.conf" -network=stage -node '<< parameters.nodetype >>'
+  standup-devnet:
+    description: 'Stand up external dev chain containers for eth, sol, and acdc'
+    steps:
+      - run: 
+          name: standup devnet dependencies
+          command: |
+            cd ~/audius-d
+            audius-d-x86 devnet
   basic-health-check:
     description: 'Perform a basic health check on an audius node'
     parameters:
@@ -156,11 +164,7 @@ jobs:
       - attach_workspace:
           at: ~/audius-d
       - configure-path
-      - run: 
-          name: standup devnet dependencies
-          command: |
-            cd ~/audius-d
-            audius-d-x86 devnet
+      - standup-devnet
       - run: docker ps
       - run:
           name: acdc-ganache
@@ -183,6 +187,20 @@ jobs:
             cd ~/audius-d
             audius-d-x86 down
 
+  test-eth-registration:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - checkout:
+          path: ~/audius-d
+      - attach_workspace:
+          at: ~/audius-d
+      - configure-path
+      - standup-devnet
+      - run:
+          name: register delegateOwnerWallet
+          command: audius-d-x86 -c ~/audius-d/register/sampleregister.audius.conf register
 
   publish-job:
     machine:
@@ -251,6 +269,15 @@ workflows:
                 - main
                 - bin
       - test-devnet-deps:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              ignore:
+                - main
+                - bin
+      - test-eth-registration:
           context: github
           requires:
             - build-job
