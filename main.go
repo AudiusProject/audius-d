@@ -138,23 +138,23 @@ func runUp() {
 	switch nodeType {
 	case "creator-node":
 		cmd = fmt.Sprintf(baseCmd + ` \
-		--name creator-node \
-		-v /var/k8s/mediorum:/var/k8s/mediorum \
-		-v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
-		-v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
-		audius/audius-docker-compose:` + imageTag)
+        --name creator-node \
+        -v /var/k8s/mediorum:/var/k8s/mediorum \
+        -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
+        -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
+        audius/audius-docker-compose:` + imageTag)
 	case "discovery-provider":
 		baseCmd = baseCmd + " -p 5000:5000"
 		cmd = fmt.Sprintf(baseCmd + ` \
-		--name discovery-provider \
-		-v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
-		-v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-		audius/audius-docker-compose:` + imageTag)
+        --name discovery-provider \
+        -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
+        -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
+        audius/audius-docker-compose:` + imageTag)
 	case "identity-service":
 		baseCmd = baseCmd + " -p 7000:7000"
 		cmd = fmt.Sprintf(baseCmd + ` \
-		--name identity-service \
-		audius/audius-docker-compose:` + imageTag)
+        --name identity-service \
+        audius/audius-docker-compose:` + imageTag)
 	default:
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
@@ -270,7 +270,7 @@ func configureChainSpec() {
 
 	specData["genesis"].(map[string]interface{})["extraData"] = extraData
 
-	specOutput, err := json.MarshalIndent(specData, "", "	 ")
+	specOutput, err := json.MarshalIndent(specData, "", "    ")
 	if err != nil {
 		exitWithError("Error marshalling specData:", err)
 	}
