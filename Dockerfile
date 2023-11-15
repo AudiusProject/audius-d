@@ -23,3 +23,5 @@ RUN echo '[]' > ./discovery-provider/chain/static-nodes.json
 
 RUN python3 -m pip install -r requirements.txt
 RUN ln -sf $PWD/audius-cli /usr/local/bin/audius-cli
+
+COPY daemon.json /etc/docker/daemon.json
