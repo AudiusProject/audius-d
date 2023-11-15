@@ -1,7 +1,7 @@
 FROM docker:dind
 
 ARG NETWORK=prod
-ARG BRANCH=as/docker-internal-hosts
+ARG BRANCH=main
 
 RUN apk add bash git curl libc-dev gcc python3 py3-pip python3-dev linux-headers postgresql-client redis
 
