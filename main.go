@@ -132,6 +132,11 @@ func runUp() {
 		exitWithError("Error executing command:", err)
 	}
 
+	if network == "dev" {
+		// utility
+		startDevnet()
+	}
+
 	var cmd string
 	baseCmd := fmt.Sprintf(`docker run --privileged -d -v audius-d:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
@@ -164,13 +169,15 @@ func runUp() {
 	}
 
 	awaitDockerStart()
-	audiusCli("set-network", network)
+	if network != "dev" {
+		audiusCli("set-network", network)
+	}
 
-	if nodeType == "discovery-provider" {
+	if nodeType == "discovery-provider" && network != "dev" {
 		configureChainSpec()
 	}
 
-	if autoUpgrade {
+	if autoUpgrade && network != "dev" {
 		fmt.Println("setting auto-upgrade")
 		audiusCli("auto-upgrade")
 		fmt.Println("auto-upgrade enabled")
@@ -183,12 +190,13 @@ func runUp() {
 			exitWithError("Error executing command:", err)
 		}
 	case "discovery-provider":
-		audiusCli("launch-chain")
-		launchCmd := []string{"launch", "discovery-provider", "-y"}
-		if seed {
-			launchCmd = append(launchCmd, "--seed")
+		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
+		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
+			exitWithError("Error executing command:", err)
 		}
-		audiusCli(launchCmd...)
+		if network != "dev" {
+			audiusCli("launch-chain")
+		}
 	case "identity-service":
 		audiusCli("launch", "identity-service", "-y")
 	default:
