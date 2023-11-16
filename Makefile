@@ -23,3 +23,6 @@ build-push: build-docker push-docker
 
 clean:
 	rm -f bin/*
+
+test:
+	go test ./...

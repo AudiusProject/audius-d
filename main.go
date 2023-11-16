@@ -12,9 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AudiusProject/audius-d/conf"
 	"github.com/AudiusProject/audius-d/register"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/joho/godotenv"
 )
 
@@ -34,9 +32,6 @@ var autoUpgrade bool
 var imageTag string
 
 func main() {
-	fmt.Println("again")
-	toml := conf.ReadTomlUnsafe("devnet.toml")
-	spew.Dump(toml)
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")

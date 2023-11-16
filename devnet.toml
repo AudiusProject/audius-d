@@ -40,12 +40,6 @@ Port = 5000
 Tag = "af284fb773a385371cdc2cae43b39ee6c6bf47b7"
 OperatorPrivateKey = ""
 
-[DiscoveryNodes.discovery-2]
-Host = "http://localhost"
-Port = 5001
-OperatorPrivateKey = ""
-
 [IdentityService]
 Host = "http://localhost"
 Port = 4000
-
