@@ -11,9 +11,4 @@ Tag = "stage"
 
 [CreatorNodes.creator-1]
 Host = "http://localhost"
-Port = 6000
-Tag = "latest"
 OperatorPrivateKey = ""
-Register = true
-AwaitHealthy = true
-AutoUpgrade = true
