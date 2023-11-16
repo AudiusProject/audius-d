@@ -41,5 +41,7 @@ Tag = "af284fb773a385371cdc2cae43b39ee6c6bf47b7"
 OperatorPrivateKey = ""
 
 [IdentityService]
+
+[IdentityService.identity-1]
 Host = "http://localhost"
 Port = 4000

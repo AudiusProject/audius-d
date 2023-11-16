@@ -1,10 +1,10 @@
 package conf
 
 type Config struct {
-	Network NetworkConfig
-	CreatorNodes map[string]CreatorConfig
-	DiscoveryNodes map[string]DiscoveryConfig
-	IdentityService IdentityConfig
+	Network          NetworkConfig
+	CreatorNodes     map[string]CreatorConfig
+	DiscoveryNodes   map[string]DiscoveryConfig
+	IdentityServices map[string]IdentityConfig
 }
 
 // base structure that all server types need
@@ -28,7 +28,7 @@ type BaseServerConfig struct {
 	Register bool
 
 	// will query `http://{host}:{port}/health_check` until
-	// a 2XX response is received, 
+	// a 2XX response is received,
 	AwaitHealthy bool
 }
 

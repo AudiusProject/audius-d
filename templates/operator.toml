@@ -1,0 +1,32 @@
+title = "Example Operator Configuration"
+description = """
+example of how to run a creator node as an operator with audius-d
+"""
+
+[Network]
+Name = "stage"
+
+AcdcHost = "http://acdc-ganache"
+AcdcPort = 8545
+
+EthMainnetHost = "http://eth-ganache"
+EthMainnetPort = 8546
+
+SolanaMainnetHost = "http://solana-test-validator"
+SolanaMainnetPort = 8899
+
+Tag = "stage"
+
+[CreatorNodes]
+
+[CreatorNodes.creator-1]
+Host = "http://localhost"
+Port = 6000
+Tag = "latest"
+OperatorPrivateKey = ""
+Register = true
+AwaitHealthy = true
+
+[DiscoveryNodes]
+
+[IdentityService]
