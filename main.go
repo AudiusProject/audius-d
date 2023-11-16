@@ -1,17 +1,19 @@
 package main
 
 import (
-	"bufio"
 	_ "embed"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/AudiusProject/audius-d/conf"
+	"github.com/AudiusProject/audius-d/register"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/joho/godotenv"
 )
@@ -35,36 +37,52 @@ func main() {
 	fmt.Println("again")
 	toml := conf.ReadTomlUnsafe("devnet.toml")
 	spew.Dump(toml)
-	// flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
-	// flag.IntVar(&port, "port", 80, "specify a custom http port")
-	// flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
-	// flag.StringVar(&network, "network", "prod", "specify the network to run on")
-	// flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
-	// flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
-	// flag.BoolVar(&autoUpgrade, "autoUpgrade", true, "runs cron job to keep node on the latest version")
+	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
+	flag.IntVar(&port, "port", 80, "specify a custom http port")
+	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
+	flag.StringVar(&network, "network", "prod", "specify the network to run on")
+	flag.StringVar(&nodeType, "node", "creator-node", "specify the node type to run")
+	flag.BoolVar(&seed, "seed", false, "seed data (only applicable to discovery-provider)")
+	flag.BoolVar(&autoUpgrade, "autoUpgrade", true, "runs cron job to keep node on the latest version")
 
-	// fmt.Printf("imageTag: audius/audius-docker-compose:%s\n", imageTag)
+	fmt.Printf("imageTag: audius/audius-docker-compose:%s\n", imageTag)
 
-	// if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
-	// 	exitWithError("Invalid image tag:", imageTag)
-	// }
-	// cmdName := "up"
-	// if len(os.Args) > 1 {
-	// 	cmdName = os.Args[1]
-	// }
-	// flag.Parse()
+	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
+		exitWithError("Invalid image tag:", imageTag)
+	}
+	flag.Parse()
+	cmdName := "up"
+	if len(flag.Args()) > 0 {
+		cmdName = flag.Args()[0]
+	}
 
-	// switch cmdName {
-	// case "down":
-	// 	runDown()
-	// 	downDevnet()
-	// case "devnet":
-	// 	startDevnet()
-	// default:
-	// 	fmt.Printf("standing up %s on network %s\n", nodeType, network)
-	// 	readConfigFile()
-	// 	runUp()
-	// }
+	switch cmdName {
+	case "down":
+		runDown()
+		downDevnet()
+	case "devnet":
+		startDevnet()
+	case "register":
+		config := readConfigFile()
+		switch nodeType {
+		case "creator-node":
+			register.RegisterNode(
+				"content-node",
+				config["creatorNodeEndpoint"],
+				config["ethereumProviderUrl"],
+				config["ethTokenAddress"],
+				config["ethRegistryAddress"],
+				config["delegateOwnerWallet"],
+				config["delegatePrivateKey"],
+			)
+		default:
+			exitWithError("Unsupported node type for registration:", nodeType)
+		}
+	default:
+		readConfigFile()
+		fmt.Printf("standing up %s on network %s\n", nodeType, network)
+		runUp()
+	}
 }
 
 func startDevnet() {
@@ -76,7 +94,7 @@ func downDevnet() {
 	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "down")
 }
 
-func readConfigFile() {
+func readConfigFile() map[string]string {
 	if confFilePath == "" {
 		if usr, err := user.Current(); err != nil {
 			exitWithError("Error retrieving current user:", err)
@@ -101,10 +119,11 @@ func readConfigFile() {
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	if err := scanner.Err(); err != nil {
+	envMap, err := godotenv.Read(confFilePath)
+	if err != nil {
 		exitWithError("Error reading config file:", err)
 	}
+	return envMap
 }
 
 func runUp() {
