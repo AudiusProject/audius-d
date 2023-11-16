@@ -5,16 +5,6 @@ example of how to run a creator node as an operator with audius-d
 
 [Network]
 Name = "stage"
-
-AcdcHost = "http://acdc-ganache"
-AcdcPort = 8545
-
-EthMainnetHost = "http://eth-ganache"
-EthMainnetPort = 8546
-
-SolanaMainnetHost = "http://solana-test-validator"
-SolanaMainnetPort = 8899
-
 Tag = "stage"
 
 [CreatorNodes]
@@ -26,7 +16,3 @@ Tag = "latest"
 OperatorPrivateKey = ""
 Register = true
 AwaitHealthy = true
-
-[DiscoveryNodes]
-
-[IdentityService]
