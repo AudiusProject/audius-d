@@ -16,3 +16,4 @@ Tag = "latest"
 OperatorPrivateKey = ""
 Register = true
 AwaitHealthy = true
+AutoUpgrade = true
