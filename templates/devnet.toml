@@ -6,13 +6,13 @@ example and runnable file for running a devnet configuration of audius protocol 
 [Network]
 Name = "devnet"
 
-AcdcHost = "http://acdc-ganache"
+AcdcRpc = "http://acdc-ganache"
 AcdcPort = 8545
 
-EthMainnetHost = "http://eth-ganache"
+EthMainnetRpc = "http://eth-ganache"
 EthMainnetPort = 8546
 
-SolanaMainnetHost = "http://solana-test-validator"
+SolanaMainnetRpc = "http://solana-test-validator"
 SolanaMainnetPort = 8899
 
 Tag = "stage" # git hash, stage, prod, dev

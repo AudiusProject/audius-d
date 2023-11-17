@@ -12,8 +12,12 @@ type BaseServerConfig struct {
 	// port that will be exposed via audius-docker-compose
 	// i.e. what you would curl in a http://{host}:{port}/health_check
 	// defaults to port 80
-	Port uint
-	Host string
+	HttpPort uint
+	// port that will be exposed via audius-docker-compose
+	// i.e. what you would curl in a http://{host}:{port}/health_check
+	// defaults to port 443
+	HttpsPort uint
+	Host      string
 
 	// the tag that will be pulled from dockerhub
 	// "latest", "stage", "prod", etc may have specific behavior
@@ -57,15 +61,15 @@ type NetworkConfig struct {
 
 	// host that running servers will use to talk to the acdc network
 	// example: devnet would have a http://acdc-ganache type string
-	AcdcHost string
+	AcdcRpc string
 
 	// same as AcdcHost but the port if applicable
 	AcdcPort uint
 
-	EthMainnetHost string
+	EthMainnetRpc  string
 	EthMainnetPort uint
 
-	SolanaMainnetHost string
+	SolanaMainnetRpc  string
 	SolanaMainnetPort uint
 
 	Tag string

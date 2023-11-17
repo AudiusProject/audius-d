@@ -25,6 +25,7 @@ var network string
 var nodeType string
 var seed bool
 var autoUpgrade bool
+var skipRest = true
 
 // with the intent of reducing configuration,
 // the latest audius-docker-compose sha (from stage branch) is set at build time via ci.
@@ -32,6 +33,11 @@ var autoUpgrade bool
 var imageTag string
 
 func main() {
+
+	if skipRest {
+		// just so i dont comment out a bunch of stuff rn
+		return
+	}
 	flag.StringVar(&confFilePath, "c", "", "Path to the .conf file")
 	flag.IntVar(&port, "port", 80, "specify a custom http port")
 	flag.IntVar(&tlsPort, "tls", 443, "specify a custom https port")
