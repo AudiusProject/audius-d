@@ -1,0 +1,14 @@
+title = "Example Operator Configuration"
+description = """
+example of how to run a creator node as an operator with audius-d
+"""
+
+[Network]
+Name = "stage"
+Tag = "stage"
+
+[CreatorNodes]
+
+[CreatorNodes.creator-1]
+Host = "http://localhost"
+OperatorPrivateKey = "62ca4962f99a39b4a2c60a8402f60baea5437c275146abd90e0bfdcf0415184d"

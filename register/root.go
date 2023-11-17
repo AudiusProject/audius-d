@@ -1,28 +1,45 @@
 package register
 
 import (
-	_ "embed"
 	"context"
 	"crypto/ecdsa"
-	"log"
+	_ "embed"
 	"fmt"
+	"log"
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum"
+	"github.com/spf13/cobra"
 )
 
 //go:embed ABIs/ERC20Detailed.json
 var erc20ABIFile string
+
 //go:embed ABIs/Registry.json
 var registryABIFile string
+
 //go:embed ABIs/ServiceProviderFactory.json
 var spfABIFile string
+
+var RootCmd *cobra.Command
+
+func init() {
+	RootCmd = &cobra.Command{
+		Use:   "register",
+		Short: "Register nodes on ethereum",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("got here")
+			//conf := cmd.ctx.Value(config.ContextKey)
+			//RegisterNode()
+		},
+	}
+}
 
 func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderUrl string, tokenAddress string, contractRegistryAddress string, ownerWallet string, privateKey string) {
 	client, err := ethclient.Dial(ethProviderUrl)
@@ -120,7 +137,7 @@ func getContractAddress(client *ethclient.Client, ethRegistryAddress common.Addr
 	}
 
 	msg := ethereum.CallMsg{
-		To:   &ethRegistryAddress, 
+		To:   &ethRegistryAddress,
 		Data: data,
 	}
 
@@ -168,4 +185,3 @@ func getSignedTx(client *ethclient.Client, txData []byte, from common.Address, t
 	}
 	return signedTx
 }
-

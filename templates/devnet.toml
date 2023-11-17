@@ -1,0 +1,47 @@
+title = "Example Devnet Configuration"
+description = """
+example and runnable file for running a devnet configuration of audius protocol with audius-d
+"""
+
+[Network]
+Name = "devnet"
+
+AcdcRpc = "http://acdc-ganache"
+AcdcPort = 8545
+
+EthMainnetRpc = "http://eth-ganache"
+EthMainnetPort = 8546
+
+SolanaMainnetRpc = "http://solana-test-validator"
+SolanaMainnetPort = 8899
+
+Tag = "stage" # git hash, stage, prod, dev
+
+[CreatorNodes]
+
+[CreatorNodes.creator-1]
+Host = "http://localhost"
+Port = 6000
+Tag = "latest"
+OperatorPrivateKey = ""
+Register = true
+AwaitHealthy = true
+
+[CreatorNodes.creator-2]
+Host = "http://localhost"
+Port = 6001
+OperatorPrivateKey = ""
+
+[DiscoveryNodes]
+
+[DiscoveryNodes.discovery-1]
+Host = "http://localhost"
+Port = 5000
+Tag = "af284fb773a385371cdc2cae43b39ee6c6bf47b7"
+OperatorPrivateKey = ""
+
+[IdentityService]
+
+[IdentityService.identity-1]
+Host = "http://localhost"
+Port = 4000
