@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"embed"
 	_ "embed"
 	"sync"
 
@@ -12,16 +11,27 @@ import (
 var defaultDevRaw []byte
 
 //go:embed templates/default.stage.toml
-var defaultStageRaw embed.FS
+var defaultStageRaw []byte
 
 //go:embed templates/default.prod.toml
-var defaultProdRaw embed.FS
+var defaultProdRaw []byte
 
-func GetDevDefaults() Config {
+func readDefault(def []byte) Config {
 	return sync.OnceValue(func() Config {
 		conf := &Config{}
-		toml.Unmarshal(defaultDevRaw, conf)
+		toml.Unmarshal(def, conf)
 		return *conf
 	})()
 }
 
+func GetDevDefaults() Config {
+	return readDefault(defaultDevRaw)
+}
+
+func GetStageDefaults() Config {
+	return readDefault(defaultStageRaw)
+}
+
+func GetProdDefaults() Config {
+	return readDefault(defaultProdRaw)
+}
