@@ -36,21 +36,6 @@ type BaseServerConfig struct {
 	AwaitHealthy bool
 }
 
-type CreatorConfig struct {
-	BaseServerConfig
-	// creator specific stuff here
-}
-
-type DiscoveryConfig struct {
-	BaseServerConfig
-	// discovery specific stuff here
-}
-
-type IdentityConfig struct {
-	BaseServerConfig
-	// identity specific stuff here
-}
-
 type NetworkConfig struct {
 	// name of the network this/these server(s) belong to
 	// analogous to "audius-cli set-network"
