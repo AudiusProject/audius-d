@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/AudiusProject/audius-d/conf"
 	"github.com/AudiusProject/audius-d/register"
 	"github.com/joho/godotenv"
 )
@@ -33,6 +34,9 @@ var skipRest = true
 var imageTag string
 
 func main() {
+
+	devDefaults := conf.GetDevDefaults()
+	fmt.Println(devDefaults)
 
 	if skipRest {
 		// just so i dont comment out a bunch of stuff rn

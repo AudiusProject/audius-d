@@ -1,6 +1,6 @@
-title = "Example Devnet Configuration"
+title = "Example CI Configuration"
 description = """
-example and runnable file for running a devnet configuration of audius protocol with audius-d
+example and runnable file for running a ci (isolated) configuration of audius protocol with audius-d
 """
 
 [Network]

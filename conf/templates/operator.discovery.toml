@@ -1,0 +1,9 @@
+title = "Example Discovery Operator Configuration"
+description = """
+example of how to run a discovery node as an operator with audius-d
+"""
+
+[DiscoveryNodes]
+
+[DiscoveryNodes.discovery-1]
+OperatorPrivateKey = "62ca4962f99a39b4a2c60a8402f60baea5437c275146abd90e0bfdcf0415184d"
