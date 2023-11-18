@@ -1,0 +1,8 @@
+title = "Default Mainnet Configuration"
+description = """
+defaults for mainnet (prod) configuration of audius protocol with audius-d
+"""
+
+[Network]
+Name = "mainnet"
+Tag = "latest"

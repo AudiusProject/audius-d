@@ -35,7 +35,7 @@ var imageTag string
 
 func main() {
 
-	devDefaults := conf.GetDevDefaults()
+	devDefaults := conf.GetDevnetDefaults()
 	fmt.Println(devDefaults)
 
 	if skipRest {

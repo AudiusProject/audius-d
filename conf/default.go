@@ -7,14 +7,14 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-//go:embed templates/default.dev.toml
-var defaultDevRaw []byte
+//go:embed templates/default.devnet.toml
+var defaultDevnetRaw []byte
 
-//go:embed templates/default.stage.toml
-var defaultStageRaw []byte
+//go:embed templates/default.testnet.toml
+var defaultTestnetRaw []byte
 
-//go:embed templates/default.prod.toml
-var defaultProdRaw []byte
+//go:embed templates/default.mainnet.toml
+var defaultMainnetRaw []byte
 
 func readDefault(def []byte) Config {
 	return sync.OnceValue(func() Config {
@@ -24,14 +24,14 @@ func readDefault(def []byte) Config {
 	})()
 }
 
-func GetDevDefaults() Config {
-	return readDefault(defaultDevRaw)
+func GetDevnetDefaults() Config {
+	return readDefault(defaultDevnetRaw)
 }
 
-func GetStageDefaults() Config {
-	return readDefault(defaultStageRaw)
+func GetTestnetDefaults() Config {
+	return readDefault(defaultTestnetRaw)
 }
 
-func GetProdDefaults() Config {
-	return readDefault(defaultProdRaw)
+func GetMainnetDefaults() Config {
+	return readDefault(defaultMainnetRaw)
 }

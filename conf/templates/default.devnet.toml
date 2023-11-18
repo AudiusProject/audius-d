@@ -1,10 +1,10 @@
-title = "Default Dev Configuration"
+title = "Default Devnet Configuration"
 description = """
-defaults for isolated configuration of audius protocol with audius-d
+defaults for an isolated devnet configuration of audius protocol with audius-d
 """
 
 [Network]
-Name = "prod"
+Name = "devnet"
 
 AcdcRpc = "http://acdc-ganache"
 AcdcPort = 8545

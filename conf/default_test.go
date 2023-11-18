@@ -7,12 +7,12 @@ import (
 )
 
 func TestDefaults(t *testing.T) {
-	devDefaults := GetDevDefaults()
-	require.EqualValues(t, "dev", devDefaults.Network.Name)
+	devDefaults := GetDevnetDefaults()
+	require.EqualValues(t, "devnet", devDefaults.Network.Name)
 
-	stageDefaults := GetStageDefaults()
-	require.EqualValues(t, "stage", stageDefaults.Network.Name)
+	stageDefaults := GetTestnetDefaults()
+	require.EqualValues(t, "testnet", stageDefaults.Network.Name)
 
-	prodDefaults := GetProdDefaults()
-	require.EqualValues(t, "prod", prodDefaults.Network.Name)
+	prodDefaults := GetMainnetDefaults()
+	require.EqualValues(t, "mainnet", prodDefaults.Network.Name)
 }

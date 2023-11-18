@@ -1,0 +1,8 @@
+title = "Default Testnet Configuration"
+description = """
+defaults for testnet (stage) configuration of audius protocol with audius-d
+"""
+
+[Network]
+Name = "testnet"
+Tag = "latest"
