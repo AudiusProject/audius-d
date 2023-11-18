@@ -1,1 +1,38 @@
-# todo, fill out
+title = "Default Dev Configuration"
+description = """
+defaults for isolated configuration of audius protocol with audius-d
+"""
+
+[Network]
+Name = "stage"
+
+AcdcRpc = "http://acdc-ganache"
+AcdcPort = 8545
+
+EthMainnetRpc = "http://eth-ganache"
+EthMainnetPort = 8546
+
+SolanaMainnetRpc = "http://solana-test-validator"
+SolanaMainnetPort = 8899
+
+Tag = "latest"
+
+[CreatorNodes]
+
+[CreatorNodes.creator-1]
+Host = "http://localhost"
+Port = 6000
+OperatorPrivateKey = ""
+
+[DiscoveryNodes]
+
+[DiscoveryNodes.discovery-1]
+Host = "http://localhost"
+Port = 5000
+OperatorPrivateKey = ""
+
+[IdentityService]
+
+[IdentityService.identity-1]
+Host = "http://localhost"
+Port = 4000
