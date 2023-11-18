@@ -14,6 +14,7 @@ import (
 
 	"github.com/AudiusProject/audius-d/conf"
 	"github.com/AudiusProject/audius-d/register"
+	"github.com/common-nighthawk/go-figure"
 	"github.com/joho/godotenv"
 )
 
@@ -34,6 +35,8 @@ var skipRest = true
 var imageTag string
 
 func main() {
+	audius := figure.NewColorFigure("Audius", "starwars", "purple", true)
+  	audius.Print()
 
 	devDefaults := conf.GetDevnetDefaults()
 	Deploy(devDefaults)
