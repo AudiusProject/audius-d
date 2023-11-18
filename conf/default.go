@@ -16,6 +16,8 @@ var defaultTestnetRaw []byte
 //go:embed templates/default.mainnet.toml
 var defaultMainnetRaw []byte
 
+// function to parse the embed structs
+// and ensure the parsing only happens once
 func readDefault(def []byte) Config {
 	return sync.OnceValue(func() Config {
 		conf := &Config{}
