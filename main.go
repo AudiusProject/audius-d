@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -39,7 +40,9 @@ func main() {
   	audius.Print()
 
 	devDefaults := conf.GetDevnetDefaults()
-	Deploy(devDefaults)
+	if err := Deploy(devDefaults); err != nil {
+		log.Fatal(err)
+	}
 
 	if skipRest {
 		// just so i dont comment out a bunch of stuff rn
