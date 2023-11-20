@@ -34,6 +34,13 @@ type BaseServerConfig struct {
 	// will query `http://{host}:{port}/health_check` until
 	// a 2XX response is received,
 	AwaitHealthy bool
+
+	// most servers have a db
+	DatabaseUrl string
+
+	// most servers have a cache
+	CacheUrl  string
+	CachePort uint
 }
 
 type NetworkConfig struct {
@@ -46,16 +53,24 @@ type NetworkConfig struct {
 
 	// host that running servers will use to talk to the acdc network
 	// example: devnet would have a http://acdc-ganache type string
-	AcdcRpc string
+	AcdcRpc                  string
+	AcdcNetworkId            uint
+	AcdcPort                 uint
+	AcdcEntityManagerAddress string
+	AcdcRegistryAddress      string
 
-	// same as AcdcHost but the port if applicable
-	AcdcPort uint
-
-	EthMainnetRpc  string
-	EthMainnetPort uint
+	EthMainnetRpc             string
+	EthMainnetPort            uint
+	EthMainnetNetworkId       uint
+	EthMainnetRegistryAddress string
+	EthMainnetTokenAddress    string
 
 	SolanaMainnetRpc  string
 	SolanaMainnetPort uint
 
 	Tag string
+}
+
+type NodeConfig interface {
+	ToOverrideEnv(nc NetworkConfig) []byte
 }

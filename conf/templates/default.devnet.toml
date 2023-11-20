@@ -21,8 +21,9 @@ Tag = "latest"
 
 [CreatorNodes.creator-1]
 Host = "http://localhost"
-Port = 6000
-OperatorPrivateKey = ""
+HttpPort = 80
+HttpsPort = 443
+OperatorPrivateKey = "62ca4962f99a39b4a2c60a8402f60baea5437c275146abd90e0bfdcf0415184d"
 
 [DiscoveryNodes]
 
