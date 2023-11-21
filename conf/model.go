@@ -18,8 +18,11 @@ type BaseServerConfig struct {
 	// port that will be exposed via audius-docker-compose
 	// i.e. what you would curl in a http://{host}:{port}/health_check
 	// defaults to port 80
-	Port uint
-	Host string
+	InternalHttpPort  uint
+	ExternalHttpPort  uint
+	InternalHttpsPort uint
+	ExternalHttpsPort uint
+	Host              string
 
 	// the tag that will be pulled from dockerhub
 	// "latest", "stage", "prod", etc may have specific behavior

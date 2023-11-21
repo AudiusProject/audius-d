@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 
 	"github.com/AudiusProject/audius-d/conf"
@@ -18,12 +17,13 @@ type OverrideEnv = map[string]string
 func RunNode(config conf.ContextConfig, serverConfig conf.BaseServerConfig, override OverrideEnv, containerName string, nodeType string, internalVolumes []string) error {
 	imageTag := fmt.Sprintf("audius/audius-docker-compose:%s", config.Network.Tag)
 	externalVolume := fmt.Sprintf("audius-d-%s", containerName)
-	port := serverConfig.Port
+	httpPorts := PortMapping(serverConfig.ExternalHttpPort, serverConfig.InternalHttpPort)
+	httpsPorts := PortMapping(serverConfig.ExternalHttpsPort, serverConfig.InternalHttpsPort)
 	formattedInternalVolumes := " -v " + strings.Join(internalVolumes, " -v ")
 
 	// assemble wrapper command and run
 	// todo: handle https port
-	upCmd := fmt.Sprintf("docker run --privileged -d -v %s:/var/lib/docker -p %d:80 -p %d:443 --name %s %s %s", externalVolume, port, 443, containerName, formattedInternalVolumes, imageTag)
+	upCmd := fmt.Sprintf("docker run --privileged -d -v %s:/var/lib/docker %s %s --name %s %s %s", externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
 	if err := Sh(upCmd); err != nil {
 		return err
 	}
@@ -57,90 +57,13 @@ func RunNode(config conf.ContextConfig, serverConfig conf.BaseServerConfig, over
 	return nil
 }
 
+func PortMapping(external, internal uint) string {
+	return fmt.Sprintf("-p %d:%d", external, internal)
+}
+
 func Sh(cmd string) error {
 	fmt.Println(cmd)
 	return runCommand("/bin/sh", "-c", cmd)
-}
-
-func runNodeDocker(nodeType string, network string, imageTag string, autoUpgrade bool) {
-	fmt.Printf("standing up %s on network %s\n", nodeType, network)
-	volumeFlag := ""
-	//volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/%s/override.env", confFilePath, nodeType)
-
-	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
-		exitWithError("Invalid image tag:", imageTag)
-	}
-
-	// volume create is idempotent
-	if err := runCommand("/bin/sh", "-c", "docker volume create audius-d"); err != nil {
-		exitWithError("Error executing command:", err)
-	}
-
-	var cmd string
-	baseCmd := fmt.Sprintf(`docker run --privileged -d -v audius-d:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, 80, 443)
-
-	switch nodeType {
-	case "creator-node":
-		cmd = fmt.Sprintf(baseCmd + ` \
-        --name creator-node \
-        -v /var/k8s/mediorum:/var/k8s/mediorum \
-        -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
-        -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
-        audius/audius-docker-compose:` + imageTag)
-	case "discovery-provider":
-		baseCmd = baseCmd + " -p 5000:5000"
-		cmd = fmt.Sprintf(baseCmd + ` \
-        --name discovery-provider \
-        -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
-        -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-        audius/audius-docker-compose:` + imageTag)
-	case "identity-service":
-		baseCmd = baseCmd + " -p 7000:7000"
-		cmd = fmt.Sprintf(baseCmd + ` \
-        --name identity-service \
-        audius/audius-docker-compose:` + imageTag)
-	default:
-		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
-	}
-
-	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
-		exitWithError("Error executing command:", err)
-	}
-
-	awaitDockerStart()
-	if network != "dev" {
-		audiusCli("set-network", network)
-	}
-
-	if nodeType == "discovery-provider" && network != "dev" {
-		configureChainSpec(nodeType, network)
-	}
-
-	if autoUpgrade && network != "dev" {
-		fmt.Println("setting auto-upgrade")
-		audiusCli("auto-upgrade")
-		fmt.Println("auto-upgrade enabled")
-	}
-
-	switch nodeType {
-	case "creator-node":
-		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
-		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
-			exitWithError("Error executing command:", err)
-		}
-	case "discovery-provider":
-		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
-		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
-			exitWithError("Error executing command:", err)
-		}
-		if network != "dev" {
-			audiusCli("launch-chain")
-		}
-	case "identity-service":
-		audiusCli("launch", "identity-service", "-y")
-	default:
-		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
-	}
 }
 
 func startDevnetDocker() {

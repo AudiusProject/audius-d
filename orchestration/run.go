@@ -27,14 +27,26 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 		RunNode(*config, dc.BaseServerConfig, override, cname, "discovery-provider", discoveryVolumes)
 	}
 	for cname, id := range config.IdentityService {
-		identityVolumes := []string{}
+		identityVolumes := []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
 		override := id.ToOverrideEnv(config.Network)
 		RunNode(*config, id.BaseServerConfig, override, cname, "identity-service", identityVolumes)
 	}
 }
 
-func RunDown(_ *conf.ContextConfig) {
-	runDownDocker()
+func RunDown(config *conf.ContextConfig) {
+	// easiest way
+	cnames := []string{"rm", "-f"}
+
+	for cname, _ := range config.CreatorNodes {
+		cnames = append(cnames, cname)
+	}
+	for cname, _ := range config.DiscoveryNodes {
+		cnames = append(cnames, cname)
+	}
+	for cname, _ := range config.IdentityService {
+		cnames = append(cnames, cname)
+	}
+	runCommand("docker", cnames...)
 	downDevnetDocker()
 }
 

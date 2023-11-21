@@ -21,19 +21,27 @@ Tag = "latest"
 
 [CreatorNodes.creator-1]
 Host = "http://localhost"
-HttpPort = 80
-HttpsPort = 443
+ExternalHttpPort = 80
+InternalHttpPort = 80
+ExternalHttpsPort = 443
+InternalHttpsPort = 443
 OperatorPrivateKey = "62ca4962f99a39b4a2c60a8402f60baea5437c275146abd90e0bfdcf0415184d"
 
 [DiscoveryNodes]
 
 [DiscoveryNodes.discovery-1]
 Host = "http://localhost"
-Port = 5000
+ExternalHttpPort = 5000
+InternalHttpPort = 5000
+ExternalHttpsPort = 5001
+InternalHttpsPort = 5001
 OperatorPrivateKey = ""
 
 [IdentityService]
 
 [IdentityService.identity-1]
 Host = "http://localhost"
-Port = 4000
+ExternalHttpPort = 7000
+InternalHttpPort = 7000
+ExternalHttpsPort = 7001
+InternalHttpsPort = 7001
