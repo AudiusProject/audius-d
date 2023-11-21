@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"bytes"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -38,4 +39,12 @@ func writeConfigToFile(confFilePath string, config interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func stringifyConfig(config interface{}) (string, error) {
+	buf := new(bytes.Buffer)
+	if err := toml.NewEncoder(buf).Encode(config); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }

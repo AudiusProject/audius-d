@@ -22,9 +22,8 @@ commands:
           name: standup audius node
           command: |
             cd ~/audius-d
-            mkdir ~/.audius
-            cp ~/audius-d/sample.audius.conf "$HOME/.audius/<< parameters.nodetype >>.conf"
-            audius-d-x86 -c "$HOME/.audius/<< parameters.nodetype >>.conf" -network=stage -node '<< parameters.nodetype >>'
+            audius-d-x86 config create-context ci -f templates/devnet.toml 
+            audius-d-x86
   standup-devnet:
     description: 'Stand up external dev chain containers for eth, sol, and acdc'
     steps:
