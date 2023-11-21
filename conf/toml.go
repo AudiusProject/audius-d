@@ -1,23 +1,41 @@
 package conf
 
-import "github.com/BurntSushi/toml"
+import (
+	"os"
+	"os/user"
+	"path/filepath"
 
-func ReadToml(filepath string) (*Config, error) {
-	var conf Config
-	_, err := toml.DecodeFile(filepath, &conf)
+	"github.com/BurntSushi/toml"
+)
 
+func getConfigBaseDir() (string, error) {
+	usr, err := user.Current()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-
-	return &conf, nil
+	confDir := filepath.Join(usr.HomeDir, ".audius")
+	return confDir, nil
 }
 
-// panics instead of returning error
-func ReadTomlUnsafe(filepath string) *Config {
-	toml, err := ReadToml(filepath)
-	if err != nil {
-		panic(err)
+func readConfigFromFile(confFilePath string, configTarget interface{}) error {
+	if _, err := os.Stat(confFilePath); err != nil {
+		return err
 	}
-	return toml
+	if _, err := toml.DecodeFile(confFilePath, configTarget); err != nil {
+		return err
+	}
+	return nil
+}
+
+func writeConfigToFile(confFilePath string, config interface{}) error {
+	file, err := os.OpenFile(confFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if err = toml.NewEncoder(file).Encode(config); err != nil {
+		return err
+	}
+	return nil
 }

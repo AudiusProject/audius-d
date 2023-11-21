@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/ethereum/go-ethereum v1.13.5
 	github.com/joho/godotenv v1.5.1
+	github.com/spf13/cobra v1.5.0
 )
 
 require (
@@ -31,6 +32,7 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/holiman/uint256 v1.2.3 // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/stretchr/testify v1.8.4
