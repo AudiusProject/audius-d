@@ -27,6 +27,16 @@ ExternalHttpsPort = 443
 InternalHttpsPort = 443
 OperatorPrivateKey = "62ca4962f99a39b4a2c60a8402f60baea5437c275146abd90e0bfdcf0415184d"
 
+# creator specific config
+DirTemplate = "/data/mediorum_dev_%d"
+DbUrlTemplate = "postgresql://postgres:postgres@db:5432/creator_node_%d"
+HostNameTemplate = "http://audius-protocol-creator-node-%d"
+IdentityService = "http://audius-protocol-identity-service-1"
+Web3EthProviderUrl = "http://eth-ganache:8545"                           # Used only in register script
+EthProviderUrl = "http://eth-ganache:8545"
+EthRegistryAddress = "${ETH_REGISTRY_ADDRESS}"
+
+
 [DiscoveryNodes]
 
 [DiscoveryNodes.discovery-1]
@@ -36,6 +46,29 @@ InternalHttpPort = 5000
 ExternalHttpsPort = 5001
 InternalHttpsPort = 5001
 OperatorPrivateKey = ""
+
+# discovery specific config
+AudiusWeb3Host = 'http://acdc-ganache:8545'
+AudiusWeb3EthProviderUrl = 'http://eth-ganache:8545'
+AudiusContractsRegistry = '${POA_REGISTRY_ADDRESS}'
+AudiusContractsEntityManagerAddress = '${ENTITY_MANAGER_ADDRESS}'
+AudiusEthContractsRegistry = '${ETH_REGISTRY_ADDRESS}'
+AudiusEthContractsToken = '${ETH_TOKEN_ADDRESS}'
+
+AudiusSolanaEndpoint = 'http://solana-test-validator:8899'
+AudiusSolanaTrackListenCountAddress = '${SOLANA_TRACK_LISTEN_COUNT_PUBLIC_KEY}'
+AudiusSolanaSignerGroupAddress = '${SOLANA_SIGNER_GROUP_PUBLIC_KEY}'
+AudiusSolanaUserBankProgramAddress = '${SOLANA_CLAIMABLE_TOKENS_PUBLIC_KEY}'
+AudiusSolanaWaudioMint = '${SOLANA_TOKEN_MINT_PUBLIC_KEY}'
+AudiusSolanaUsdcMint = '${SOLANA_USDC_TOKEN_MINT_PUBLIC_KEY}'
+AudiusSolanaRewardsManagerProgramAddress = '${SOLANA_REWARD_MANAGER_PUBLIC_KEY}'
+AudiusSolanaRewardsManagerAccount = '${SOLANA_REWARD_MANAGER_PDA_PUBLIC_KEY}'
+AudiusSolanaAnchorDataProgramId = '${SOLANA_AUDIUS_DATA_PUBLIC_KEY}'
+AudiusSolanaAnchorAdminStoragePublicKey = '${SOLANA_ADMIN_ACCOUNT_PUBLIC_KEY}'
+
+AudiusDiscprovDevMode = 'true'
+AudiusDiscprovLoglevel = 'debug'
+
 
 [IdentityService]
 
@@ -70,8 +103,8 @@ RedisPort = 6379
 AaoEndpoint = "http://anti-abuse-oracle:8000"
 AaoAddress = "${AAO_WALLET_ADDRESS}"
 
-Web3Provider = "http://poa-ganache:8545"
-SecondaryWeb3Provider = "http://poa-ganache:8545"
+Web3Provider = "http://acdc-ganache:8545"
+SecondaryWeb3Provider = "http://acdc-ganache:8545"
 RegistryAddress = "${POA_REGISTRY_ADDRESS}"
 EntityManagerAddress = "${ENTITY_MANAGER_ADDRESS}"
 OwnerWallet = "${POA_OWNER_WALLET}"
