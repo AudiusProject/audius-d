@@ -16,6 +16,18 @@ type OverrideEnv = map[string]string
 
 // deploys a server node regardless of type
 func RunNode(config conf.ContextConfig, serverConfig conf.BaseServerConfig, override OverrideEnv, containerName string, nodeType string, internalVolumes []string) error {
+	if isContainerRunning(containerName) {
+		fmt.Printf("container %s already running\n", containerName)
+		return nil
+	}
+
+	if isContainerNameInUse(containerName) {
+		fmt.Printf("container %s already exists, removing and starting with current config\n", containerName)
+		if err := removeContainerByName(containerName); err != nil {
+			return err
+		}
+	}
+
 	imageTag := fmt.Sprintf("audius/audius-docker-compose:%s", config.Network.Tag)
 	externalVolume := fmt.Sprintf("audius-d-%s", containerName)
 	httpPorts := PortMapping(serverConfig.ExternalHttpPort, serverConfig.InternalHttpPort)
@@ -49,12 +61,66 @@ func RunNode(config conf.ContextConfig, serverConfig conf.BaseServerConfig, over
 		return err
 	}
 
+	// if not testnet (stage) or mainnet (prod), remove the .env files
+	// and just rely on override
+	if config.Network.Name != "stage" && config.Network.Name != "prod" {
+		rmstage := fmt.Sprintf(`docker exec %s sh -c "cp %s/stage.env %s/unused.stage.env && echo '' > %s/stage.env"`, containerName, nodeType, nodeType, nodeType)
+		if err := Sh(rmstage); err != nil {
+			return err
+		}
+
+		rmprod := fmt.Sprintf(`docker exec %s sh -c "cp %s/prod.env %s/unused.prod.env && echo '' > %s/prod.env"`, containerName, nodeType, nodeType, nodeType)
+		if err := Sh(rmprod); err != nil {
+			return err
+		}
+		fmt.Println("set testnet and mainnet configs to be unused, relying purely on override.env")
+	}
+
 	// assemble inner command and run
 	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, containerName, nodeType)
 	if err := Sh(startCmd); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func isContainerRunning(containerName string) bool {
+	cmd := exec.Command("docker", "ps", "-q", "-f", "name="+containerName)
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	return len(strings.TrimSpace(string(output))) > 0
+}
+
+func isContainerNameInUse(containerName string) bool {
+	cmd := exec.Command("docker", "ps", "-a", "--format", "{{.Names}}")
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	// Split the output into individual container names
+	containers := strings.Split(strings.TrimSpace(string(output)), "\n")
+
+	// Check if the given container name exists in the list
+	for _, name := range containers {
+		if name == containerName {
+			return true
+		}
+	}
+	return false
+}
+
+func removeContainerByName(containerName string) error {
+	cmd := exec.Command("docker", "rm", "-f", containerName)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

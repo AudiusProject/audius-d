@@ -93,12 +93,10 @@ func SetContext(ctxName string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(ctxDir)
 	confBaseDir, err := getConfigBaseDir()
 	if err != nil {
 		return err
 	}
-	fmt.Println(confBaseDir)
 
 	// verify context to set to actually exists
 	if _, err := os.Stat(filepath.Join(ctxDir, ctxName)); os.IsNotExist(err) {

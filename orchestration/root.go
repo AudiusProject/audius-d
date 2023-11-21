@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"github.com/AudiusProject/audius-d/conf"
+	"github.com/common-nighthawk/go-figure"
 	"github.com/spf13/cobra"
 )
 
@@ -10,6 +11,8 @@ var (
 		Use:   "up",
 		Short: "Uses the currently enabled context to spin up audius nodes.",
 		Run: func(cmd *cobra.Command, args []string) {
+			audius := figure.NewColorFigure("Audius", "starwars", "purple", true)
+			audius.Print()
 			RunAudiusWithConfig(cmd.Context().Value(conf.ContextKey).(*conf.ContextConfig))
 		},
 	}

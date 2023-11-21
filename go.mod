@@ -3,6 +3,7 @@ module github.com/AudiusProject/audius-d
 go 1.21
 
 require (
+	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/ethereum/go-ethereum v1.13.5
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.5.0

@@ -1,6 +1,7 @@
 title = "Default Devnet Configuration"
 description = """
 defaults for an isolated devnet configuration of audius protocol with audius-d
+values taken straight from audius-docker-compose
 """
 
 [Network]
