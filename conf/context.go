@@ -121,18 +121,6 @@ func SetContext(ctxName string) error {
 	return nil
 }
 
-func readConfigFromContext(contextName string, configTarget *ContextConfig) error {
-	contextBaseDir, err := getContextBaseDir()
-	if err != nil {
-		return err
-	}
-	err = readConfigFromFile(filepath.Join(contextBaseDir, contextName), configTarget)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func writeConfigToContext(ctxName string, ctxConfig *ContextConfig) error {
 	ctxBaseDir, err := getContextBaseDir()
 	if err != nil {
