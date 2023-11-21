@@ -93,11 +93,14 @@ func SetContext(ctxName string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(ctxDir)
 	confBaseDir, err := getConfigBaseDir()
 	if err != nil {
 		return err
 	}
+	fmt.Println(confBaseDir)
 
+	// verify context to set to actually exists
 	if _, err := os.Stat(filepath.Join(ctxDir, ctxName)); os.IsNotExist(err) {
 		fmt.Printf("No context named %s\n", ctxName)
 		return err
@@ -107,6 +110,10 @@ func SetContext(ctxName string) error {
 	if err = readExecutionConfig(&execConf); err != nil {
 		return err
 	}
+
+	// set name to current context
+	execConf.CurrentContext = ctxName
+
 	execConfFilePath := filepath.Join(confBaseDir, "audius")
 	if err = writeConfigToFile(execConfFilePath, &execConf); err != nil {
 		return err
@@ -157,15 +164,7 @@ func createDefaultContext(contextFilePath string) error {
 		Network: NetworkConfig{
 			Name: "stage",
 		},
-		CreatorNodes: map[string]CreatorConfig{
-			"creator-node-1": CreatorConfig{
-				BaseServerConfig{
-					Port: 80,
-					Host: "http://localhost",
-					Tag:  "stage",
-				},
-			},
-		},
+		CreatorNodes: map[string]CreatorConfig{},
 	}
 
 	file, err := os.OpenFile(contextFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)

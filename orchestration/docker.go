@@ -8,8 +8,59 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/AudiusProject/audius-d/conf"
 	"github.com/joho/godotenv"
 )
+
+type OverrideEnv = map[string]string
+
+// deploys a server node regardless of type
+func RunNode(config conf.ContextConfig, serverConfig conf.BaseServerConfig, override OverrideEnv, containerName string, nodeType string, internalVolumes []string) error {
+	imageTag := fmt.Sprintf("audius/audius-docker-compose:%s", config.Network.Tag)
+	externalVolume := fmt.Sprintf("audius-d-%s", containerName)
+	port := serverConfig.Port
+	formattedInternalVolumes := " -v " + strings.Join(internalVolumes, " -v ")
+
+	// assemble wrapper command and run
+	// todo: handle https port
+	upCmd := fmt.Sprintf("docker run --privileged -d -v %s:/var/lib/docker -p %d:80 -p %d:443 --name %s %s %s", externalVolume, port, 443, containerName, formattedInternalVolumes, imageTag)
+	if err := Sh(upCmd); err != nil {
+		return err
+	}
+
+	// initialize override.env file
+	localOverridePath := fmt.Sprintf("./%s-override.env", containerName)
+	if err := godotenv.Write(override, localOverridePath); err != nil {
+		return err
+	}
+
+	envCmd := fmt.Sprintf("docker cp %s %s:/root/audius-docker-compose/%s/override.env", localOverridePath, containerName, nodeType)
+	if err := Sh(envCmd); err != nil {
+		return err
+	}
+
+	cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, containerName)
+	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
+		return err
+	}
+
+	if err := os.Remove(localOverridePath); err != nil {
+		return err
+	}
+
+	// assemble inner command and run
+	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, containerName, nodeType)
+	if err := Sh(startCmd); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Sh(cmd string) error {
+	fmt.Println(cmd)
+	return runCommand("/bin/sh", "-c", cmd)
+}
 
 func runNodeDocker(nodeType string, network string, imageTag string, autoUpgrade bool) {
 	fmt.Printf("standing up %s on network %s\n", nodeType, network)

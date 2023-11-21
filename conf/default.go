@@ -18,22 +18,22 @@ var defaultMainnetRaw []byte
 
 // function to parse the embed structs
 // and ensure the parsing only happens once
-func readDefault(def []byte) Config {
-	return sync.OnceValue(func() Config {
-		conf := &Config{}
+func readDefault(def []byte) ContextConfig {
+	return sync.OnceValue(func() ContextConfig {
+		conf := &ContextConfig{}
 		toml.Unmarshal(def, conf)
 		return *conf
 	})()
 }
 
-func GetDevnetDefaults() Config {
+func GetDevnetDefaults() ContextConfig {
 	return readDefault(defaultDevnetRaw)
 }
 
-func GetTestnetDefaults() Config {
+func GetTestnetDefaults() ContextConfig {
 	return readDefault(defaultTestnetRaw)
 }
 
-func GetMainnetDefaults() Config {
+func GetMainnetDefaults() ContextConfig {
 	return readDefault(defaultMainnetRaw)
 }
