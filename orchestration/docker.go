@@ -3,6 +3,7 @@ package orchestration
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -71,10 +72,6 @@ func startDevnetDocker() {
 	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "up", "-d")
 }
 
-func runDownDocker() {
-	runCommand("docker", "rm", "-f", "creator-node", "discovery-provider", "identity-service")
-}
-
 func downDevnetDocker() {
 	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "down")
 }
@@ -85,7 +82,7 @@ func audiusCli(args ...string) {
 	cmds := append(audCli, args...)
 	err := runCommand("docker", cmds...)
 	if err != nil {
-		exitWithError("Error with audius-cli:", err)
+		log.Fatal(err)
 	}
 }
 
@@ -95,23 +92,9 @@ func dockerExec(arg ...string) string {
 	cmds := append(baseCmd, arg...)
 	out, err := exec.Command("docker", cmds...).Output()
 	if err != nil {
-		exitWithError("Error with cmd:", err, cmds)
+		log.Fatal(err)
 	}
 	return string(out)
-}
-
-func awaitDockerStart() {
-	nodeType := ""
-	cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, nodeType)
-	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
-		exitWithError("Error awaiting docker start:", err)
-	}
-
-}
-
-func exitWithError(msg ...interface{}) {
-	fmt.Println(msg...)
-	os.Exit(1)
 }
 
 // generates relevant nethermind chain configuration files
@@ -126,7 +109,7 @@ func configureChainSpec(nodeType string, network string) {
 	networkEnv := dockerExec("cat", networkEnvPath)
 	networkEnvMap, err := godotenv.Unmarshal(networkEnv)
 	if err != nil {
-		exitWithError("Error unmarshalling network env:", err)
+		log.Fatal(err)
 	}
 
 	signers := networkEnvMap["audius_genesis_signers"]
@@ -137,7 +120,7 @@ func configureChainSpec(nodeType string, network string) {
 	var specData map[string]interface{}
 	err = json.Unmarshal([]byte(specInput), &specData)
 	if err != nil {
-		exitWithError("Unmarshall error:", err)
+		log.Fatal(err)
 	}
 
 	networkId := specData["params"].(map[string]interface{})["networkID"].(string)
@@ -147,44 +130,44 @@ func configureChainSpec(nodeType string, network string) {
 
 	specOutput, err := json.MarshalIndent(specData, "", "    ")
 	if err != nil {
-		exitWithError("Error marshalling specData:", err)
+		log.Fatal(err)
 	}
 
 	peersStr := networkEnvMap["audius_static_nodes"]
 	peers := strings.Split(peersStr, ",")
 	peersOutput, err := json.MarshalIndent(peers, "", "    ")
 	if err != nil {
-		exitWithError("Error marshalling peers output:", err)
+		log.Fatal(err)
 	}
 
 	err = os.WriteFile("spec.json", specOutput, 0644)
 	if err != nil {
-		exitWithError("Error writing spec", err)
+		log.Fatal(err)
 	}
 
 	err = os.WriteFile("static-nodes.json", peersOutput, 0644)
 	if err != nil {
-		exitWithError("Error writing static nodes", err)
+		log.Fatal(err)
 	}
 
 	// docker cp ./spec.json creator-node:/root/audius-docker-compose/discovery-provider/chain
 	err = exec.Command("docker", "cp", "./spec.json", fmt.Sprintf("%s:/root/audius-docker-compose/discovery-provider/chain", nodeType)).Run()
 	if err != nil {
-		exitWithError("Error with spec docker cp:", err)
+		log.Fatal(err)
 	}
 
 	err = exec.Command("docker", "cp", "./static-nodes.json", fmt.Sprintf("%s:/root/audius-docker-compose/discovery-provider/chain", nodeType)).Run()
 	if err != nil {
-		exitWithError("Error with static nodes docker cp:", err)
+		log.Fatal(err)
 	}
 
 	// cleanup, remove temp files from filesystem
 	err = os.Remove("spec.json")
 	if err != nil {
-		exitWithError(err)
+		log.Fatal(err)
 	}
 	err = os.Remove("static-nodes.json")
 	if err != nil {
-		exitWithError(err)
+		log.Fatal(err)
 	}
 }
