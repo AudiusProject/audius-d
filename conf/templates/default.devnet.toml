@@ -45,3 +45,52 @@ ExternalHttpPort = 7000
 InternalHttpPort = 7000
 ExternalHttpsPort = 7001
 InternalHttpsPort = 7001
+
+# identity specific config
+LogLevel = "debug"
+MinimumBalance = 1
+MinimumRelayerBalance = 1
+MinimumFunderBalance = 1
+
+RelayerPrivateKey = "${POA_RELAYER_WALLET_1_PRIVATE_KEY}"
+RelayerPublicKey = "${POA_RELAYER_WALLET_1_ADDRESS}"
+RelayerWallets = "${POA_RELAYER_WALLETS}"
+
+EthFunderAddress = "0xaaaa90Fc2bfa70028D6b444BB9754066d9E2703b"
+EthRelayerWallets = "${ETH_RELAYER_WALLETS}"
+
+UserVerifierPrivateKey = "ebba299e6163ff3208de4e82ce7db09cf7e434847b5bdab723af96ae7c763a0e"
+UserVerifierPublicKey = "0xbbbb93A6B3A1D6fDd27909729b95CCB0cc9002C0"
+
+DbUrl = "postgres://postgres:postgres@db:5432/identity_service"
+
+RedisHost = "identity-service-redis"
+RedisPort = 6379
+
+AaoEndpoint = "http://anti-abuse-oracle:8000"
+AaoAddress = "${AAO_WALLET_ADDRESS}"
+
+Web3Provider = "http://poa-ganache:8545"
+SecondaryWeb3Provider = "http://poa-ganache:8545"
+RegistryAddress = "${POA_REGISTRY_ADDRESS}"
+EntityManagerAddress = "${ENTITY_MANAGER_ADDRESS}"
+OwnerWallet = "${POA_OWNER_WALLET}"
+
+EthProviderUrl = "http://eth-ganache:8545"
+EthTokenAddress = "${ETH_TOKEN_ADDRESS}"
+EthRegistryAddress = "${ETH_REGISTRY_ADDRESS}"
+EthOwnerWallet = "${ETH_OWNER_WALLET}"
+
+SolanaEndpoint = "http://solana-test-validator:8899"
+SolanaTrackListenCountAddress = "${SOLANA_TRACK_LISTEN_COUNT_PUBLIC_KEY}"
+SolanaAudiusEthRegistryAddress = "${SOLANA_AUDIUS_ETH_REGISTRY_PUBLIC_KEY}"
+SolanaValidSigner = "${SOLANA_VALID_SIGNER_PUBLIC_KEY}"
+SolanaFeePayerWallets = '[{"privateKey":${SOLANA_FEEPAYER_SECRET_KEY}}]'
+SolanaSignerPrivateKey = "${ETH_VALID_SIGNER_PRIVATE_KEY}"
+SolanaMintAddress = "${SOLANA_TOKEN_MINT_PUBLIC_KEY}"
+SolanaUSDCMintAddress = "${SOLANA_USDC_TOKEN_MINT_PUBLIC_KEY}"
+SolanaClaimableTokenProgramAddress = "${SOLANA_CLAIMABLE_TOKENS_PUBLIC_KEY}"
+SolanaRewardsManagerProgramId = "${SOLANA_REWARD_MANAGER_PUBLIC_KEY}"
+SolanaRewardsManagerProgramPDA = "${SOLANA_REWARD_MANAGER_PDA_PUBLIC_KEY}"
+SolanaRewardsManagerTokenPDA = "${SOLANA_REWARD_MANAGER_TOKEN_PDA_PUBLIC_KEY}"
+SolanaAudiusAnchorDataProgramId = "${SOLANA_AUDIUS_DATA_PUBLIC_KEY}"
