@@ -37,13 +37,13 @@ func RunDown(config *conf.ContextConfig) {
 	// easiest way
 	cnames := []string{"rm", "-f"}
 
-	for cname, _ := range config.CreatorNodes {
+	for cname := range config.CreatorNodes {
 		cnames = append(cnames, cname)
 	}
-	for cname, _ := range config.DiscoveryNodes {
+	for cname := range config.DiscoveryNodes {
 		cnames = append(cnames, cname)
 	}
-	for cname, _ := range config.IdentityService {
+	for cname := range config.IdentityService {
 		cnames = append(cnames, cname)
 	}
 	runCommand("docker", cnames...)
