@@ -2,6 +2,7 @@ package conf
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -44,7 +45,7 @@ func ReadOrCreateContextConfig() (*ContextConfig, error) {
 	if _, err = os.Stat(contextFilePath); os.IsNotExist(err) {
 		fmt.Printf("Context '%s' not found, creating default.\n", execConf.CurrentContext)
 		createDefaultContext(contextFilePath)
-		err = SetContext("default")
+		err = UseContext("default")
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +89,26 @@ func GetContext() (string, error) {
 	return execConf.CurrentContext, nil
 }
 
-func SetContext(ctxName string) error {
+func GetContexts() ([]string, error) {
+	ctxDir, err := getContextBaseDir()
+	if err != nil {
+		return nil, err
+	}
+	files, err := ioutil.ReadDir(ctxDir)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []string
+	for _, file := range files {
+		if !file.IsDir() {
+			ret = append(ret, file.Name())
+		}
+	}
+	return ret, nil
+}
+
+func UseContext(ctxName string) error {
 	ctxDir, err := getContextBaseDir()
 	if err != nil {
 		return err
@@ -101,7 +121,7 @@ func SetContext(ctxName string) error {
 	// verify context to set to actually exists
 	if _, err := os.Stat(filepath.Join(ctxDir, ctxName)); os.IsNotExist(err) {
 		fmt.Printf("No context named %s\n", ctxName)
-		return err
+		return nil
 	}
 
 	var execConf ExecutionConfig
@@ -119,6 +139,22 @@ func SetContext(ctxName string) error {
 	return nil
 }
 
+func DeleteContext(ctxName string) error {
+	ctxDir, err := getContextBaseDir()
+	if err != nil {
+		return err
+	}
+	ctxFilepath := filepath.Join(ctxDir, ctxName)
+	if _, err := os.Stat(ctxFilepath); os.IsNotExist(err) {
+		fmt.Printf("No context named %s\n", ctxName)
+		return nil
+	}
+	if err := os.Remove(ctxFilepath); err != nil {
+		return err
+	}
+	return nil
+}
+
 func writeConfigToContext(ctxName string, ctxConfig *ContextConfig) error {
 	ctxBaseDir, err := getContextBaseDir()
 	if err != nil {
@@ -129,10 +165,15 @@ func writeConfigToContext(ctxName string, ctxConfig *ContextConfig) error {
 	return err
 }
 
-func createContextFromTemplate(name string, templateFilePath string) {
+func createContextFromTemplate(name string, templateFilePath string) error {
 	var ctxConfig ContextConfig
-	readConfigFromFile(templateFilePath, &ctxConfig)
-	writeConfigToContext(name, &ctxConfig)
+	if err := readConfigFromFile(templateFilePath, &ctxConfig); err != nil {
+		return err
+	}
+	if err := writeConfigToContext(name, &ctxConfig); err != nil {
+		return err
+	}
+	return nil
 }
 
 func createExecutionConfig(confFilePath string) error {
