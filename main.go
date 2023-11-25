@@ -12,8 +12,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/joho/godotenv"
 	"github.com/AudiusProject/audius-d/register"
+	"github.com/joho/godotenv"
 )
 
 //go:embed sample.audius.conf
@@ -74,6 +74,9 @@ func main() {
 			exitWithError("Unsupported node type for registration:", nodeType)
 		}
 	default:
+		if cmdName != "up" {
+			exitWithError("Unsupported command:", cmdName)
+		}
 		readConfigFile()
 		fmt.Printf("standing up %s on network %s\n", nodeType, network)
 		runUp()
@@ -128,7 +131,7 @@ func runUp() {
 	}
 
 	// volume create is idempotent
-	if err := runCommand("/bin/sh", "-c", "docker volume create audius-d"); err != nil {
+	if err := runCommand("/bin/sh", "-c", "docker volume create audius-d-docker"); err != nil {
 		exitWithError("Error executing command:", err)
 	}
 
@@ -138,7 +141,7 @@ func runUp() {
 	}
 
 	var cmd string
-	baseCmd := fmt.Sprintf(`docker run --privileged -d -v audius-d:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
+	baseCmd := fmt.Sprintf(`docker run --privileged -d -v audius-d-docker:/var/lib/docker/overlay2 %s -p %d:80 -p %d:443`, volumeFlag, port, tlsPort)
 
 	switch nodeType {
 	case "creator-node":

@@ -51,3 +51,16 @@ builds required go binaries that are (for now) committed to this repo on the `bi
 ```
 make
 ```
+
+ ## dev
+
+ for green https for localhost. add caddy to your host trusted certificate authorities.
+
+ ```
+ docker exec creator-node sh -c "docker exec caddy cat /data/caddy/pki/authorities/local/root.crt" > caddy-root.crt
+
+ sudo security add-trusted-cert -d -r trustRoot -k "/Library/Keychains/System.keychain" "$(pwd)/caddy-root.crt"
+
+ echo $(docker exec creator-node sh -c "docker exec caddy cat /data/caddy/pki/authorities/local/root.crt") | sudo security add-trusted-cert -d -r trustRoot -k "/Library/Keychains/System.keychain" /dev/stdin
+ ```
+ 
