@@ -1,14 +1,14 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { EnvVarsProvider } from './providers/EnvVarsProvider.tsx'
-import AppWithProviders from './AppWithProviders.tsx'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { EnvVarsProvider } from "./providers/EnvVarsProvider.tsx";
+import AppWithProviders from "./AppWithProviders.tsx";
 
-import './index.css'
+import "./index.css";
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <EnvVarsProvider>
       <AppWithProviders />
     </EnvVarsProvider>
-  </React.StrictMode>
-)
+  </React.StrictMode>,
+);

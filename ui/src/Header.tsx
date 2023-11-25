@@ -1,22 +1,27 @@
-import { useState } from 'react'
-import { Dialog } from '@headlessui/react'
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import { useState } from "react";
+import { Dialog } from "@headlessui/react";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 
 // TODO
-const navigation = [
-  { name: 'Uptime', href: '#' },
-]
+const navigation = [{ name: "Uptime", href: "#" }];
 
 const Header = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <header className="bg-white">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
+      <nav
+        className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8"
+        aria-label="Global"
+      >
         <div className="flex flex-1">
           <div className="hidden lg:flex lg:gap-x-12">
             {navigation.map((item) => (
-              <a key={item.name} href={item.href} className="text-sm font-semibold leading-6 text-gray-900">
+              <a
+                key={item.name}
+                href={item.href}
+                className="text-sm font-semibold leading-6 text-gray-900"
+              >
                 {item.name}
               </a>
             ))}
@@ -34,10 +39,19 @@ const Header = () => {
         </div>
         <a href="#" className="-m-1.5 p-1.5">
           <span className="sr-only">Audius d</span>
-          <img className="h-8 w-auto" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600" alt="" />
+          <img
+            className="h-8 w-auto"
+            src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600"
+            alt=""
+          />
         </a>
       </nav>
-      <Dialog as="div" className="lg:hidden" open={mobileMenuOpen} onClose={setMobileMenuOpen}>
+      <Dialog
+        as="div"
+        className="lg:hidden"
+        open={mobileMenuOpen}
+        onClose={setMobileMenuOpen}
+      >
         <div className="fixed inset-0 z-10" />
         <Dialog.Panel className="fixed inset-y-0 left-0 z-10 w-full overflow-y-auto bg-white px-6 py-6">
           <div className="flex items-center justify-between">
@@ -60,7 +74,10 @@ const Header = () => {
               />
             </a>
             <div className="flex flex-1 justify-end">
-              <a href="#" className="text-sm font-semibold leading-6 text-gray-900">
+              <a
+                href="#"
+                className="text-sm font-semibold leading-6 text-gray-900"
+              >
                 Log in <span aria-hidden="true">&rarr;</span>
               </a>
             </div>
@@ -79,7 +96,7 @@ const Header = () => {
         </Dialog.Panel>
       </Dialog>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;
