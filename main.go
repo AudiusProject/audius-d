@@ -7,7 +7,7 @@ import (
 
 	"github.com/AudiusProject/audius-d/conf"
 	"github.com/AudiusProject/audius-d/em"
-	"github.com/AudiusProject/audius-d/hashid"
+	"github.com/AudiusProject/audius-d/hashes"
 	"github.com/AudiusProject/audius-d/orchestration"
 	"github.com/AudiusProject/audius-d/register"
 	"github.com/spf13/cobra"
@@ -28,7 +28,7 @@ func main() {
 	rootCmd.AddCommand(register.RootCmd)
 	rootCmd.AddCommand(conf.RootCmd)
 	rootCmd.AddCommand(em.EmCmd)
-	rootCmd.AddCommand(hashid.HashCmd)
+	rootCmd.AddCommand(hashes.HashCmd)
 	rootCmd.Execute()
 }
 

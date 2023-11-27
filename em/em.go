@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/AudiusProject/audius-d/acdc"
-	"github.com/AudiusProject/audius-d/hashid"
+	"github.com/AudiusProject/audius-d/hashes"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
@@ -116,12 +116,12 @@ func sendEmTx(client *ethclient.Client, actorIdEnc string, action string, entity
 	}
 	signerAddress := crypto.PubkeyToAddress(privateKey.PublicKey).Hex()
 
-	actorId, err := hashid.MaybeDecode(actorIdEnc)
+	actorId, err := hashes.MaybeDecode(actorIdEnc)
 	if err != nil {
 		log.Fatal("invalid --actor", actorId, err)
 	}
 
-	entityId, err := hashid.MaybeDecode(entityIdEnc)
+	entityId, err := hashes.MaybeDecode(entityIdEnc)
 	if err != nil {
 		log.Fatal("invalid --id", actorId, err)
 	}

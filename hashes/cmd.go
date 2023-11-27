@@ -1,30 +1,13 @@
-package hashid
+package hashes
 
 import (
-	"errors"
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 
-	"github.com/speps/go-hashids/v2"
 	"github.com/spf13/cobra"
 )
-
-var (
-	hasher  *hashids.HashID
-	HashCmd *cobra.Command
-)
-
-func init() {
-	initHasher()
-	initCmd()
-}
-
-func initHasher() {
-	hd := hashids.NewData()
-	hd.Salt = "azowernasdfoia"
-	hd.MinLength = 5
-	hasher, _ = hashids.NewWithData(hd)
-}
 
 func initCmd() {
 	HashCmd = &cobra.Command{
@@ -60,28 +43,24 @@ func initCmd() {
 				}
 			},
 		},
+		&cobra.Command{
+			Use: "cid",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				if len(args) != 1 {
+					log.Fatal("filename required")
+				}
+				file, err := os.Open(args[0])
+				if err != nil {
+					return err
+				}
+				defer file.Close()
+				cid, err := ComputeFileCID(file)
+				if err != nil {
+					return err
+				}
+				fmt.Println("cid =", cid)
+				return nil
+			},
+		},
 	)
-}
-
-func Encode(id int) (string, error) {
-	return hasher.Encode([]int{id})
-}
-
-func Decode(hid string) (int, error) {
-	ids, err := hasher.DecodeWithError(hid)
-	if err != nil {
-		return 0, err
-	}
-	if len(ids) < 1 {
-		return 0, errors.New("invalid hash")
-	}
-	return ids[0], nil
-}
-
-func MaybeDecode(hid string) (int, error) {
-	id, err := Decode(hid)
-	if err != nil {
-		id, err = strconv.Atoi(hid)
-	}
-	return id, err
 }
