@@ -8,8 +8,67 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/AudiusProject/audius-d/conf"
 	"github.com/joho/godotenv"
 )
+
+type OverrideEnv = map[string]string
+
+// deploys a server node generically
+func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, override OverrideEnv, containerName string, nodeType string, internalVolumes []string) error {
+	if isContainerRunning(containerName) {
+		fmt.Printf("container %s already running\n", containerName)
+		return nil
+	}
+
+	if isContainerNameInUse(containerName) {
+		fmt.Printf("container %s already exists, removing and starting with current config\n", containerName)
+		if err := removeContainerByName(containerName); err != nil {
+			return err
+		}
+	}
+
+	imageTag := fmt.Sprintf("audius/audius-docker-compose:%s", nconf.Tag)
+	externalVolume := fmt.Sprintf("audius-d-%s", containerName)
+	httpPorts := fmt.Sprintf("-p %d:%d", serverConfig.ExternalHttpPort, serverConfig.InternalHttpPort)
+	httpsPorts := fmt.Sprintf("-p %d:%d", serverConfig.ExternalHttpsPort, serverConfig.InternalHttpsPort)
+	formattedInternalVolumes := " -v " + strings.Join(internalVolumes, " -v ")
+
+	// assemble wrapper command and run
+	// todo: handle https port
+	upCmd := fmt.Sprintf("docker run --privileged -d -v %s:/var/lib/docker %s %s --name %s %s %s", externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
+	if err := Sh(upCmd); err != nil {
+		return err
+	}
+
+	// initialize override.env file
+	localOverridePath := fmt.Sprintf("./%s-override.env", containerName)
+	if err := godotenv.Write(override, localOverridePath); err != nil {
+		return err
+	}
+
+	envCmd := fmt.Sprintf("docker cp %s %s:/root/audius-docker-compose/%s/override.env", localOverridePath, containerName, nodeType)
+	if err := Sh(envCmd); err != nil {
+		return err
+	}
+
+	cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, containerName)
+	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
+		return err
+	}
+
+	if err := os.Remove(localOverridePath); err != nil {
+		return err
+	}
+
+	// assemble inner command and run
+	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, containerName, nodeType)
+	if err := Sh(startCmd); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func runNodeDocker(nodeType string, network string, imageTag string, autoUpgrade bool) {
 	fmt.Printf("standing up %s on network %s\n", nodeType, network)
@@ -90,6 +149,50 @@ func runNodeDocker(nodeType string, network string, imageTag string, autoUpgrade
 	default:
 		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
+}
+
+func Sh(cmd string) error {
+	fmt.Println(cmd)
+	return runCommand("/bin/sh", "-c", cmd)
+}
+
+func isContainerRunning(containerName string) bool {
+	cmd := exec.Command("docker", "ps", "-q", "-f", "name="+containerName)
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	return len(strings.TrimSpace(string(output))) > 0
+}
+
+func isContainerNameInUse(containerName string) bool {
+	cmd := exec.Command("docker", "ps", "-a", "--format", "{{.Names}}")
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	// Split the output into individual container names
+	containers := strings.Split(strings.TrimSpace(string(output)), "\n")
+
+	// Check if the given container name exists in the list
+	for _, name := range containers {
+		if name == containerName {
+			return true
+		}
+	}
+	return false
+}
+
+func removeContainerByName(containerName string) error {
+	cmd := exec.Command("docker", "rm", "-f", containerName)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func startDevnetDocker() {

@@ -1,5 +1,7 @@
 package conf
 
+import "fmt"
+
 type ExecutionConfig struct {
 	ConfigVersion  string
 	CurrentContext string
@@ -10,7 +12,7 @@ type ContextConfig struct {
 	Network         NetworkConfig
 	CreatorNodes    map[string]CreatorConfig
 	DiscoveryNodes  map[string]DiscoveryConfig
-	IdentityService IdentityConfig
+	IdentityService map[string]IdentityConfig
 }
 
 // base structure that all server types need
@@ -18,24 +20,20 @@ type BaseServerConfig struct {
 	// port that will be exposed via audius-docker-compose
 	// i.e. what you would curl in a http://{host}:{port}/health_check
 	// defaults to port 80
-	Port uint
-	Host string
+	InternalHttpPort  uint
+	ExternalHttpPort  uint
+	InternalHttpsPort uint
+	ExternalHttpsPort uint
+	Host              string
 
 	// the tag that will be pulled from dockerhub
 	// "latest", "stage", "prod", etc may have specific behavior
 	// git hashes are also eligible
 	Tag string
 
-	// the one key to rule them all
-	OperatorPrivateKey string
-
-	// currently only eligible on devnet
-	// will automatically register the node if set to true
-	Register bool
-
-	// will query `http://{host}:{port}/health_check` until
-	// a 2XX response is received,
-	AwaitHealthy bool
+	OperatorPrivateKey    string
+	OperatorWallet        string
+	OperatorRewardsWallet string
 }
 
 type CreatorConfig struct {
@@ -43,14 +41,42 @@ type CreatorConfig struct {
 	// creator specific stuff here
 }
 
+func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
+	overrideEnv := make(map[string]string)
+
+	overrideEnv["creatorNodeEndpoint"] = config.Host
+	overrideEnv["delegateOwnerWallet"] = config.OperatorWallet
+	overrideEnv["delegatePrivateKey"] = config.OperatorPrivateKey
+	overrideEnv["spOwnerWallet"] = config.OperatorRewardsWallet
+
+	return overrideEnv
+}
+
 type DiscoveryConfig struct {
 	BaseServerConfig
-	// discovery specific stuff here
+}
+
+func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
+	overrideEnv := make(map[string]string)
+
+	overrideEnv["audius_discprov_url"] = config.Host
+	overrideEnv["audius_delegate_owner_wallet"] = config.OperatorWallet
+	overrideEnv["audius_delegate_private_key"] = config.OperatorPrivateKey
+
+	return overrideEnv
 }
 
 type IdentityConfig struct {
 	BaseServerConfig
 	// identity specific stuff here
+}
+
+func (config *IdentityConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
+	overrideEnv := make(map[string]string)
+
+	fmt.Println("warning: identity overrides not implemented yet")
+
+	return overrideEnv
 }
 
 type NetworkConfig struct {
@@ -75,4 +101,8 @@ type NetworkConfig struct {
 	SolanaMainnetPort uint
 
 	Tag string
+}
+
+type NodeConfig interface {
+	ToOverrideEnv(nc NetworkConfig) []byte
 }
