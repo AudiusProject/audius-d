@@ -106,53 +106,6 @@ jobs:
             - bin/audius-d-arm
             - bin/audius-d-x86
 
-
-  test-creator-node:
-    machine:
-      image: ubuntu-2204:current
-    resource_class: large
-    steps:
-      - checkout:
-          path: ~/audius-d
-      - attach_workspace:
-          at: ~/audius-d
-      - configure-path
-      - standup-node:
-          nodetype: 'creator-node'
-      - basic-health-check
-          
-  test-discovery-provider:
-    machine:
-      image: ubuntu-2204:current
-    resource_class: large
-    steps:
-      - checkout:
-          path: ~/audius-d
-      - attach_workspace:
-          at: ~/audius-d
-      - configure-path
-      - standup-node:
-          nodetype: 'discovery-provider'
-      - basic-health-check:
-          port: 5000
-          jqkey: '.data.discovery_provider_healthy'
-
-  test-identity-service:
-    machine:
-      image: ubuntu-2204:current
-    resource_class: large
-    steps:
-      - checkout:
-          path: ~/audius-d
-      - attach_workspace:
-          at: ~/audius-d
-      - configure-path
-      - standup-node:
-          nodetype: 'identity-service'
-      - basic-health-check:
-          port: 7000
-          jqkey: '.healthy'
-
   test-devnet-deps:
     machine:
       image: ubuntu-2204:current
@@ -274,33 +227,6 @@ workflows:
               ignore:
                 - main
                 - bin
-      # - test-creator-node:
-      #     context: github
-      #     requires:
-      #       - build-job
-      #     filters:
-      #       branches:
-      #         ignore:
-      #           - main
-      #           - bin
-      # - test-discovery-provider:
-      #     context: github
-      #     requires:
-      #       - build-job
-      #     filters:
-      #       branches:
-      #         ignore:
-      #           - main
-      #           - bin
-      # - test-identity-service:
-      #     context: github
-      #     requires:
-      #       - build-job
-      #     filters:
-      #       branches:
-      #         ignore:
-      #           - main
-      #           - bin
       - test-devnet-deps:
           context: github
           requires:
@@ -327,30 +253,15 @@ workflows:
             branches:
               only:
                 - main
-      - test-creator-node:
+      - test-ci-stage:
           context: github
           requires:
             - build-job
           filters:
             branches:
-              only:
+              ignore:
                 - main
-      - test-discovery-provider:
-          context: github
-          requires:
-            - build-job
-          filters:
-            branches:
-              only:
-                - main
-      - test-identity-service:
-          context: github
-          requires:
-            - build-job
-          filters:
-            branches:
-              only:
-                - main
+                - bin
       - test-devnet-deps:
           context: github
           requires:
@@ -362,9 +273,7 @@ workflows:
       - publish-job:
           context: github
           requires:
-            - test-creator-node
-            - test-discovery-provider
-            - test-identity-service
+            - test-ci-stage
             - test-devnet-deps
           filters:
             branches:
