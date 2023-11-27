@@ -2,6 +2,7 @@ package conf
 
 type CreatorConfig struct {
 	BaseServerConfig
+	DbUrl              string
 	DirTemplate        string
 	DbUrlTemplate      string
 	HostNameTemplate   string
@@ -18,6 +19,7 @@ type CreatorConfig struct {
 func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv := make(map[string]string)
 
+	overrideEnv["dbUrl"] = config.DbUrl
 	overrideEnv["dirTemplate"] = config.DirTemplate
 	overrideEnv["dbUrlTemplate"] = config.DbUrlTemplate
 	overrideEnv["hostNameTemplate"] = config.HostNameTemplate
