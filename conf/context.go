@@ -127,6 +127,10 @@ func UseContext(ctxName string) error {
 	if err = readExecutionConfig(&execConf); err != nil {
 		return err
 	}
+
+	// set new name and rewrite file
+	execConf.CurrentContext = ctxName
+
 	execConfFilePath := filepath.Join(confBaseDir, "audius")
 	if err = writeConfigToFile(execConfFilePath, &execConf); err != nil {
 		return err
