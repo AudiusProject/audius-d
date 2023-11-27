@@ -200,7 +200,7 @@ jobs:
           name: standup ci env against stage
           command: |
             cd ~/audius-d
-            audius-d-x86 config create-context ci -f templates/ci.toml 
+            audius-d-x86 config create-context ci -f conf/templates/ci.toml 
             audius-d-x86
       - basic-health-check # creator node default
       - basic-health-check:
