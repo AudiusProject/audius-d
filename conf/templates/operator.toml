@@ -5,11 +5,15 @@ example of how to run a creator node as an operator with audius-d
 
 [Network]
 Name = "stage"
-Tag = "stage"
+Tag = "latest"
 
 [CreatorNodes]
 
 [CreatorNodes.creator-1]
+InternalHttpPort = 80
+ExternalHttpPort = 80
+InternalHttpsPort = 443
+ExternalHttpsPort = 443
 Host = "http://localhost"
 OperatorPrivateKey = "62ca4962f99a39b4a2c60a8402f60baea5437c275146abd90e0bfdcf0415184d"
 # todo: derive this from private key at runtime
