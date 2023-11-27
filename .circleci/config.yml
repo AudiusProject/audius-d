@@ -186,6 +186,31 @@ jobs:
             cd ~/audius-d
             audius-d-x86 down
 
+  test-ci-stage:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - checkout:
+          path: ~/audius-d
+      - attach_workspace:
+          at: ~/audius-d
+      - configure-path
+      - run:
+          name: standup ci env against stage
+          command: |
+            cd ~/audius-d
+            audius-d-x86 config create-context ci -f templates/ci.toml 
+            audius-d-x86
+      - basic-health-check # creator node default
+      - basic-health-check:
+          port: 5000
+          jqkey: '.data.discovery_provider_healthy'
+      - basic-health-check:
+          port: 7000
+          jqkey: '.healthy'
+      
+
   test-eth-registration:
     machine:
       image: ubuntu-2204:current
@@ -240,7 +265,7 @@ workflows:
               ignore:
                 - main
                 - bin
-      - test-creator-node:
+      - test-ci-stage:
           context: github
           requires:
             - build-job
@@ -249,24 +274,33 @@ workflows:
               ignore:
                 - main
                 - bin
-      - test-discovery-provider:
-          context: github
-          requires:
-            - build-job
-          filters:
-            branches:
-              ignore:
-                - main
-                - bin
-      - test-identity-service:
-          context: github
-          requires:
-            - build-job
-          filters:
-            branches:
-              ignore:
-                - main
-                - bin
+      # - test-creator-node:
+      #     context: github
+      #     requires:
+      #       - build-job
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - main
+      #           - bin
+      # - test-discovery-provider:
+      #     context: github
+      #     requires:
+      #       - build-job
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - main
+      #           - bin
+      # - test-identity-service:
+      #     context: github
+      #     requires:
+      #       - build-job
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - main
+      #           - bin
       - test-devnet-deps:
           context: github
           requires:
