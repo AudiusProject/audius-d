@@ -1,7 +1,5 @@
 package conf
 
-import "fmt"
-
 type ExecutionConfig struct {
 	ConfigVersion  string
 	CurrentContext string
@@ -69,12 +67,13 @@ func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string
 type IdentityConfig struct {
 	BaseServerConfig
 	// identity specific stuff here
+	SolanaClaimableTokenProgramAddress string
 }
 
 func (config *IdentityConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv := make(map[string]string)
 
-	fmt.Println("warning: identity overrides not implemented yet")
+	overrideEnv["solanaClaimableTokenProgramAddress"] = config.SolanaClaimableTokenProgramAddress
 
 	return overrideEnv
 }

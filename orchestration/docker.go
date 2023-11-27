@@ -200,17 +200,12 @@ func startDevnetDocker() {
 	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "up", "-d")
 }
 
-func runDownDocker() {
-	runCommand("docker", "rm", "-f", "creator-node", "discovery-provider", "identity-service")
-}
-
 func downDevnetDocker() {
 	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "down")
 }
 
-func audiusCli(args ...string) {
-	nodeType := ""
-	audCli := []string{"exec", nodeType, "audius-cli"}
+func audiusCli(container string, args ...string) {
+	audCli := []string{"exec", container, "audius-cli"}
 	cmds := append(audCli, args...)
 	err := runCommand("docker", cmds...)
 	if err != nil {
