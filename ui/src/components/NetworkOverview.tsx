@@ -2,12 +2,12 @@ import React, { useEffect, useState } from "react";
 import BN from "bn.js";
 import useSWR from "swr";
 import { Card, Title, Tracker, Flex, Text, Color } from "@tremor/react";
-import { useEnvVars } from "./providers/EnvVarsProvider";
-import { useAudiusLibs } from "./providers/AudiusLibsProvider";
-import type { AudiusLibsContextType } from "./providers/AudiusLibsProvider";
-import { formatWei } from "./helpers";
-import useNodes from "./hooks/useNodes";
-import { UptimeResponse } from "./Uptime";
+import { useEnvVars } from "../providers/EnvVarsProvider";
+import { useAudiusLibs } from "../providers/AudiusLibsProvider";
+import type { AudiusLibsContextType } from "../providers/AudiusLibsProvider";
+import { formatWei } from "../utils/helpers";
+import useNodes from "../hooks/useNodes";
+import { UptimeResponse } from "../components/Uptime";
 
 interface NodeResponse {
   blockNumber: number;

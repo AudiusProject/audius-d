@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { WagmiProvider } from "wagmi";
-import { AudiusLibsProvider } from "./providers/AudiusLibsProvider.tsx";
+import { AudiusLibsProvider } from "../providers/AudiusLibsProvider.tsx";
 import App from "./App.tsx";
-import { useWagmiConfig } from "./hooks/useWagmiConfig.tsx";
+import { useWagmiConfig } from "../hooks/useWagmiConfig.tsx";
 
 const AppWithProviders = () => {
   const wagmiConfig = useWagmiConfig();

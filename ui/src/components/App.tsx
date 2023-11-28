@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useBlockNumber, useAccount, useConnect, useDisconnect } from "wagmi";
-import { useEnvVars } from "./providers/EnvVarsProvider";
-import { useAudiusLibs } from "./providers/AudiusLibsProvider";
-import useMinChainVersions from "./hooks/useMinChainVersions";
-import useLatestGitHubVersions from "./hooks/useLatestGitHubVersions";
-import Header from "./Header";
+import { useEnvVars } from "../providers/EnvVarsProvider";
+import { useAudiusLibs } from "../providers/AudiusLibsProvider";
+import useMinChainVersions from "../hooks/useMinChainVersions";
+import useLatestGitHubVersions from "../hooks/useLatestGitHubVersions";
+import Header from "../Header";
 import Uptime from "./Uptime";
 import NetworkOverview from "./NetworkOverview";
 
