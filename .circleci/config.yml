@@ -121,18 +121,39 @@ jobs:
       - run:
           name: acdc-ganache
           command: |
-            sleep 3
-            curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545
+            timeout=0
+            while ! curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545 && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+              echo "server didn't respond within 60 seconds. Exiting due to timeout."
+              exit 1
+            fi
       - run:
           name: mainnet-ganache
           command: |
-            sleep 3
-            curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8546
+            timeout=0
+            while ! curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8546 && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+              echo "server didn't respond within 60 seconds. Exiting due to timeout."
+              exit 1
+            fi
       - run:
           name: mainnet-solana
           command: |
-            sleep 3
-            curl http://localhost:8899 -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}'
+            timeout=0
+            while ! curl http://localhost:8899 -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}' && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+              echo "server didn't respond within 60 seconds. Exiting due to timeout."
+              exit 1
+            fi
       - run:
           name: tear down devnet dependencies
           command: |
@@ -259,9 +280,8 @@ workflows:
             - build-job
           filters:
             branches:
-              ignore:
+              only:
                 - main
-                - bin
       - test-devnet-deps:
           context: github
           requires:
