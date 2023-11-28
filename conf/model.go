@@ -35,7 +35,7 @@ type BaseServerConfig struct {
 }
 
 type CreatorConfig struct {
-	BaseServerConfig
+	BaseServerConfig `mapstructure:",squash"`
 	// creator specific stuff here
 }
 
@@ -51,7 +51,7 @@ func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 }
 
 type DiscoveryConfig struct {
-	BaseServerConfig
+	BaseServerConfig `mapstructure:",squash"`
 }
 
 func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
@@ -65,7 +65,7 @@ func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string
 }
 
 type IdentityConfig struct {
-	BaseServerConfig
+	BaseServerConfig `mapstructure:",squash"`
 	// identity specific stuff here
 	SolanaClaimableTokenProgramAddress string
 }

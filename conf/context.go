@@ -81,7 +81,7 @@ func readExecutionConfig(execConf *ExecutionConfig) error {
 	return nil
 }
 
-func GetContext() (string, error) {
+func GetCurrentContextName() (string, error) {
 	var execConf ExecutionConfig
 	if err := readExecutionConfig(&execConf); err != nil {
 		return "", err
@@ -174,6 +174,14 @@ func writeConfigToContext(ctxName string, ctxConfig *ContextConfig) error {
 	ctxConfig.ConfigVersion = ConfigVersion
 	err = writeConfigToFile(filepath.Join(ctxBaseDir, ctxName), ctxConfig)
 	return err
+}
+
+func writeConfigToCurrentContext(ctxConfig *ContextConfig) error {
+	ctxName, err := GetCurrentContextName()
+	if err != nil {
+		return err
+	}
+	return writeConfigToContext(ctxName, ctxConfig)
 }
 
 func createContextFromTemplate(name string, templateFilePath string) error {
