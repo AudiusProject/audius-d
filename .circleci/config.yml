@@ -187,9 +187,9 @@ jobs:
           port: 7000
           jqkey: '.healthy'
       - run:
-        name: teardown
-        command: |
-          audius-d-x86 down
+          name: teardown
+          command: |
+            audius-d-x86 down
       
 
   test-eth-registration:
