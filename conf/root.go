@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -185,7 +184,9 @@ func editConfig(contextName string) error {
 
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
-		return errors.New("Please set the $EDITOR environment variable to your preferred text editor.")
+		fmt.Println("Please set $EDITOR in your shell profile to your preferred text editor.")
+		fmt.Println("Defaulting to nano")
+		editor = "nano"
 	}
 
 	cmd := exec.Command(editor, tempFile.Name())
