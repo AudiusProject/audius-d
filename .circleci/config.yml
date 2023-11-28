@@ -193,7 +193,42 @@ jobs:
       - standup-devnet
       - run:
           name: register delegateOwnerWallet
-          command: audius-d-x86 -c ~/audius-d/register/sampleregister.audius.conf register
+          command: |
+            cd ~/audius-d
+            audius-d-x86 config create-context ci -f conf/templates/ci.toml 
+            audius-d-x86
+            audius-d-x86 register
+
+  test-config-subcommands:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: small
+    steps:
+      - checkout:
+          path: ~/audius-d
+      - attach_workspace:
+          at: ~/audius-d
+      - configure-path
+      - run:
+          name: test default context is created
+          command: |
+            audius-d-x86 config
+      - run:
+          name: test create context
+          command: |
+            audius-d-x86 config create-context test -f ~/audius-d/conf/templates/ci.toml 
+      - run:
+          name: test modify context
+          command: |
+            audius-d-x86 config set Network.EthMainnetPort 8765
+      - run:
+          name: test delete context
+          command: |
+            audius-d-x86 config delete-context test
+      - run:
+          name: test resort to default context
+          command: |
+            audius-d-x86 config
 
   publish-job:
     machine:
@@ -252,6 +287,15 @@ workflows:
               ignore:
                 - main
                 - bin
+      - test-config-subcommands:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              ignore:
+                - main
+                - bin
       - test-eth-registration:
           context: github
           requires:
@@ -278,6 +322,14 @@ workflows:
               only:
                 - main
       - test-devnet-deps:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              only:
+                - main
+      - test-config-subcommands:
           context: github
           requires:
             - build-job

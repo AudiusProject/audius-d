@@ -9,11 +9,8 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-type audiusContextKey string
-
 const (
 	ConfigVersion = "0.1"
-	ContextKey    = audiusContextKey("audius_cobra_context")
 )
 
 func ReadOrCreateContextConfig() (*ContextConfig, error) {
@@ -29,12 +26,21 @@ func ReadOrCreateContextConfig() (*ContextConfig, error) {
 	}
 	if _, err := os.Stat(execConfFilePath); os.IsNotExist(err) {
 		fmt.Println("No existing config found at ~/.audius, creating new.")
-		createExecutionConfig(execConfFilePath)
+		if err = createExecutionConfig(execConfFilePath); err != nil {
+			return nil, err
+		}
+
 	}
 
 	var execConf ExecutionConfig
 	if err = readExecutionConfig(&execConf); err != nil {
-		return nil, err
+		fmt.Printf("Failed to read execution config: %s\nAttempting to recreate...\n", err)
+		if err = createExecutionConfig(execConfFilePath); err != nil {
+			return nil, err
+		}
+		if err = readExecutionConfig(&execConf); err != nil {
+			return nil, err
+		}
 	}
 
 	contextDir, err := getContextBaseDir()
@@ -43,12 +49,13 @@ func ReadOrCreateContextConfig() (*ContextConfig, error) {
 	}
 	contextFilePath := filepath.Join(contextDir, execConf.CurrentContext)
 	if _, err = os.Stat(contextFilePath); os.IsNotExist(err) {
-		fmt.Printf("Context '%s' not found, creating default.\n", execConf.CurrentContext)
-		createDefaultContext(contextFilePath)
+		fmt.Printf("Context '%s' not found, using default.\n", execConf.CurrentContext)
+		createDefaultContextIfNotExists()
 		err = UseContext("default")
 		if err != nil {
 			return nil, err
 		}
+		contextFilePath = filepath.Join(contextDir, "default")
 	}
 
 	var ctx ContextConfig
@@ -204,15 +211,25 @@ func createExecutionConfig(confFilePath string) error {
 	return err
 }
 
-func createDefaultContext(contextFilePath string) error {
-	conf := ContextConfig{
+func createDefaultContextIfNotExists() error {
+	contextDir, err := getContextBaseDir()
+	if err != nil {
+		return err
+	}
+
+	var conf ContextConfig
+	if err = readConfigFromContext("default", &conf); err == nil {
+		return nil
+	}
+
+	conf = ContextConfig{
 		ConfigVersion: ConfigVersion,
 		Network: NetworkConfig{
 			Name: "stage",
 		},
 	}
 
-	file, err := os.OpenFile(contextFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(filepath.Join(contextDir, "default"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
