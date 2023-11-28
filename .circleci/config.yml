@@ -12,18 +12,6 @@ commands:
           command: |
             echo 'export PATH=~/audius-d/bin:$PATH' >> $BASH_ENV
             source $BASH_ENV
-  standup-node:
-    description: 'Stand up an audius node of the provided type'
-    parameters:
-      nodetype:
-        type: string
-    steps:
-      - run:
-          name: standup audius node
-          command: |
-            cd ~/audius-d
-            audius-d-x86 config create-context ci -f templates/devnet.toml 
-            audius-d-x86
   standup-devnet:
     description: 'Stand up external dev chain containers for eth, sol, and acdc'
     steps:
@@ -46,7 +34,7 @@ commands:
           name: 'Basic health check'
           command: |
             timeout=0
-            while [[ "$(curl -Lsko /dev/null -w "%{http_code}" http://localhost:<< parameters.port >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+            while [[ "$(curl -Lsko /dev/null -w "%{http_code}" http://localhost:<< parameters.port >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 180 ]; do
               sleep 3
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
