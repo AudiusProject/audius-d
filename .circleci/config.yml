@@ -139,7 +139,7 @@ jobs:
             cd ~/audius-d
             audius-d-x86 down
 
-  test-ci-stage:
+  test-audius-d-stage:
     machine:
       image: ubuntu-2204:current
     resource_class: large
@@ -218,7 +218,7 @@ workflows:
               ignore:
                 - main
                 - bin
-      - test-ci-stage:
+      - test-audius-d-stage:
           context: github
           requires:
             - build-job
@@ -253,7 +253,7 @@ workflows:
             branches:
               only:
                 - main
-      - test-ci-stage:
+      - test-audius-d-stage:
           context: github
           requires:
             - build-job
@@ -273,7 +273,7 @@ workflows:
       - publish-job:
           context: github
           requires:
-            - test-ci-stage
+            - test-audius-d-stage
             - test-devnet-deps
           filters:
             branches:
