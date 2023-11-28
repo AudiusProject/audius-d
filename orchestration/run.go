@@ -16,19 +16,39 @@ func DownDevnet(_ *conf.ContextConfig) {
 }
 
 func RunAudiusWithConfig(config *conf.ContextConfig) {
-	for _, cc := range config.CreatorNodes {
-		runNodeDocker("creator-node", config.Network.Name, cc.Tag, false)
+	for cname, cc := range config.CreatorNodes {
+		creatorVolumes := []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db"}
+		override := cc.ToOverrideEnv(config.Network)
+		RunNode(config.Network, cc.BaseServerConfig, override, cname, "creator-node", creatorVolumes)
 	}
-	for _, dc := range config.DiscoveryNodes {
-		runNodeDocker("discovery-provider", config.Network.Name, dc.Tag, false)
+	for cname, dc := range config.DiscoveryNodes {
+		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain"}
+		override := dc.ToOverrideEnv(config.Network)
+		RunNode(config.Network, dc.BaseServerConfig, override, cname, "discovery-provider", discoveryVolumes)
+		// discovery requires a few extra things
+		audiusCli(cname, "launch-chain")
 	}
-	if config.IdentityService.Tag != "" {
-		runNodeDocker("identity-service", config.Network.Name, config.IdentityService.Tag, false)
+	for cname, id := range config.IdentityService {
+		identityVolumes := []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
+		override := id.ToOverrideEnv(config.Network)
+		RunNode(config.Network, id.BaseServerConfig, override, cname, "identity-service", identityVolumes)
 	}
 }
 
-func RunDown(_ *conf.ContextConfig) {
-	runDownDocker()
+func RunDown(config *conf.ContextConfig) {
+	// easiest way
+	cnames := []string{"rm", "-f"}
+
+	for cname := range config.CreatorNodes {
+		cnames = append(cnames, cname)
+	}
+	for cname := range config.DiscoveryNodes {
+		cnames = append(cnames, cname)
+	}
+	for cname := range config.IdentityService {
+		cnames = append(cnames, cname)
+	}
+	runCommand("docker", cnames...)
 	downDevnetDocker()
 }
 

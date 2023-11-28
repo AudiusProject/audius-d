@@ -12,18 +12,6 @@ commands:
           command: |
             echo 'export PATH=~/audius-d/bin:$PATH' >> $BASH_ENV
             source $BASH_ENV
-  standup-node:
-    description: 'Stand up an audius node of the provided type'
-    parameters:
-      nodetype:
-        type: string
-    steps:
-      - run:
-          name: standup audius node
-          command: |
-            cd ~/audius-d
-            audius-d-x86 config create-context ci -f templates/devnet.toml 
-            audius-d-x86
   standup-devnet:
     description: 'Stand up external dev chain containers for eth, sol, and acdc'
     steps:
@@ -46,7 +34,7 @@ commands:
           name: 'Basic health check'
           command: |
             timeout=0
-            while [[ "$(curl -Lsko /dev/null -w "%{http_code}" http://localhost:<< parameters.port >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+            while [[ "$(curl -Lsko /dev/null -w "%{http_code}" http://localhost:<< parameters.port >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 180 ]; do
               sleep 3
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
@@ -106,53 +94,6 @@ jobs:
             - bin/audius-d-arm
             - bin/audius-d-x86
 
-
-  test-creator-node:
-    machine:
-      image: ubuntu-2204:current
-    resource_class: large
-    steps:
-      - checkout:
-          path: ~/audius-d
-      - attach_workspace:
-          at: ~/audius-d
-      - configure-path
-      - standup-node:
-          nodetype: 'creator-node'
-      - basic-health-check
-          
-  test-discovery-provider:
-    machine:
-      image: ubuntu-2204:current
-    resource_class: large
-    steps:
-      - checkout:
-          path: ~/audius-d
-      - attach_workspace:
-          at: ~/audius-d
-      - configure-path
-      - standup-node:
-          nodetype: 'discovery-provider'
-      - basic-health-check:
-          port: 5000
-          jqkey: '.data.discovery_provider_healthy'
-
-  test-identity-service:
-    machine:
-      image: ubuntu-2204:current
-    resource_class: large
-    steps:
-      - checkout:
-          path: ~/audius-d
-      - attach_workspace:
-          at: ~/audius-d
-      - configure-path
-      - standup-node:
-          nodetype: 'identity-service'
-      - basic-health-check:
-          port: 7000
-          jqkey: '.healthy'
-
   test-devnet-deps:
     machine:
       image: ubuntu-2204:current
@@ -168,23 +109,76 @@ jobs:
       - run:
           name: acdc-ganache
           command: |
-            sleep 3
-            curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545
+            timeout=0
+            while [[ "$(curl -sf -w "%{http_code}" -o /dev/null -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+            if [ "$timeout" -ge 60 ]; then
+              echo "Server didn't respond within 60 seconds. Exiting due to timeout."
+              exit 1
+            fi
       - run:
           name: mainnet-ganache
           command: |
-            sleep 3
-            curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8546
+            timeout=0
+            while [[ "$(curl -sf -w "%{http_code}" -o /dev/null -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8546)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+            if [ "$timeout" -ge 60 ]; then
+              echo "Server didn't respond within 60 seconds. Exiting due to timeout."
+              exit 1
+            fi
       - run:
           name: mainnet-solana
           command: |
-            sleep 3
-            curl http://localhost:8899 -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}'
+            timeout=0
+            while [[ "$(curl http://localhost:8899 -o /dev/null -X POST -H "Content-Type: application/json" -w "%{http_code}" -d '{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}')" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+            if [ "$timeout" -ge 60 ]; then
+              echo "Server didn't respond within 60 seconds. Exiting due to timeout."
+              exit 1
+            fi
       - run:
           name: tear down devnet dependencies
           command: |
             cd ~/audius-d
             audius-d-x86 down
+
+  test-audius-d-stage:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - checkout:
+          path: ~/audius-d
+      - attach_workspace:
+          at: ~/audius-d
+      - configure-path
+      - run:
+          name: standup ci env against stage
+          command: |
+            cd ~/audius-d
+            audius-d-x86 config create-context ci -f conf/templates/ci.toml 
+            audius-d-x86
+      - basic-health-check # creator node default
+      - basic-health-check:
+          port: 5000
+          jqkey: '.data.discovery_provider_healthy'
+      - basic-health-check:
+          port: 7000
+          jqkey: '.healthy'
+      - run:
+          name: teardown
+          command: |
+            audius-d-x86 down
+      
 
   test-eth-registration:
     machine:
@@ -240,25 +234,7 @@ workflows:
               ignore:
                 - main
                 - bin
-      - test-creator-node:
-          context: github
-          requires:
-            - build-job
-          filters:
-            branches:
-              ignore:
-                - main
-                - bin
-      - test-discovery-provider:
-          context: github
-          requires:
-            - build-job
-          filters:
-            branches:
-              ignore:
-                - main
-                - bin
-      - test-identity-service:
+      - test-audius-d-stage:
           context: github
           requires:
             - build-job
@@ -293,23 +269,7 @@ workflows:
             branches:
               only:
                 - main
-      - test-creator-node:
-          context: github
-          requires:
-            - build-job
-          filters:
-            branches:
-              only:
-                - main
-      - test-discovery-provider:
-          context: github
-          requires:
-            - build-job
-          filters:
-            branches:
-              only:
-                - main
-      - test-identity-service:
+      - test-audius-d-stage:
           context: github
           requires:
             - build-job
@@ -328,9 +288,7 @@ workflows:
       - publish-job:
           context: github
           requires:
-            - test-creator-node
-            - test-discovery-provider
-            - test-identity-service
+            - test-audius-d-stage
             - test-devnet-deps
           filters:
             branches:

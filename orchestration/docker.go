@@ -5,91 +5,112 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 
+	"github.com/AudiusProject/audius-d/conf"
 	"github.com/joho/godotenv"
 )
 
-func runNodeDocker(nodeType string, network string, imageTag string, autoUpgrade bool) {
-	fmt.Printf("standing up %s on network %s\n", nodeType, network)
-	volumeFlag := ""
-	//volumeFlag = fmt.Sprintf("-v %s:/root/audius-docker-compose/%s/override.env", confFilePath, nodeType)
+type OverrideEnv = map[string]string
 
-	if !regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`).MatchString(imageTag) {
-		exitWithError("Invalid image tag:", imageTag)
+// deploys a server node generically
+func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, override OverrideEnv, containerName string, nodeType string, internalVolumes []string) error {
+	if isContainerRunning(containerName) {
+		fmt.Printf("container %s already running\n", containerName)
+		return nil
 	}
 
-	// volume create is idempotent
-	if err := runCommand("/bin/sh", "-c", "docker volume create audius-d"); err != nil {
-		exitWithError("Error executing command:", err)
+	if isContainerNameInUse(containerName) {
+		fmt.Printf("container %s already exists, removing and starting with current config\n", containerName)
+		if err := removeContainerByName(containerName); err != nil {
+			return err
+		}
 	}
 
-	var cmd string
-	baseCmd := fmt.Sprintf(`docker run --privileged -d -v audius-d:/var/lib/docker %s -p %d:80 -p %d:443`, volumeFlag, 80, 443)
+	imageTag := fmt.Sprintf("audius/audius-docker-compose:%s", nconf.Tag)
+	externalVolume := fmt.Sprintf("audius-d-%s", containerName)
+	httpPorts := fmt.Sprintf("-p %d:%d", serverConfig.ExternalHttpPort, serverConfig.InternalHttpPort)
+	httpsPorts := fmt.Sprintf("-p %d:%d", serverConfig.ExternalHttpsPort, serverConfig.InternalHttpsPort)
+	formattedInternalVolumes := " -v " + strings.Join(internalVolumes, " -v ")
 
-	switch nodeType {
-	case "creator-node":
-		cmd = fmt.Sprintf(baseCmd + ` \
-        --name creator-node \
-        -v /var/k8s/mediorum:/var/k8s/mediorum \
-        -v /var/k8s/creator-node-backend:/var/k8s/creator-node-backend \
-        -v /var/k8s/creator-node-db:/var/k8s/creator-node-db \
-        audius/audius-docker-compose:` + imageTag)
-	case "discovery-provider":
-		baseCmd = baseCmd + " -p 5000:5000"
-		cmd = fmt.Sprintf(baseCmd + ` \
-        --name discovery-provider \
-        -v /var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db \
-        -v /var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain \
-        audius/audius-docker-compose:` + imageTag)
-	case "identity-service":
-		baseCmd = baseCmd + " -p 7000:7000"
-		cmd = fmt.Sprintf(baseCmd + ` \
-        --name identity-service \
-        audius/audius-docker-compose:` + imageTag)
-	default:
-		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
+	// assemble wrapper command and run
+	// todo: handle https port
+	upCmd := fmt.Sprintf("docker run --privileged -d -v %s:/var/lib/docker %s %s --name %s %s %s", externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
+	if err := Sh(upCmd); err != nil {
+		return err
 	}
 
+	// initialize override.env file
+	localOverridePath := fmt.Sprintf("./%s-override.env", containerName)
+	if err := godotenv.Write(override, localOverridePath); err != nil {
+		return err
+	}
+
+	envCmd := fmt.Sprintf("docker cp %s %s:/root/audius-docker-compose/%s/override.env", localOverridePath, containerName, nodeType)
+	if err := Sh(envCmd); err != nil {
+		return err
+	}
+
+	cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, containerName)
 	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
-		exitWithError("Error executing command:", err)
+		return err
 	}
 
-	awaitDockerStart()
-	if network != "dev" {
-		audiusCli("set-network", network)
+	if err := os.Remove(localOverridePath); err != nil {
+		return err
 	}
 
-	if nodeType == "discovery-provider" && network != "dev" {
-		configureChainSpec(nodeType, network)
+	// assemble inner command and run
+	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, containerName, nodeType)
+	if err := Sh(startCmd); err != nil {
+		return err
 	}
 
-	if autoUpgrade && network != "dev" {
-		fmt.Println("setting auto-upgrade")
-		audiusCli("auto-upgrade")
-		fmt.Println("auto-upgrade enabled")
+	return nil
+}
+
+func Sh(cmd string) error {
+	fmt.Println(cmd)
+	return runCommand("/bin/sh", "-c", cmd)
+}
+
+func isContainerRunning(containerName string) bool {
+	cmd := exec.Command("docker", "ps", "-q", "-f", "name="+containerName)
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	return len(strings.TrimSpace(string(output))) > 0
+}
+
+func isContainerNameInUse(containerName string) bool {
+	cmd := exec.Command("docker", "ps", "-a", "--format", "{{.Names}}")
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+		return false
 	}
 
-	switch nodeType {
-	case "creator-node":
-		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
-		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
-			exitWithError("Error executing command:", err)
+	// Split the output into individual container names
+	containers := strings.Split(strings.TrimSpace(string(output)), "\n")
+
+	// Check if the given container name exists in the list
+	for _, name := range containers {
+		if name == containerName {
+			return true
 		}
-	case "discovery-provider":
-		execCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, nodeType, nodeType)
-		if err := runCommand("/bin/sh", "-c", execCmd); err != nil {
-			exitWithError("Error executing command:", err)
-		}
-		if network != "dev" {
-			audiusCli("launch-chain")
-		}
-	case "identity-service":
-		audiusCli("launch", "identity-service", "-y")
-	default:
-		exitWithError(fmt.Sprintf("provided node type is not supported: %s", nodeType))
 	}
+	return false
+}
+
+func removeContainerByName(containerName string) error {
+	cmd := exec.Command("docker", "rm", "-f", containerName)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func startDevnetDocker() {
@@ -97,17 +118,12 @@ func startDevnetDocker() {
 	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "up", "-d")
 }
 
-func runDownDocker() {
-	runCommand("docker", "rm", "-f", "creator-node", "discovery-provider", "identity-service")
-}
-
 func downDevnetDocker() {
 	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "down")
 }
 
-func audiusCli(args ...string) {
-	nodeType := ""
-	audCli := []string{"exec", nodeType, "audius-cli"}
+func audiusCli(container string, args ...string) {
+	audCli := []string{"exec", container, "audius-cli"}
 	cmds := append(audCli, args...)
 	err := runCommand("docker", cmds...)
 	if err != nil {

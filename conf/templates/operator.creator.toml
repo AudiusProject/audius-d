@@ -1,0 +1,18 @@
+title = "Example Operator Configuration"
+description = """
+example of how to run a creator node as an operator with audius-d
+"""
+
+[Network]
+Name = "prod"
+Tag = "latest"
+
+[CreatorNodes.creator-node]
+InternalHttpPort = 80
+ExternalHttpPort = 80
+InternalHttpsPort = 443
+ExternalHttpsPort = 443
+Host = "http://localhost"
+OperatorPrivateKey = ""
+OperatorWallet = ""
+OperatorRewardsWallet = ""

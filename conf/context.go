@@ -202,15 +202,6 @@ func createDefaultContext(contextFilePath string) error {
 		Network: NetworkConfig{
 			Name: "stage",
 		},
-		CreatorNodes: map[string]CreatorConfig{
-			"creator-node-1": CreatorConfig{
-				BaseServerConfig{
-					Port: 80,
-					Host: "http://localhost",
-					Tag:  "stage",
-				},
-			},
-		},
 	}
 
 	file, err := os.OpenFile(contextFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
