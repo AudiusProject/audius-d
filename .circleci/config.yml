@@ -122,7 +122,7 @@ jobs:
           name: acdc-ganache
           command: |
             timeout=0
-            while [[ "$(curl -sf -w "%{http_code}" X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+            while [[ "$(curl -sf -w "%{http_code}" -o /dev/null -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
               sleep 3
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
@@ -135,7 +135,7 @@ jobs:
           name: mainnet-ganache
           command: |
             timeout=0
-            while [[ "$(curl -sf -w "%{http_code}" -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8546)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+            while [[ "$(curl -sf -w "%{http_code}" -o /dev/null -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8546)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
               sleep 3
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
@@ -148,7 +148,7 @@ jobs:
           name: mainnet-solana
           command: |
             timeout=0
-            while [[ "$(curl http://localhost:8899 -X POST -H "Content-Type: application/json" -w "%{http_code}" -d '{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}')" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+            while [[ "$(curl http://localhost:8899 -o /dev/null -X POST -H "Content-Type: application/json" -w "%{http_code}" -d '{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}')" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
               sleep 3
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
