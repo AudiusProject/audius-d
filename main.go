@@ -27,8 +27,8 @@ func main() {
 	rootCmd.AddCommand(orchestration.UpCmd, orchestration.DownCmd, orchestration.DevnetCmd)
 	rootCmd.AddCommand(register.RootCmd)
 	rootCmd.AddCommand(conf.RootCmd)
-	rootCmd.AddCommand(em.EmCmd)
-	rootCmd.AddCommand(hashes.HashCmd)
+	rootCmd.AddCommand(em.RootCmd)
+	rootCmd.AddCommand(hashes.RootCmd)
 	rootCmd.Execute()
 }
 

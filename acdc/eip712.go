@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 )
 
-func preapreEip712(chainId int64, _nonce [32]byte, fields EmArgs) ([]byte, error) {
+func prepareEip712(chainId int64, _nonce [32]byte, fields EmArgs) ([]byte, error) {
 	var typedData = apitypes.TypedData{
 		Types: apitypes.Types{
 			"EIP712Domain": []apitypes.Type{

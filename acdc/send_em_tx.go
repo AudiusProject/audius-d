@@ -31,7 +31,7 @@ func SendEmTx(client *ethclient.Client, privateKey *ecdsa.PrivateKey, fields EmA
 	_nonce := randBytes32()
 
 	// sign it with EIP 712
-	sighash, err := preapreEip712(chainId.Int64(), _nonce, fields)
+	sighash, err := prepareEip712(chainId.Int64(), _nonce, fields)
 	if err != nil {
 		return nil, err
 	}

@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var EmCmd *cobra.Command
+var RootCmd *cobra.Command
 
 const (
 	keyfileLocation = ".audius_developer_app_private_key"
@@ -28,10 +28,11 @@ func init() {
 	var entityType string
 	var entityId string
 
-	EmCmd = &cobra.Command{
+	RootCmd = &cobra.Command{
 		Use:   "em",
 		Short: "Send EntityManager transactions",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
+
 			// todo: get endpoint from env (stage / prod / other)
 			const ACDC_ENDPOINT = `https://acdc-gateway.staging.audius.co`
 			client, err := ethclient.Dial(ACDC_ENDPOINT)
@@ -39,14 +40,45 @@ func init() {
 				log.Fatal(err)
 			}
 
-			sendEmTx(client, actorId, action, entityType, entityId)
+			privateKey, err := crypto.LoadECDSA(keyfileLocation)
+			if err != nil {
+				log.Fatal("invalid keyfile: ", err)
+			}
+			signerAddress := crypto.PubkeyToAddress(privateKey.PublicKey).Hex()
+
+			actorIdInt, err := hashes.MaybeDecode(actorId)
+			if err != nil {
+				log.Fatal("invalid --actor", actorIdInt, err)
+			}
+
+			entityIdInt, err := hashes.MaybeDecode(entityId)
+			if err != nil {
+				log.Fatal("invalid --id", actorIdInt, err)
+			}
+
+			logger := slog.With("Signer", signerAddress, "Actor", actorIdInt, "Action", action, "EntityType", entityType, "EntityID", entityIdInt)
+
+			tx, err := acdc.SendEmTx(client, privateKey, acdc.EmArgs{
+				UserID:     int64(actorIdInt),
+				Action:     action,
+				EntityType: entityType,
+				EntityID:   int64(entityIdInt),
+			})
+
+			if err != nil {
+				logger.Error("failed to send tx", "err", err)
+			} else {
+				logger.Info("sent tx", "txhash", tx.Hash().Hex())
+			}
+
+			return nil
 		},
 	}
 
-	EmCmd.PersistentFlags().StringVar(&actorId, "actor", "", "user id performing the action")
-	EmCmd.PersistentFlags().StringVar(&action, "action", "", "verb to perform: Repost / Save / Follow")
-	EmCmd.PersistentFlags().StringVar(&entityType, "type", "", "entity type: Track / Playlist / User")
-	EmCmd.PersistentFlags().StringVar(&entityId, "id", "", "entity id")
+	RootCmd.Flags().StringVar(&actorId, "actor", "", "user id performing the action")
+	RootCmd.Flags().StringVar(&action, "action", "", "verb to perform: Repost / Save / Follow")
+	RootCmd.Flags().StringVar(&entityType, "type", "", "entity type: Track / Playlist / User")
+	RootCmd.Flags().StringVar(&entityId, "id", "", "entity id")
 
 	// commands for managing developer private key
 	keyCmd := &cobra.Command{
@@ -105,41 +137,6 @@ func init() {
 			},
 		},
 	)
-	EmCmd.AddCommand(keyCmd)
+	RootCmd.AddCommand(keyCmd)
 
-}
-
-func sendEmTx(client *ethclient.Client, actorIdEnc string, action string, entityType string, entityIdEnc string) error {
-	privateKey, err := crypto.LoadECDSA(keyfileLocation)
-	if err != nil {
-		log.Fatal("invalid keyfile: ", err)
-	}
-	signerAddress := crypto.PubkeyToAddress(privateKey.PublicKey).Hex()
-
-	actorId, err := hashes.MaybeDecode(actorIdEnc)
-	if err != nil {
-		log.Fatal("invalid --actor", actorId, err)
-	}
-
-	entityId, err := hashes.MaybeDecode(entityIdEnc)
-	if err != nil {
-		log.Fatal("invalid --id", actorId, err)
-	}
-
-	logger := slog.With("Signer", signerAddress, "Actor", actorId, "Action", action, "EntityType", entityType, "EntityID", entityId)
-
-	tx, err := acdc.SendEmTx(client, privateKey, acdc.EmArgs{
-		UserID:     int64(actorId),
-		Action:     action,
-		EntityType: entityType,
-		EntityID:   int64(entityId),
-	})
-
-	if err != nil {
-		logger.Error("failed to send tx", "err", err)
-	} else {
-		logger.Info("sent tx", "txhash", tx.Hash().Hex())
-	}
-
-	return nil
 }

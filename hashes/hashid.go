@@ -5,20 +5,13 @@ import (
 	"strconv"
 
 	"github.com/speps/go-hashids/v2"
-	"github.com/spf13/cobra"
 )
 
 var (
-	hasher  *hashids.HashID
-	HashCmd *cobra.Command
+	hasher *hashids.HashID
 )
 
 func init() {
-	initHasher()
-	initCmd()
-}
-
-func initHasher() {
 	hd := hashids.NewData()
 	hd.Salt = "azowernasdfoia"
 	hd.MinLength = 5

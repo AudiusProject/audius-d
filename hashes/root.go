@@ -9,24 +9,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func initCmd() {
-	HashCmd = &cobra.Command{
+var RootCmd *cobra.Command
+
+func init() {
+	RootCmd = &cobra.Command{
 		Use: "hash",
 	}
-	HashCmd.AddCommand(
+	RootCmd.AddCommand(
 		&cobra.Command{
 			Use: "encode",
 			Run: func(cmd *cobra.Command, args []string) {
 				for _, arg := range args {
 					val, err := strconv.Atoi(arg)
 					if err != nil {
-						fmt.Printf("invalid number: %s \n", arg)
+						fmt.Fprintf(os.Stderr, "invalid number: %s \n", arg)
 						continue
 					}
 					if hashed, err := Encode(val); err != nil {
-						fmt.Printf("invalid number: %s \n", arg)
+						fmt.Fprintf(os.Stderr, "invalid input: %s \n", arg)
 					} else {
-						fmt.Printf("%s => %s \n", arg, hashed)
+						fmt.Println(hashed)
 					}
 				}
 			},
@@ -36,9 +38,9 @@ func initCmd() {
 			Run: func(cmd *cobra.Command, args []string) {
 				for _, arg := range args {
 					if num, err := MaybeDecode(arg); err != nil {
-						fmt.Printf("invalid number: %s \n", arg)
+						fmt.Fprintf(os.Stderr, "invalid input: %s \n", arg)
 					} else {
-						fmt.Printf("%s => %d \n", arg, num)
+						fmt.Println(num)
 					}
 				}
 			},
