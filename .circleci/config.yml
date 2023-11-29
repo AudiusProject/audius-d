@@ -222,6 +222,18 @@ jobs:
           command: |
             audius-d-x86 config set Network.EthMainnetPort 8765
       - run:
+          name: ensure modifications are reflected
+          command: |
+            audius-d-x86 config | grep 'EthMainnetPort = 8765'
+      - run:
+          name: test invalid modify context
+          command: |
+            audius-d-x86 config set Network.EthMainnetPort 8asdf
+      - run:
+          name: ensure invalid modifications are not reflected
+          command: |
+            audius-d-x86 config | grep 'EthMainnetPort = 8765'
+      - run:
           name: test delete context
           command: |
             audius-d-x86 config delete-context test
