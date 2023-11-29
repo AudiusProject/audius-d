@@ -193,7 +193,49 @@ jobs:
       - standup-devnet
       - run:
           name: register delegateOwnerWallet
-          command: audius-d-x86 -c ~/audius-d/register/sampleregister.audius.conf register
+          command: |
+            cd ~/audius-d
+            audius-d-x86 config create-context ci -f conf/templates/ci.toml 
+            audius-d-x86
+            audius-d-x86 register
+
+  test-config-subcommands:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: medium
+    steps:
+      - checkout:
+          path: ~/audius-d
+      - attach_workspace:
+          at: ~/audius-d
+      - configure-path
+      - run:
+          name: test default context is created
+          command: |
+            audius-d-x86 config
+      - run:
+          name: test create context
+          command: |
+            audius-d-x86 config create-context test -f ~/audius-d/conf/templates/ci.toml 
+      - run:
+          name: test modify context
+          command: |
+            audius-d-x86 config set Network.EthMainnetPort 8765
+            audius-d-x86 config | grep 'EthMainnetPort = 8765'
+      - run:
+          name: test invalid modify context
+          command: |
+            if audius-d-x86 config set Network.EthMainnetPort 8asdf; then
+              echo Should not have succeeded
+              false
+            fi
+            audius-d-x86 config | grep 'EthMainnetPort = 8765'
+      - run:
+          name: test delete context
+          command: |
+            audius-d-x86 config delete-context test
+            audius-d-x86 config  # should resort to default
+            audius-d-x86 config current-context | grep 'default'
 
   publish-job:
     machine:
@@ -252,6 +294,15 @@ workflows:
               ignore:
                 - main
                 - bin
+      - test-config-subcommands:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              ignore:
+                - main
+                - bin
       - test-eth-registration:
           context: github
           requires:
@@ -278,6 +329,14 @@ workflows:
               only:
                 - main
       - test-devnet-deps:
+          context: github
+          requires:
+            - build-job
+          filters:
+            branches:
+              only:
+                - main
+      - test-config-subcommands:
           context: github
           requires:
             - build-job

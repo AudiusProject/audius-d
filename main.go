@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	_ "embed"
-	"log"
 
 	"github.com/AudiusProject/audius-d/conf"
 	"github.com/AudiusProject/audius-d/orchestration"
@@ -15,9 +13,6 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "audius-d [command]",
 		Short: "CLI for provisioning and interacting with audius nodes",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			cmd.SetContext(context.WithValue(context.Background(), conf.ContextKey, readOrCreateContext()))
-		},
 		Run: func(cmd *cobra.Command, args []string) {
 			orchestration.UpCmd.Run(cmd, args)
 		},
@@ -26,12 +21,4 @@ func main() {
 	rootCmd.AddCommand(register.RootCmd)
 	rootCmd.AddCommand(conf.RootCmd)
 	rootCmd.Execute()
-}
-
-func readOrCreateContext() *conf.ContextConfig {
-	ctx_config, err := conf.ReadOrCreateContextConfig()
-	if err != nil {
-		log.Fatal("Failed to retrieve context:", err)
-	}
-	return ctx_config
 }

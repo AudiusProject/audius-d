@@ -15,6 +15,7 @@ var (
 	RootCmd = &cobra.Command{
 		Use:   "config [command]",
 		Short: "view/modify audius-d configuration",
+		Args:  cobra.ExactArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
 			dumpCmd.Run(cmd, args)
 		},
@@ -25,13 +26,17 @@ var (
 		Use:   "dump [-o outfile]",
 		Short: "dump current config to stdout or a file",
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx_config, err := ReadOrCreateContextConfig()
+			if err != nil {
+				log.Fatal("Failed to retrieve context. ", err)
+			}
 			if dumpOutfile != "" {
-				err := writeConfigToFile(dumpOutfile, cmd.Context().Value(ContextKey).(*ContextConfig))
+				err := writeConfigToFile(dumpOutfile, ctx_config)
 				if err != nil {
 					log.Fatal("Failed to write config to file:", err)
 				}
 			} else {
-				str, err := stringifyConfig(cmd.Context().Value(ContextKey).(*ContextConfig))
+				str, err := stringifyConfig(ctx_config)
 				if err != nil {
 					log.Fatal("Failed to dump config:", err)
 				}
