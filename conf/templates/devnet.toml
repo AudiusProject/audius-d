@@ -20,17 +20,27 @@ Tag = "stage" # git hash, stage, prod, dev
 [CreatorNodes]
 
 [CreatorNodes.creator-1]
+InternalHttpPort = 80
+ExternalHttpPort = 80
+InternalHttpsPort = 443
+ExternalHttpsPort = 443
 Host = "http://localhost"
 Port = 6000
 Tag = "latest"
-OperatorPrivateKey = ""
+OperatorPrivateKey = "21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7cf58ab"
 Register = true
 AwaitHealthy = true
+MediorumEnv = "sandbox"
 
 [CreatorNodes.creator-2]
+InternalHttpPort = 80
+ExternalHttpPort = 81
+InternalHttpsPort = 443
+ExternalHttpsPort = 444
 Host = "http://localhost"
 Port = 6001
-OperatorPrivateKey = ""
+OperatorPrivateKey = "1166189cdf129cdcb011f2ad0e5be24f967f7b7026d162d7c36073b12020b61c"
+MediorumEnv = "sandbox"
 
 [DiscoveryNodes]
 
