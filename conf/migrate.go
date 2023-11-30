@@ -1,4 +1,4 @@
-package migration
+package conf
 
 import (
 	"errors"
@@ -6,12 +6,12 @@ import (
 	"log"
 	"os"
 
-	"github.com/AudiusProject/audius-d/conf"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/joho/godotenv"
 )
 
-func MigrateAudiusDockerCompose(path string) error {
+func MigrateAudiusDockerCompose(ctxname, path string) error {
+	log.Printf("migrating audius-docker-compose to context %s", ctxname)
+
 	if err := assertRepoPath(path); err != nil {
 		return err
 	}
@@ -26,12 +26,10 @@ func MigrateAudiusDockerCompose(path string) error {
 		return err
 	}
 
-	spew.Dump(env)
-
-	configContext := conf.NewContextConfig()
+	configContext := NewContextConfig()
 	envToContextConfig(nodeType, env, configContext)
 
-	conf.WriteConfigToContext("test-migrate", configContext)
+	writeConfigToContext(ctxname, configContext)
 
 	return nil
 }
@@ -70,8 +68,8 @@ func readOverrideEnv(path, nodeType string) (map[string]string, error) {
 	return godotenv.Read(orpath)
 }
 
-func envToContextConfig(nodeType string, env map[string]string, ctx *conf.ContextConfig) {
-	base := conf.BaseServerConfig{
+func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConfig) {
+	base := BaseServerConfig{
 		Host: "http://localhost",
 		Tag:  "latest",
 	}
@@ -85,7 +83,7 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *conf.Contex
 		base.OperatorWallet = env["delegateOwnerWallet"]
 		base.OperatorRewardsWallet = env["spOwnerWallet"]
 
-		creatorConf := conf.CreatorConfig{
+		creatorConf := CreatorConfig{
 			BaseServerConfig: base,
 		}
 		ctx.CreatorNodes["creator-node"] = creatorConf
@@ -100,13 +98,13 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *conf.Contex
 		base.OperatorWallet = env["audius_delegate_owner_wallet"]
 		base.OperatorRewardsWallet = env["audius_delegate_owner_wallet"]
 
-		discoveryConf := conf.DiscoveryConfig{
+		discoveryConf := DiscoveryConfig{
 			BaseServerConfig: base,
 		}
 		ctx.DiscoveryNodes["discovery-provider"] = discoveryConf
 	}
 
-	net := conf.NetworkConfig{
+	net := NetworkConfig{
 		Name: "stage",
 	}
 

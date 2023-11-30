@@ -4,7 +4,6 @@ import (
 	_ "embed"
 
 	"github.com/AudiusProject/audius-d/conf"
-	"github.com/AudiusProject/audius-d/migration"
 	"github.com/AudiusProject/audius-d/orchestration"
 	"github.com/AudiusProject/audius-d/register"
 	"github.com/spf13/cobra"
@@ -21,6 +20,5 @@ func main() {
 	rootCmd.AddCommand(orchestration.UpCmd, orchestration.DownCmd, orchestration.DevnetCmd)
 	rootCmd.AddCommand(register.RootCmd)
 	rootCmd.AddCommand(conf.RootCmd)
-	rootCmd.AddCommand(migration.MigrateCmd)
 	rootCmd.Execute()
 }
