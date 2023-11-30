@@ -208,7 +208,7 @@ func editConfig(contextName string) error {
 		return err
 	}
 
-	if err = writeConfigToContext(contextName, &newConfig); err != nil {
+	if err = WriteConfigToContext(contextName, &newConfig); err != nil {
 		return err
 	}
 

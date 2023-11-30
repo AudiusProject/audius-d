@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/AudiusProject/audius-d/conf"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/joho/godotenv"
 )
@@ -21,7 +22,16 @@ func MigrateAudiusDockerCompose(path string) error {
 	}
 
 	env, err := readOverrideEnv(path, nodeType)
+	if err != nil {
+		return err
+	}
+
 	spew.Dump(env)
+
+	configContext := conf.NewContextConfig()
+	envToContextConfig(nodeType, env, configContext)
+
+	conf.WriteConfigToContext("test-migrate", configContext)
 
 	return nil
 }
@@ -60,6 +70,45 @@ func readOverrideEnv(path, nodeType string) (map[string]string, error) {
 	return godotenv.Read(orpath)
 }
 
-func writeMigratedContextConfig() error {
-	return nil
+func envToContextConfig(nodeType string, env map[string]string, ctx *conf.ContextConfig) {
+	base := conf.BaseServerConfig{
+		Host: "http://localhost",
+		Tag:  "latest",
+	}
+	if nodeType == "creator-node" {
+		base.ExternalHttpPort = 80
+		base.InternalHttpPort = 80
+		base.ExternalHttpsPort = 443
+		base.InternalHttpsPort = 443
+
+		base.OperatorPrivateKey = env["delegatePrivateKey"]
+		base.OperatorWallet = env["delegateOwnerWallet"]
+		base.OperatorRewardsWallet = env["spOwnerWallet"]
+
+		creatorConf := conf.CreatorConfig{
+			BaseServerConfig: base,
+		}
+		ctx.CreatorNodes["creator-node"] = creatorConf
+	}
+	if nodeType == "discovery-provider" {
+		base.ExternalHttpPort = 5000
+		base.InternalHttpPort = 5000
+		base.ExternalHttpsPort = 5001
+		base.InternalHttpsPort = 5001
+
+		base.OperatorPrivateKey = env["audius_delegate_private_key"]
+		base.OperatorWallet = env["audius_delegate_owner_wallet"]
+		base.OperatorRewardsWallet = env["audius_delegate_owner_wallet"]
+
+		discoveryConf := conf.DiscoveryConfig{
+			BaseServerConfig: base,
+		}
+		ctx.DiscoveryNodes["discovery-provider"] = discoveryConf
+	}
+
+	net := conf.NetworkConfig{
+		Name: "stage",
+	}
+
+	ctx.Network = net
 }

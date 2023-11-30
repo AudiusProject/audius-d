@@ -13,6 +13,16 @@ type ContextConfig struct {
 	IdentityService map[string]IdentityConfig
 }
 
+func NewContextConfig() *ContextConfig {
+	return &ContextConfig{
+		ConfigVersion:   "0.1",
+		Network:         NetworkConfig{},
+		CreatorNodes:    map[string]CreatorConfig{},
+		DiscoveryNodes:  map[string]DiscoveryConfig{},
+		IdentityService: map[string]IdentityConfig{},
+	}
+}
+
 // base structure that all server types need
 type BaseServerConfig struct {
 	// port that will be exposed via audius-docker-compose

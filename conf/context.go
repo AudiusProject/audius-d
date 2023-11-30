@@ -173,7 +173,7 @@ func readConfigFromContext(contextName string, configTarget *ContextConfig) erro
 	return nil
 }
 
-func writeConfigToContext(ctxName string, ctxConfig *ContextConfig) error {
+func WriteConfigToContext(ctxName string, ctxConfig *ContextConfig) error {
 	ctxBaseDir, err := getContextBaseDir()
 	if err != nil {
 		return err
@@ -188,7 +188,7 @@ func writeConfigToCurrentContext(ctxConfig *ContextConfig) error {
 	if err != nil {
 		return err
 	}
-	return writeConfigToContext(ctxName, ctxConfig)
+	return WriteConfigToContext(ctxName, ctxConfig)
 }
 
 func createContextFromTemplate(name string, templateFilePath string) error {
@@ -196,7 +196,7 @@ func createContextFromTemplate(name string, templateFilePath string) error {
 	if err := readConfigFromFile(templateFilePath, &ctxConfig); err != nil {
 		return err
 	}
-	if err := writeConfigToContext(name, &ctxConfig); err != nil {
+	if err := WriteConfigToContext(name, &ctxConfig); err != nil {
 		return err
 	}
 	return nil
