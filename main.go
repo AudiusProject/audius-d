@@ -4,10 +4,14 @@ import (
 	_ "embed"
 
 	"github.com/AudiusProject/audius-d/conf"
+	"github.com/AudiusProject/audius-d/gui"
 	"github.com/AudiusProject/audius-d/orchestration"
 	"github.com/AudiusProject/audius-d/register"
 	"github.com/spf13/cobra"
 )
+
+// //go:embed ui/dist/*
+// var dist embed.FS
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -20,5 +24,6 @@ func main() {
 	rootCmd.AddCommand(orchestration.UpCmd, orchestration.DownCmd, orchestration.DevnetCmd)
 	rootCmd.AddCommand(register.RootCmd)
 	rootCmd.AddCommand(conf.RootCmd)
+	rootCmd.AddCommand(gui.RunGuiServer)
 	rootCmd.Execute()
 }
