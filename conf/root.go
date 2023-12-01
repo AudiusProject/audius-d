@@ -86,6 +86,27 @@ var (
 			useContextCmd.Run(cmd, args)
 		},
 	}
+	migrateContextCmd = &cobra.Command{
+		Use:   "migrate-context <name> <path>",
+		Short: "create an audius-d configuration based of an existing audius-docker-compose instance",
+		Long: `
+		Create an audius-d configuration based of an existing audius-docker-compose instance.
+		
+		Requires two arguments, the name of the context where the instance will land. 
+		A path to an existing audius-docker-compose installation.
+
+		Examples:
+		"audius-d migrate-context creator-node ~/audius-docker-compose"
+		"audius-d config migrate-context discovery-provider ../audius-docker-compose"
+		`,
+		Args: cobra.ExactArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := MigrateAudiusDockerCompose(args[0], args[1]); err != nil {
+				log.Fatal("audius-docker-compose migration failed: ", err)
+			}
+			log.Println("audius-docker-compose migration successful 🎉")
+		},
+	}
 	currentContextCmd = &cobra.Command{
 		Use:   "current-context",
 		Short: "Show the currently enabled context",
@@ -138,7 +159,7 @@ var (
 func init() {
 	createContextCmd.Flags().StringVarP(&confFileTemplate, "templatefile", "f", "", "-f <config file to build context from>")
 	dumpCmd.Flags().StringVarP(&dumpOutfile, "outfile", "o", "", "-o <outfile")
-	RootCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, setCmd, editCmd)
+	RootCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, setCmd, editCmd, migrateContextCmd)
 }
 
 func setConfigWithViper(key string, value string) error {
@@ -157,7 +178,7 @@ func setConfigWithViper(key string, value string) error {
 		return err
 	}
 	if !v.IsSet(key) {
-		return fmt.Errorf("Key '%s' not found in config.", key)
+		return fmt.Errorf("key '%s' not found in config", key)
 	}
 	v.Set(key, value)
 	var config ContextConfig
