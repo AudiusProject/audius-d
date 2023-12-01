@@ -1,10 +1,29 @@
-import type { AbiItem } from "web3-utils";
 import registryJSON from "../eth-contracts/ABIs/Registry.json";
 import { useEnvVars } from "../providers/EnvVarsProvider";
 import { useReadContract } from "wagmi";
 import { utf8ToBytes32 } from "../utils/utils";
 
 type addressString = `0x${string}`;
+
+type AbiItem = {
+  anonymous?: boolean;
+  constant?: boolean;
+  gas?: number;
+  inputs?: Array<{
+    internalType?: string;
+    name: string;
+    type: string;
+  }>;
+  name?: string;
+  outputs?: Array<{
+    internalType: string;
+    name: string;
+    type: string;
+  }>;
+  payable?: boolean;
+  stateMutability?: string;
+  type: string;
+};
 
 type ContractABI = {
   abi: AbiItem[];
