@@ -1,7 +1,7 @@
 NETWORK ?= stage
 TAG ?= latest
 
-build-go: build-gui
+build-go:
 	@echo "Building Go binary..."
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audius-d-x86 main.go
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audius-d-arm main.go

@@ -10,9 +10,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// //go:embed ui/dist/*
-// var dist embed.FS
-
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "audius-d [command]",
@@ -24,6 +21,6 @@ func main() {
 	rootCmd.AddCommand(orchestration.UpCmd, orchestration.DownCmd, orchestration.DevnetCmd)
 	rootCmd.AddCommand(register.RootCmd)
 	rootCmd.AddCommand(conf.RootCmd)
-	rootCmd.AddCommand(gui.RunGuiServer)
+	rootCmd.AddCommand(gui.RootCmd)
 	rootCmd.Execute()
 }

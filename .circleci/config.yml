@@ -105,7 +105,8 @@ jobs:
           name: make
           command: |
             cd ~/audius-d
-            make TAG=$COMPOSE_COMMIT_SHA
+            make build-gui
+            make build-go TAG=$COMPOSE_COMMIT_SHA
       - persist_to_workspace:
           root: ~/audius-d
           paths:
