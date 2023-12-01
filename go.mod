@@ -4,7 +4,6 @@ go 1.21.3
 
 require (
 	github.com/BurntSushi/toml v1.3.2
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/ethereum/go-ethereum v1.13.4
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.5.0
