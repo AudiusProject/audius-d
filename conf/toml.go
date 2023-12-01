@@ -15,6 +15,13 @@ func getConfigBaseDir() (string, error) {
 		return "", err
 	}
 	confDir := filepath.Join(usr.HomeDir, ".audius")
+
+	// MkdirAll is idempotent
+	// Ensure directory exists before handing it off
+	err = os.MkdirAll(confDir, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
 	return confDir, nil
 }
 
