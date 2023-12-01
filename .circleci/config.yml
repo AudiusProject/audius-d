@@ -51,6 +51,8 @@ jobs:
       image: ubuntu-2204:current
     resource_class: large
     steps:
+      - attach_workspace:
+          at: ~/workspace
       - checkout:
           path: ~/audius-d
       - run:
@@ -83,6 +85,13 @@ jobs:
               make build-push TAG=$COMPOSE_COMMIT_SHA
               make build-push TAG=latest
             fi
+      - run:
+          name: npm i (gui)
+          command: |
+            cd ~/audius-d/gui/ui
+            npm i
+            mkdir -p ~/workspace/node_modules
+            cp -R ./node_modules ~/workspace/node_modules
       - run:
           name: make
           command: |
