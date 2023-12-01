@@ -14,35 +14,10 @@ const (
 )
 
 func ReadOrCreateContextConfig() (*ContextConfig, error) {
-	confDir, err := getConfigBaseDir()
+	execConf, err := readOrCreateExecutionConfig()
 	if err != nil {
 		return nil, err
 	}
-
-	execConfFilePath := filepath.Join(confDir, "audius")
-	err = os.MkdirAll(filepath.Join(confDir, "contexts"), os.ModePerm)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := os.Stat(execConfFilePath); os.IsNotExist(err) {
-		fmt.Println("No existing config found at ~/.audius, creating new.")
-		if err = createExecutionConfig(execConfFilePath); err != nil {
-			return nil, err
-		}
-
-	}
-
-	var execConf ExecutionConfig
-	if err = readExecutionConfig(&execConf); err != nil {
-		fmt.Printf("Failed to read execution config: %s\nAttempting to recreate...\n", err)
-		if err = createExecutionConfig(execConfFilePath); err != nil {
-			return nil, err
-		}
-		if err = readExecutionConfig(&execConf); err != nil {
-			return nil, err
-		}
-	}
-
 	contextDir, err := getContextBaseDir()
 	if err != nil {
 		return nil, err
@@ -73,24 +48,47 @@ func getContextBaseDir() (string, error) {
 		return "", err
 	}
 	contextDir := filepath.Join(confBaseDir, "contexts")
+
+	// MkdirAll is idempotent
+	// Ensure directory exists before handing it off
+	err = os.MkdirAll(contextDir, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
 	return contextDir, nil
 }
 
-func readExecutionConfig(execConf *ExecutionConfig) error {
-	configDir, err := getConfigBaseDir()
+func readOrCreateExecutionConfig() (ExecutionConfig, error) {
+	var execConf ExecutionConfig
+	confDir, err := getConfigBaseDir()
 	if err != nil {
-		return err
+		return execConf, err
 	}
-	execConfFilePath := filepath.Join(configDir, "audius")
+
+	execConfFilePath := filepath.Join(confDir, "audius")
+	if _, err := os.Stat(execConfFilePath); os.IsNotExist(err) {
+		fmt.Println("No existing config found at ~/.audius, creating new.")
+		if err = createExecutionConfig(execConfFilePath); err != nil {
+			return execConf, err
+		}
+
+	}
+
 	if err = readConfigFromFile(execConfFilePath, &execConf); err != nil {
-		return err
+		fmt.Printf("Failed to read execution config: %s\nAttempting to recreate...\n", err)
+		if err = createExecutionConfig(execConfFilePath); err != nil {
+			return execConf, err
+		}
+		if err = readConfigFromFile(execConfFilePath, &execConf); err != nil {
+			return execConf, err
+		}
 	}
-	return nil
+	return execConf, nil
 }
 
 func GetCurrentContextName() (string, error) {
-	var execConf ExecutionConfig
-	if err := readExecutionConfig(&execConf); err != nil {
+	execConf, err := readOrCreateExecutionConfig()
+	if err != nil {
 		return "", err
 	}
 	return execConf.CurrentContext, nil
@@ -130,8 +128,8 @@ func UseContext(ctxName string) error {
 		return nil
 	}
 
-	var execConf ExecutionConfig
-	if err = readExecutionConfig(&execConf); err != nil {
+	execConf, err := readOrCreateExecutionConfig()
+	if err != nil {
 		return err
 	}
 
