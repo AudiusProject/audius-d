@@ -15,7 +15,7 @@ type ContextConfig struct {
 
 func NewContextConfig() *ContextConfig {
 	return &ContextConfig{
-		ConfigVersion:   "0.1",
+		ConfigVersion:   ConfigVersion,
 		Network:         NetworkConfig{},
 		CreatorNodes:    map[string]CreatorConfig{},
 		DiscoveryNodes:  map[string]DiscoveryConfig{},

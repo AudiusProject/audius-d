@@ -89,7 +89,17 @@ var (
 	migrateContextCmd = &cobra.Command{
 		Use:   "migrate-context <name> <path>",
 		Short: "create an audius-d configuration based of an existing audius-docker-compose instance",
-		Args:  cobra.ExactArgs(2),
+		Long: `
+		Create an audius-d configuration based of an existing audius-docker-compose instance.
+		
+		Requires two arguments, the name of the context where the instance will land. 
+		A path to an existing audius-docker-compose installation.
+
+		Examples:
+		"audius-d migrate-context creator-node ~/audius-docker-compose"
+		"audius-d config migrate-context discovery-provider ../audius-docker-compose"
+		`,
+		Args: cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := MigrateAudiusDockerCompose(args[0], args[1]); err != nil {
 				log.Fatal("audius-docker-compose migration failed: ", err)
