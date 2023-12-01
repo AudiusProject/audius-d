@@ -88,19 +88,16 @@ jobs:
       - restore_cache:
           keys:
             - node-modules-{{ checksum "~/audius-d/gui/ui/package-lock.json" }}
+            - node-modules-
       - run:
-          name: npm i (gui)
+          name: npm ci
           command: |
             cd ~/audius-d/gui/ui
-            if [ ! -d "~/workspace/node_modules" ]; then
-              npm i
-              mkdir -p ~/workspace/node_modules
-              cp -R ./node_modules ~/workspace/node_modules
-            fi
+            npm ci
       - save_cache:
-          paths:
-            - ~/workspace/node_modules
           key: node-modules-{{ checksum "~/audius-d/gui/ui/package-lock.json" }}
+          paths:
+            - ~/audius-d/gui/ui/node_modules
       - run:
           name: make
           command: |

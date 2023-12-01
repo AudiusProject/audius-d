@@ -9,8 +9,7 @@ cd audius-d/gui/ui
 npm i
 
 cd audius-d
-make build-gui
-make build-go
+make build-gui build-go
 ```
 
 ## run
@@ -20,6 +19,12 @@ make build-go
 ```
 
 ## dev
+
+### audius-d
+
+```
+make build-go
+```
 
 ### gui
 
