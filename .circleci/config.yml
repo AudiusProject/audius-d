@@ -55,6 +55,9 @@ jobs:
           at: ~/workspace
       - checkout:
           path: ~/audius-d
+      - restore_cache:
+          keys:
+            - node-modules-{{ checksum "~/audius-d/gui/ui/package-lock.json" }}
       - run:
           name: install go
           command: |
@@ -89,9 +92,15 @@ jobs:
           name: npm i (gui)
           command: |
             cd ~/audius-d/gui/ui
-            npm i
-            mkdir -p ~/workspace/node_modules
-            cp -R ./node_modules ~/workspace/node_modules
+            if [ ! -d "~/workspace/node_modules" ]; then
+              npm i
+              mkdir -p ~/workspace/node_modules
+              cp -R ./node_modules ~/workspace/node_modules
+            fi
+      - save_cache:
+          paths:
+            - ~/workspace/node_modules
+          key: node-modules-{{ checksum "~/audius-d/gui/ui/package-lock.json" }}
       - run:
           name: make
           command: |
