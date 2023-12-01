@@ -42,5 +42,5 @@ func StartGuiServer() {
 	// Serve other static files
 	e.GET("/*", echo.WrapHandler(http.StripPrefix("/", fileServer)))
 
-	e.Logger.Fatal(e.Start(":8080"))
+	e.Logger.Fatal(e.Start(":2024"))
 }
