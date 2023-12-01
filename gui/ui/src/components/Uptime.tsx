@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useEnvVars } from "./providers/EnvVarsProvider";
+import { useEnvVars } from "../providers/EnvVarsProvider";
 
 export interface UptimeResponse {
   host: string;

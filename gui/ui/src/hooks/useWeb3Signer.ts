@@ -11,7 +11,7 @@ type Web3Type = any;
 const walletClientToSigner = async (
   walletClient: WalletClient,
 ): Promise<Signer> => {
-  const { account, chain, transport } = walletClient;
+  const { account, chain } = walletClient;
   const network = {
     chainId: chain!.id,
     name: chain!.name,
@@ -19,10 +19,8 @@ const walletClientToSigner = async (
   };
 
   // Dynamically import hefty libraries so that we don't have to include them in the main index bundle
-  const ethersjs = await import("ethers");
-  const { providers } = ethersjs;
-
-  const provider = new providers.Web3Provider(transport, network);
+  const ethers = await import("ethers");
+  const provider = new ethers.JsonRpcProvider(undefined, network);
   const signer = provider.getSigner(account!.address);
   return signer;
 };

@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import BN from "bn.js";
 import useSWR from "swr";
-import { Card, Title, Tracker, Flex, Text, Color } from "@tremor/react";
-import { useEnvVars } from "./providers/EnvVarsProvider";
-import { useAudiusLibs } from "./providers/AudiusLibsProvider";
-import type { AudiusLibsContextType } from "./providers/AudiusLibsProvider";
-import { formatWei } from "./helpers";
-import useNodes from "./hooks/useNodes";
-import { UptimeResponse } from "./Uptime";
+import { Tracker, Color } from "@tremor/react";
+import { useEnvVars } from "../providers/EnvVarsProvider";
+import { useAudiusLibs } from "../providers/AudiusLibsProvider";
+// import type { AudiusLibsType } from "../providers/AudiusLibsProvider";
+import type { AudiusLibs } from "@audius/sdk/dist/WebAudiusLibs.d.ts";
+import { formatWei } from "../utils/helpers";
+import useNodes from "../hooks/useNodes";
+import { UptimeResponse } from "../components/Uptime";
 
 interface NodeResponse {
   blockNumber: number;
@@ -42,17 +43,28 @@ type GetPendingUndelegateRequestResponse = {
 
 type User = {
   wallet: string;
-  totalDelegatorStake: BigNumber;
-  pendingUndelegateRequest: GetPendingUndelegateRequestResponse;
+  totalDelegatorStake: BigNumber | undefined;
+  pendingUndelegateRequest: GetPendingUndelegateRequestResponse | undefined;
 };
 
-const fetcher = async (url) => {
+class FetchError extends Error {
+  info: any;
+  status: number;
+
+  constructor(message: string) {
+    super(message);
+    this.info = null;
+    this.status = 0;
+  }
+}
+
+const fetcher = async (url: string) => {
   const res = await fetch(url);
 
   // If the status code is not in the range 200-299,
   // we still try to parse and throw it.
   if (!res.ok) {
-    const error = new Error("An error occurred while fetching the data.");
+    const error = new FetchError("An error occurred while fetching the data.");
     // Attach extra info to the error object.
     error.info = await res.json();
     error.status = res.status;
@@ -62,7 +74,7 @@ const fetcher = async (url) => {
   return res.json();
 };
 
-const UptimeTracker = ({ data }: { UptimeResponse }) => {
+const UptimeTracker = ({ data }: { data: UptimeResponse }) => {
   if (!data?.uptime_raw_data) {
     return null;
   }
@@ -88,14 +100,14 @@ const UptimeTracker = ({ data }: { UptimeResponse }) => {
 
 const getUserMetadata = async (
   wallet: string,
-  audiusLibs: AudiusLibsContextType,
+  audiusLibs: AudiusLibs,
 ): Promise<User> => {
   const totalDelegatorStake =
-    await audiusLibs.ethContracts.DelegateManagerClient.getTotalDelegatorStake(
+    await audiusLibs.ethContracts?.DelegateManagerClient.getTotalDelegatorStake(
       wallet,
     );
   const pendingUndelegateRequest =
-    await audiusLibs.ethContracts.DelegateManagerClient.getPendingUndelegateRequest(
+    await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
       wallet,
     );
 
@@ -110,20 +122,20 @@ const getUserMetadata = async (
 
 const getServiceProviderMetadata = async (
   wallet: string,
-  audiusLibs: AudiusLibsContextType,
+  audiusLibs: AudiusLibs,
 ) => {
   const totalStakedFor =
-    await audiusLibs.ethContracts.StakingProxyClient.totalStakedFor(wallet);
+    await audiusLibs.ethContracts?.StakingProxyClient.totalStakedFor(wallet);
   const delegatedTotal =
-    await audiusLibs.ethContracts.DelegateManagerClient.getTotalDelegatedToServiceProvider(
+    await audiusLibs.ethContracts?.DelegateManagerClient.getTotalDelegatedToServiceProvider(
       wallet,
     );
-  const serviceProvider: ServiceProvider =
-    await audiusLibs.ethContracts.ServiceProviderFactoryClient.getServiceProviderDetails(
+  const serviceProvider: ServiceProvider | undefined =
+    await audiusLibs.ethContracts?.ServiceProviderFactoryClient.getServiceProviderDetails(
       wallet,
     );
   const pendingDecreaseStakeRequest =
-    await audiusLibs.ethContracts.ServiceProviderFactoryClient.getPendingDecreaseStakeRequest(
+    await audiusLibs.ethContracts?.ServiceProviderFactoryClient.getPendingDecreaseStakeRequest(
       wallet,
     );
 
@@ -135,7 +147,7 @@ const getServiceProviderMetadata = async (
   };
 };
 
-const NodeRow = ({ node }: { NodeResponse }) => {
+const NodeRow = ({ node }: { node: NodeResponse }) => {
   const { audiusLibs } = useAudiusLibs();
 
   const [bondedData, setBondedData] = useState("");
@@ -151,10 +163,7 @@ const NodeRow = ({ node }: { NodeResponse }) => {
      *      active delegator stake = (total delegator stake - locked delegator stake)
      *          locked delegator stake = amount of pending undelegateRequest for address
      */
-    const getActiveStake = async (
-      wallet: string,
-      audiusLibs: AudiusLibsContextType,
-    ) => {
+    const getActiveStake = async (wallet: string, audiusLibs: AudiusLibs) => {
       try {
         const user = await getUserMetadata(wallet, audiusLibs);
         const serviceProvider = await getServiceProviderMetadata(
@@ -166,25 +175,41 @@ const NodeRow = ({ node }: { NodeResponse }) => {
           ...serviceProvider,
         };
 
-        let activeDeployerStake: BN = new BN("0");
-        let activeDelegatorStake: BN = new BN("0");
+        let activeDeployerStake = new BN("0");
+        let activeDelegatorStake = new BN("0");
         if ("serviceProvider" in operator) {
-          const { deployerStake } = operator.serviceProvider;
-          const { amount: pendingDecreaseStakeAmount, lockupExpiryBlock } =
-            operator.pendingDecreaseStakeRequest;
-          if (lockupExpiryBlock !== 0) {
-            activeDeployerStake = deployerStake.sub(pendingDecreaseStakeAmount);
-          } else {
-            activeDeployerStake = deployerStake;
+          const deployerStake = operator.serviceProvider?.deployerStake;
+          const {
+            amount: pendingDecreaseStakeAmount = new BN("0"),
+            lockupExpiryBlock = 0,
+          } = operator.pendingDecreaseStakeRequest ?? {};
+
+          if (deployerStake) {
+            if (lockupExpiryBlock !== 0) {
+              activeDeployerStake = deployerStake.sub(
+                pendingDecreaseStakeAmount,
+              );
+            } else {
+              activeDeployerStake = deployerStake;
+            }
           }
         }
 
-        if (operator.pendingUndelegateRequest.lockupExpiryBlock !== 0) {
-          activeDelegatorStake = operator.totalDelegatorStake.sub(
-            operator.pendingUndelegateRequest.amount,
-          );
+        if (operator.pendingUndelegateRequest?.lockupExpiryBlock !== 0) {
+          // Ensure operator.totalDelegatorStake and operator.pendingUndelegateRequest.amount are defined and are BN
+          if (
+            operator.totalDelegatorStake &&
+            operator.pendingUndelegateRequest?.amount
+          ) {
+            activeDelegatorStake = operator.totalDelegatorStake.sub(
+              operator.pendingUndelegateRequest.amount,
+            );
+          } else {
+            activeDelegatorStake = new BN("0");
+          }
         } else {
-          activeDelegatorStake = operator.totalDelegatorStake;
+          // If operator.totalDelegatorStake is not defined, default to BN("0")
+          activeDelegatorStake = operator.totalDelegatorStake || new BN("0");
         }
         const activeStake = activeDelegatorStake.add(activeDeployerStake);
         setBondedData(formatWei(activeStake));
@@ -194,8 +219,8 @@ const NodeRow = ({ node }: { NodeResponse }) => {
       }
     };
 
-    if (node.owner) {
-      getActiveStake(node.owner, audiusLibs);
+    if (node.owner && audiusLibs) {
+      void getActiveStake(node.owner, audiusLibs);
     }
   }, [node, audiusLibs]);
 

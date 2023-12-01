@@ -18,8 +18,9 @@ const useMinChainVersions = () => {
     utf8ToBytes32(serviceType.DISCOVERY_PROVIDER),
   ]);
   if (!isDiscoveryResultPending && !discoveryResultError && discoveryResult) {
-    expectedVersions[serviceType.DISCOVERY_PROVIDER] =
-      bytes32ToUtf8(discoveryResult);
+    expectedVersions[serviceType.DISCOVERY_PROVIDER] = bytes32ToUtf8(
+      discoveryResult as string,
+    );
   }
 
   const {
@@ -30,7 +31,9 @@ const useMinChainVersions = () => {
     utf8ToBytes32(serviceType.CREATOR_NODE),
   ]);
   if (!isContentResultPending && !contentResultError && contentResult) {
-    expectedVersions[serviceType.CREATOR_NODE] = bytes32ToUtf8(contentResult);
+    expectedVersions[serviceType.CREATOR_NODE] = bytes32ToUtf8(
+      contentResult as string,
+    );
   }
 
   const isPending = isDiscoveryResultPending || isContentResultPending;
