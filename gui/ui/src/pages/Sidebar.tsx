@@ -7,10 +7,10 @@ const Sidebar: React.FC = () => {
       <nav>
         <ul>
           <li>
-            <Link to="/">Status</Link>
+            <Link to="/">/status</Link>
           </li>
           <li>
-            <Link to="/network">Network</Link>
+            <Link to="/network">/network</Link>
           </li>
         </ul>
       </nav>

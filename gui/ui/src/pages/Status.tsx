@@ -6,7 +6,7 @@ import { useAudiusLibs } from "../providers/AudiusLibsProvider";
 import useMinChainVersions from "../hooks/useMinChainVersions";
 import useLatestGitHubVersions from "../hooks/useLatestGitHubVersions";
 
-const Home: React.FC = () => {
+const Status: React.FC = () => {
   const { endpoint, env, nodeType } = useEnvVars();
   const {
     audiusLibs,
@@ -95,4 +95,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home;
+export default Status;

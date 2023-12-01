@@ -1,53 +1,29 @@
 # audius-d
 
-the simpliest way to run and interact with an audius node.
+run your own node.
 
-## install
-
-```
-curl -sSL https://raw.githubusercontent.com/AudiusProject/audius-d/main/install.sh | sh
-```
-
-## quickstart
-
-run a dev setup
+## build
 
 ```
-mkdir ~/.audius && cp sample.audius.conf ~/.audius/audius.conf
+cd audius-d/gui/ui
+npm i
 
-audius-d
+cd audius-d
+make build-gui
+make build-go
 ```
 
 ## run
 
-**configure**
-
-minimal required config, (default location `~/.audius/audius.conf`) or pass via `-c` flag at runtime
-
 ```
-# creator-node audius.conf
-creatorNodeEndpoint=
-delegateOwnerWallet=
-delegatePrivateKey=
-spOwnerWallet=
+./bin/audius-d-arm help
 ```
 
-```
-# discovery-provider audius.conf
-audius_discprov_url=
-audius_delegate_owner_wallet=
-audius_delegate_private_key=
-```
+## dev
 
-**run**
-```
-audius-d [-c audius.conf]
-```
-
-## build
-
-builds required go binaries that are (for now) committed to this repo on the `bin` branch by CI.
+### gui
 
 ```
-make
+cd gui/ui
+npm run stage
 ```
