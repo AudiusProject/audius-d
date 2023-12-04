@@ -1,49 +1,50 @@
-package orchestration
+package main
 
 import (
 	"log"
 
-	"github.com/AudiusProject/audius-d/conf"
+	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/orchestration"
 	"github.com/spf13/cobra"
 )
 
 var (
-	UpCmd = &cobra.Command{
+	upCmd = &cobra.Command{
 		Use:   "up",
 		Short: "Uses the currently enabled context to spin up audius nodes.",
 		Run: func(cmd *cobra.Command, args []string) {
-			RunAudiusWithConfig(readOrCreateContext())
+			orchestration.RunAudiusWithConfig(readOrCreateContext())
 		},
 	}
-	DownCmd = &cobra.Command{
+	downCmd = &cobra.Command{
 		Use:   "down",
 		Short: "Spin down nodes and network in the current context.",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := readOrCreateContext()
-			RunDown(ctx)
-			DownDevnet(ctx)
+			orchestration.RunDown(ctx)
+			orchestration.DownDevnet(ctx)
 		},
 	}
-	DevnetCmd = &cobra.Command{
+	devnetCmd = &cobra.Command{
 		Use:   "devnet [command]",
 		Short: "Spin up local ethereum, solana, and acdc chains for development",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := readOrCreateContext()
-			StartDevnet(ctx)
+			orchestration.StartDevnet(ctx)
 		},
 	}
-	DevnetDownCmd = &cobra.Command{
+	devnetDownCmd = &cobra.Command{
 		Use:   "down",
 		Short: "Shut down local ethereum, solana, and acdc chains",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := readOrCreateContext()
-			DownDevnet(ctx)
+			orchestration.DownDevnet(ctx)
 		},
 	}
 )
 
 func init() {
-	DevnetCmd.AddCommand(DevnetDownCmd)
+	devnetCmd.AddCommand(devnetDownCmd)
 }
 
 func readOrCreateContext() *conf.ContextConfig {

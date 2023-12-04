@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	"github.com/BurntSushi/toml"
 )
 
 const (
@@ -18,7 +16,7 @@ func ReadOrCreateContextConfig() (*ContextConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	contextDir, err := getContextBaseDir()
+	contextDir, err := GetContextBaseDir()
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +32,7 @@ func ReadOrCreateContextConfig() (*ContextConfig, error) {
 	}
 
 	var ctx ContextConfig
-	err = readConfigFromFile(contextFilePath, &ctx)
+	err = ReadConfigFromFile(contextFilePath, &ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +40,7 @@ func ReadOrCreateContextConfig() (*ContextConfig, error) {
 	return &ctx, nil
 }
 
-func getContextBaseDir() (string, error) {
+func GetContextBaseDir() (string, error) {
 	confBaseDir, err := getConfigBaseDir()
 	if err != nil {
 		return "", err
@@ -74,12 +72,12 @@ func readOrCreateExecutionConfig() (ExecutionConfig, error) {
 
 	}
 
-	if err = readConfigFromFile(execConfFilePath, &execConf); err != nil {
+	if err = ReadConfigFromFile(execConfFilePath, &execConf); err != nil {
 		fmt.Printf("Failed to read execution config: %s\nAttempting to recreate...\n", err)
 		if err = createExecutionConfig(execConfFilePath); err != nil {
 			return execConf, err
 		}
-		if err = readConfigFromFile(execConfFilePath, &execConf); err != nil {
+		if err = ReadConfigFromFile(execConfFilePath, &execConf); err != nil {
 			return execConf, err
 		}
 	}
@@ -95,7 +93,7 @@ func GetCurrentContextName() (string, error) {
 }
 
 func GetContexts() ([]string, error) {
-	ctxDir, err := getContextBaseDir()
+	ctxDir, err := GetContextBaseDir()
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +112,7 @@ func GetContexts() ([]string, error) {
 }
 
 func UseContext(ctxName string) error {
-	ctxDir, err := getContextBaseDir()
+	ctxDir, err := GetContextBaseDir()
 	if err != nil {
 		return err
 	}
@@ -137,14 +135,14 @@ func UseContext(ctxName string) error {
 	execConf.CurrentContext = ctxName
 
 	execConfFilePath := filepath.Join(confBaseDir, "audius")
-	if err = writeConfigToFile(execConfFilePath, &execConf); err != nil {
+	if err = WriteConfigToFile(execConfFilePath, &execConf); err != nil {
 		return err
 	}
 	return nil
 }
 
 func DeleteContext(ctxName string) error {
-	ctxDir, err := getContextBaseDir()
+	ctxDir, err := GetContextBaseDir()
 	if err != nil {
 		return err
 	}
@@ -159,42 +157,42 @@ func DeleteContext(ctxName string) error {
 	return nil
 }
 
-func readConfigFromContext(contextName string, configTarget *ContextConfig) error {
-	contextBaseDir, err := getContextBaseDir()
+func ReadConfigFromContext(contextName string, configTarget *ContextConfig) error {
+	contextBaseDir, err := GetContextBaseDir()
 	if err != nil {
 		return err
 	}
-	err = readConfigFromFile(filepath.Join(contextBaseDir, contextName), configTarget)
+	err = ReadConfigFromFile(filepath.Join(contextBaseDir, contextName), configTarget)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func writeConfigToContext(ctxName string, ctxConfig *ContextConfig) error {
-	ctxBaseDir, err := getContextBaseDir()
+func WriteConfigToContext(ctxName string, ctxConfig *ContextConfig) error {
+	ctxBaseDir, err := GetContextBaseDir()
 	if err != nil {
 		return err
 	}
 	ctxConfig.ConfigVersion = ConfigVersion
-	err = writeConfigToFile(filepath.Join(ctxBaseDir, ctxName), ctxConfig)
+	err = WriteConfigToFile(filepath.Join(ctxBaseDir, ctxName), ctxConfig)
 	return err
 }
 
-func writeConfigToCurrentContext(ctxConfig *ContextConfig) error {
+func WriteConfigToCurrentContext(ctxConfig *ContextConfig) error {
 	ctxName, err := GetCurrentContextName()
 	if err != nil {
 		return err
 	}
-	return writeConfigToContext(ctxName, ctxConfig)
+	return WriteConfigToContext(ctxName, ctxConfig)
 }
 
-func createContextFromTemplate(name string, templateFilePath string) error {
+func CreateContextFromTemplate(name string, templateFilePath string) error {
 	var ctxConfig ContextConfig
-	if err := readConfigFromFile(templateFilePath, &ctxConfig); err != nil {
+	if err := ReadConfigFromFile(templateFilePath, &ctxConfig); err != nil {
 		return err
 	}
-	if err := writeConfigToContext(name, &ctxConfig); err != nil {
+	if err := WriteConfigToContext(name, &ctxConfig); err != nil {
 		return err
 	}
 	return nil
@@ -205,18 +203,18 @@ func createExecutionConfig(confFilePath string) error {
 		ConfigVersion:  ConfigVersion,
 		CurrentContext: "default",
 	}
-	err := writeConfigToFile(confFilePath, &execConfig)
+	err := WriteConfigToFile(confFilePath, &execConfig)
 	return err
 }
 
 func createDefaultContextIfNotExists() error {
-	contextDir, err := getContextBaseDir()
+	contextDir, err := GetContextBaseDir()
 	if err != nil {
 		return err
 	}
 
 	var conf ContextConfig
-	if err = readConfigFromContext("default", &conf); err == nil {
+	if err = ReadConfigFromContext("default", &conf); err == nil {
 		return nil
 	}
 
@@ -227,14 +225,9 @@ func createDefaultContextIfNotExists() error {
 		},
 	}
 
-	file, err := os.OpenFile(filepath.Join(contextDir, "default"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
+	if err = WriteConfigToFile(filepath.Join(contextDir, "default"), &conf); err != nil {
 		return err
 	}
-	defer file.Close()
 
-	if err = toml.NewEncoder(file).Encode(conf); err != nil {
-		return err
-	}
 	return nil
 }

@@ -20,5 +20,6 @@ export default defineConfig({
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    outDir: "../../pkg/gui/dist",
   },
 });

@@ -8,19 +8,10 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/spf13/cobra"
 )
 
-//go:embed ui/dist/*
+//go:embed dist/*
 var embeddedFiles embed.FS
-
-var RootCmd = &cobra.Command{
-	Use:   "gui",
-	Short: "Run gui server",
-	Run: func(cmd *cobra.Command, args []string) {
-		StartGuiServer()
-	},
-}
 
 func StartGuiServer() {
 	e := echo.New()
