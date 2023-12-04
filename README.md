@@ -23,7 +23,8 @@ make build-gui build-go
 ### audius-d
 
 ```
-make build-go
+chmod +x ./dev
+./dev
 ```
 
 ### gui

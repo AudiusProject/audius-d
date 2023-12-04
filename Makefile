@@ -8,7 +8,7 @@ build-go:
 
 build-gui:
 	@echo "Building GUI..."
-	cd ./gui/ui && npm run build
+	cd ./gui/ui && npm i && npm run build
 
 regen-abis:
 	curl -s https://raw.githubusercontent.com/AudiusProject/audius-protocol/main/packages/libs/src/eth-contracts/ABIs/ERC20Detailed.json | jq '.abi' > ./register/ABIs/ERC20Detailed.json
