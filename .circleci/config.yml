@@ -19,7 +19,7 @@ commands:
           name: standup devnet dependencies
           command: |
             cd ~/audius-d
-            audiusctl-x86 devnet
+            audius-ctl-x86 devnet
   basic-health-check:
     description: 'Perform a basic health check on an audius node'
     parameters:
@@ -106,8 +106,8 @@ jobs:
       - persist_to_workspace:
           root: ~/audius-d
           paths:
-            - bin/audiusctl-arm
-            - bin/audiusctl-x86
+            - bin/audius-ctl-arm
+            - bin/audius-ctl-x86
 
   test-devnet-deps:
     machine:
@@ -164,7 +164,7 @@ jobs:
           name: tear down devnet dependencies
           command: |
             cd ~/audius-d
-            audiusctl-x86 down
+            audius-ctl-x86 down
 
   test-audius-d-stage:
     machine:
@@ -180,8 +180,8 @@ jobs:
           name: standup ci env against stage
           command: |
             cd ~/audius-d
-            audiusctl-x86 config create-context ci -f configs/templates/ci.toml 
-            audiusctl-x86
+            audius-ctl-x86 config create-context ci -f configs/templates/ci.toml 
+            audius-ctl-x86
       - basic-health-check # creator node default
       - basic-health-check:
           port: 5000
@@ -192,7 +192,7 @@ jobs:
       - run:
           name: teardown
           command: |
-            audiusctl-x86 down
+            audius-ctl-x86 down
       
 
   test-eth-registration:
@@ -210,9 +210,9 @@ jobs:
           name: register delegateOwnerWallet
           command: |
             cd ~/audius-d
-            audiusctl-x86 config create-context ci -f configs/templates/ci.toml 
-            audiusctl-x86
-            audiusctl-x86 register
+            audius-ctl-x86 config create-context ci -f configs/templates/ci.toml 
+            audius-ctl-x86
+            audius-ctl-x86 register
 
   test-config-subcommands:
     machine:
@@ -227,30 +227,30 @@ jobs:
       - run:
           name: test default context is created
           command: |
-            audiusctl-x86 config
+            audius-ctl-x86 config
       - run:
           name: test create context
           command: |
-            audiusctl-x86 config create-context test -f ~/audius-d/configs/templates/ci.toml 
+            audius-ctl-x86 config create-context test -f ~/audius-d/configs/templates/ci.toml 
       - run:
           name: test modify context
           command: |
-            audiusctl-x86 config set Network.EthMainnetPort 8765
-            audiusctl-x86 config | grep 'EthMainnetPort = 8765'
+            audius-ctl-x86 config set Network.EthMainnetPort 8765
+            audius-ctl-x86 config | grep 'EthMainnetPort = 8765'
       - run:
           name: test invalid modify context
           command: |
-            if audiusctl-x86 config set Network.EthMainnetPort 8asdf; then
+            if audius-ctl-x86 config set Network.EthMainnetPort 8asdf; then
               echo Should not have succeeded
               false
             fi
-            audiusctl-x86 config | grep 'EthMainnetPort = 8765'
+            audius-ctl-x86 config | grep 'EthMainnetPort = 8765'
       - run:
           name: test delete context
           command: |
-            audiusctl-x86 config delete-context test
-            audiusctl-x86 config  # should resort to default
-            audiusctl-x86 config current-context | grep 'default'
+            audius-ctl-x86 config delete-context test
+            audius-ctl-x86 config  # should resort to default
+            audius-ctl-x86 config current-context | grep 'default'
 
   publish-job:
     machine:
