@@ -87,17 +87,17 @@ jobs:
             fi
       - restore_cache:
           keys:
-            - node-modules-{{ checksum "~/audius-d/gui/ui/package-lock.json" }}
+            - node-modules-{{ checksum "~/audius-d/web/ui/package-lock.json" }}
             - node-modules-
       - run:
           name: npm ci
           command: |
-            cd ~/audius-d/gui/ui
+            cd ~/audius-d/web/ui
             npm ci
       - save_cache:
-          key: node-modules-{{ checksum "~/audius-d/gui/ui/package-lock.json" }}
+          key: node-modules-{{ checksum "~/audius-d/web/ui/package-lock.json" }}
           paths:
-            - ~/audius-d/gui/ui/node_modules
+            - ~/audius-d/web/ui/node_modules
       - run:
           name: make
           command: |

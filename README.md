@@ -5,30 +5,25 @@ run your own node.
 ## build
 
 ```
-cd audius-d/gui/ui
-npm i
-
 cd audius-d
-make build-gui build-go
+make
 ```
 
 ## run
 
 ```
-./bin/audius-d-arm help
+# x86 Linux
+./bin/audiusctl-x86 help
+
+# Mac
+./bin/audiusctl-arm help
 ```
 
 ## dev
 
-### audius-d
-
-```
-make build-go
-```
-
 ### gui
 
 ```
-cd gui/ui
+cd web/ui
 npm run stage
 ```
