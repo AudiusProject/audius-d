@@ -4,7 +4,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/AudiusProject/audius-d/conf"
+	"github.com/AudiusProject/audius-d/pkg/conf"
 )
 
 func StartDevnet(_ *conf.ContextConfig) {
