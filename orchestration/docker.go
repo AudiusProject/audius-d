@@ -15,6 +15,12 @@ type OverrideEnv = map[string]string
 
 // deploys a server node generically
 func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, override OverrideEnv, containerName string, nodeType string, internalVolumes []string) error {
+	hasPkey := serverConfig.OperatorPrivateKey != ""
+	if !hasPkey && (nodeType == "discovery-provider" || nodeType == "creator-node") {
+		fmt.Println("pkey not provided, node will not be started")
+		return nil
+	}
+
 	if isContainerRunning(containerName) {
 		fmt.Printf("container %s already running\n", containerName)
 		return nil

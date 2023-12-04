@@ -1,0 +1,38 @@
+title = "Testnet Defaults"
+description = """
+configuration defaults for nodes on testnet (stage)
+"""
+
+[Network]
+Name = "stage"
+Tag = "latest"
+
+[CreatorNodes.creator-node]
+InternalHttpPort = 80
+ExternalHttpPort = 80
+InternalHttpsPort = 443
+ExternalHttpsPort = 443
+Host = "http://localhost"
+OperatorPrivateKey = "62ca4962f99a39b4a2c60a8402f60baea5437c275146abd90e0bfdcf0415184d"
+# todo: derive this from private key at runtime
+OperatorWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
+OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
+
+[DiscoveryNodes.discovery-node]
+InternalHttpPort = 5000
+ExternalHttpPort = 5000
+InternalHttpsPort = 5001
+ExternalHttpsPort = 5001
+Host = "http://localhost"
+OperatorPrivateKey = "c1c36935d3809daacf3aa63243feef5e7a97ba11dc56fe3a923758937362ed6e"
+# todo: derive this from private key at runtime
+OperatorWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
+OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
+
+[IdentityService.identity-node]
+SolanaClaimableTokenProgramAddress = "testHKV1B56fbvop4w6f2cTGEub9dRQ2Euta5VmqdX9"
+InternalHttpPort = 7000
+ExternalHttpPort = 7000
+InternalHttpsPort = 7001
+ExternalHttpsPort = 7001
+Host = "http://localhost"

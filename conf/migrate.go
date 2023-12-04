@@ -69,44 +69,24 @@ func readOverrideEnv(path, nodeType string) (map[string]string, error) {
 }
 
 func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConfig) {
-	base := BaseServerConfig{
-		Host: "http://localhost",
-		Tag:  "latest",
-	}
 	if nodeType == "creator-node" {
-		base.ExternalHttpPort = 80
-		base.InternalHttpPort = 80
-		base.ExternalHttpsPort = 443
-		base.InternalHttpsPort = 443
+		creator := NewCreatorConfig()
 
-		base.OperatorPrivateKey = env["delegatePrivateKey"]
-		base.OperatorWallet = env["delegateOwnerWallet"]
-		base.OperatorRewardsWallet = env["spOwnerWallet"]
+		creator.OperatorPrivateKey = env["delegatePrivateKey"]
+		creator.OperatorWallet = env["delegateOwnerWallet"]
+		creator.OperatorRewardsWallet = env["spOwnerWallet"]
 
-		creatorConf := CreatorConfig{
-			BaseServerConfig: base,
-		}
-		ctx.CreatorNodes["creator-node"] = creatorConf
+		ctx.CreatorNodes["creator-node"] = *creator
 	}
 	if nodeType == "discovery-provider" {
-		base.ExternalHttpPort = 5000
-		base.InternalHttpPort = 5000
-		base.ExternalHttpsPort = 5001
-		base.InternalHttpsPort = 5001
+		discovery := NewDiscoveryConfig()
 
-		base.OperatorPrivateKey = env["audius_delegate_private_key"]
-		base.OperatorWallet = env["audius_delegate_owner_wallet"]
-		base.OperatorRewardsWallet = env["audius_delegate_owner_wallet"]
+		discovery.OperatorPrivateKey = env["audius_delegate_private_key"]
+		discovery.OperatorWallet = env["audius_delegate_owner_wallet"]
+		discovery.OperatorRewardsWallet = env["audius_delegate_owner_wallet"]
 
-		discoveryConf := DiscoveryConfig{
-			BaseServerConfig: base,
-		}
-		ctx.DiscoveryNodes["discovery-provider"] = discoveryConf
+		ctx.DiscoveryNodes["discovery-provider"] = *discovery
 	}
 
-	net := NetworkConfig{
-		Name: "stage",
-	}
-
-	ctx.Network = net
+	ctx.Network = *NewNetworkConfig()
 }
