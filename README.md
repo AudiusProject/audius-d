@@ -13,10 +13,10 @@ make
 
 ```
 # x86 Linux
-./bin/audiusctl-x86 help
+./bin/audius-ctl-x86 help
 
 # Mac
-./bin/audiusctl-arm help
+./bin/audius-ctl-arm help
 ```
 
 ## dev

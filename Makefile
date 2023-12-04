@@ -2,24 +2,26 @@ NETWORK ?= stage
 TAG ?= latest
 
 UI_DIR := web/ui
-UI_ARTIFACTS_DIR := pkg/gui/dist
-UI_ARTIFACTS := $(shell find $(UI_ARTIFACTS_DIR) -type f -name '*.js' -o -name '*.css') $(UI_ARTIFACTS_DIR)/index.html
+UI_ARTIFACT_DIR := pkg/gui/dist
+UI_ARTIFACT := $(UI_ARTIFACT_DIR)/index.html
 UI_SRC := $(shell find $(UI_DIR) -type f -not -path '$(UI_DIR)/node_modules/*')
 
 ABI_DIR := pkg/register/ABIs
-SRC := $(shell find . -type f -name '*.go') go.mod go.sum $(UI_ARTIFACTS)
+SRC := $(shell find . -type f -name '*.go') go.mod go.sum $(UI_ARTIFACT)
 
 
-.PHONY: audiusctl
-audiusctl: bin/audiusctl-arm bin/audiusctl-x86
+.PHONY: audius-ctl
+audius-ctl: bin/audius-ctl-arm bin/audius-ctl-x86
 
-bin/audiusctl-arm: $(SRC) $(UI_ARTIFACTS)
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audiusctl-arm ./cmd/audiusctl
+bin/audius-ctl-arm: $(SRC) $(UI_ARTIFACT)
+	@echo "Building arm audius-ctl..."
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audius-ctl-arm ./cmd/audius-ctl
 
-bin/audiusctl-x86: $(SRC) $(UI_ARTIFACTS)
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audiusctl-x86 ./cmd/audiusctl
+bin/audius-ctl-x86: $(SRC) $(UI_ARTIFACT)
+	@echo "Building x86 audius-ctl..."
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audius-ctl-x86 ./cmd/audius-ctl
 
-$(UI_ARTIFACTS): $(UI_SRC)
+$(UI_ARTIFACT): $(UI_SRC)
 	@echo "Building GUI..."
 	cd $(UI_DIR) && npm i && npm run build
 
@@ -43,4 +45,3 @@ build-push: build-docker push-docker
 .PHONY: clean
 clean:
 	rm -f bin/*
-
