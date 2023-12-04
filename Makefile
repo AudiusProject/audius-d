@@ -10,7 +10,6 @@ ABI_DIR := pkg/register/ABIs
 SRC := $(shell find . -type f -name '*.go') go.mod go.sum $(UI_ARTIFACT)
 
 
-.PHONY: audius-ctl
 audius-ctl: bin/audius-ctl-arm bin/audius-ctl-x86
 
 bin/audius-ctl-arm: $(SRC) $(UI_ARTIFACT)
