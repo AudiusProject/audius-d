@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "env-cmd -f .env.sandbox.local vite",
+    "dev": "env-cmd -f .env.dev.local vite",
     "stage": "env-cmd -f .env.stage.local vite",
     "prod": "env-cmd -f .env.prod.local vite",
     "stage:preview": "env-cmd -f .env.stage.local vite build && vite preview",
