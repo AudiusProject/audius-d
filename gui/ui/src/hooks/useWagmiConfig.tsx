@@ -7,20 +7,33 @@ import { useEnvVars } from "../providers/EnvVarsProvider.tsx";
 
 export const useWagmiConfig = () => {
   const { ethProviderUrl } = useEnvVars();
+  const localEndpoints = ["http://audius-protocol-eth-ganache-1", "http://localhost:8546"]
 
   return useMemo(() => {
     // audius-docker-compose configs only allow for one RPC env var, which could be a single endpoint or a comma-separated list of endpoint
     const providerEndpoints = ethProviderUrl.includes(",")
       ? ethProviderUrl.split(",")
       : [ethProviderUrl];
-    const rpcProviders: Transport[] = providerEndpoints.map((url) =>
+
+    providerEndpoints.forEach((url) => {
+      if (localEndpoints.includes(url)) {
+        // dynamically import
+        import("ethers").then((ethers) => {
+          const provider = new ethers.JsonRpcProvider(url);
+          // advance local ganache chain
+          provider.send("evm_mine", [])
+        });
+      }
+    })
+
+    const rpcProviders: Transport[] = providerEndpoints.map((url: string) =>
       url.startsWith("ws") ? webSocket(url) : http(url),
     );
 
     // Allows for fallback to other RPC endpoints if the first one fails
     const transports = fallback([
       ...rpcProviders,
-      http("http://audius-protocol-eth-ganache-1"),
+      http(localEndpoints[0]),
       http(), // Public fallback provider (rate-limited)
     ]);
 
