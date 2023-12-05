@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/AudiusProject/audius-d/conf"
+	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/joho/godotenv"
 )
 
@@ -115,11 +115,11 @@ func removeContainerByName(containerName string) error {
 
 func startDevnetDocker() {
 	fmt.Println("Starting local eth, sol, and acdc chains")
-	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "up", "-d")
+	runCommand("docker", "compose", "-f", "./deployments/docker-compose.devnet.yml", "up", "-d")
 }
 
 func downDevnetDocker() {
-	runCommand("docker", "compose", "-f", "./devnet/docker-compose.yml", "down")
+	runCommand("docker", "compose", "-f", "./deployments/docker-compose.devnet.yml", "down")
 }
 
 func audiusCli(container string, args ...string) {

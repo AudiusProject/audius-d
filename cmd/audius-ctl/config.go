@@ -1,4 +1,4 @@
-package conf
+package main
 
 import (
 	"fmt"
@@ -7,12 +7,13 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
-	RootCmd = &cobra.Command{
+	configCmd = &cobra.Command{
 		Use:   "config [command]",
 		Short: "view/modify audius-d configuration",
 		Args:  cobra.ExactArgs(0),
@@ -26,17 +27,17 @@ var (
 		Use:   "dump [-o outfile]",
 		Short: "dump current config to stdout or a file",
 		Run: func(cmd *cobra.Command, args []string) {
-			ctx_config, err := ReadOrCreateContextConfig()
+			ctx_config, err := conf.ReadOrCreateContextConfig()
 			if err != nil {
 				log.Fatal("Failed to retrieve context. ", err)
 			}
 			if dumpOutfile != "" {
-				err := writeConfigToFile(dumpOutfile, ctx_config)
+				err := conf.WriteConfigToFile(dumpOutfile, ctx_config)
 				if err != nil {
 					log.Fatal("Failed to write config to file:", err)
 				}
 			} else {
-				str, err := stringifyConfig(ctx_config)
+				str, err := conf.StringifyConfig(ctx_config)
 				if err != nil {
 					log.Fatal("Failed to dump config:", err)
 				}
@@ -60,7 +61,7 @@ var (
 		Short: "edit the current or specified configuration in an external editor",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			ctxName, err := GetCurrentContextName()
+			ctxName, err := conf.GetCurrentContextName()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -79,7 +80,7 @@ var (
 		Short: "create an audius-d configuration context, optionally from a template",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			err := createContextFromTemplate(args[0], confFileTemplate)
+			err := conf.CreateContextFromTemplate(args[0], confFileTemplate)
 			if err != nil {
 				log.Fatal("Failed to create context:", err)
 			}
@@ -101,7 +102,7 @@ var (
 		`,
 		Args: cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := MigrateAudiusDockerCompose(args[0], args[1]); err != nil {
+			if err := conf.MigrateAudiusDockerCompose(args[0], args[1]); err != nil {
 				log.Fatal("audius-docker-compose migration failed: ", err)
 			}
 			log.Println("audius-docker-compose migration successful 🎉")
@@ -111,7 +112,7 @@ var (
 		Use:   "current-context",
 		Short: "Show the currently enabled context",
 		Run: func(cmd *cobra.Command, args []string) {
-			ctx, err := GetCurrentContextName()
+			ctx, err := conf.GetCurrentContextName()
 			if err != nil {
 				log.Fatal("Failed to retrieve current context: ", err)
 			}
@@ -122,7 +123,7 @@ var (
 		Use:   "get-contexts",
 		Short: "Show all available contexts",
 		Run: func(cmd *cobra.Command, args []string) {
-			ctxs, err := GetContexts()
+			ctxs, err := conf.GetContexts()
 			if err != nil {
 				log.Fatal("Failed to retrieve current context: ", err)
 			}
@@ -136,7 +137,7 @@ var (
 		Short: "Switch to a different context",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			err := UseContext(args[0])
+			err := conf.UseContext(args[0])
 			if err != nil {
 				log.Fatal("Failed to set context: ", err)
 			}
@@ -148,7 +149,7 @@ var (
 		Short: "Delete a context",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := DeleteContext(args[0]); err != nil {
+			if err := conf.DeleteContext(args[0]); err != nil {
 				log.Fatal("Failed to delete context: ", err)
 			}
 			fmt.Printf("Context %s deleted.\n", args[0])
@@ -159,16 +160,16 @@ var (
 func init() {
 	createContextCmd.Flags().StringVarP(&confFileTemplate, "templatefile", "f", "", "-f <config file to build context from>")
 	dumpCmd.Flags().StringVarP(&dumpOutfile, "outfile", "o", "", "-o <outfile")
-	RootCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, setCmd, editCmd, migrateContextCmd)
+	configCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, setCmd, editCmd, migrateContextCmd)
 }
 
 func setConfigWithViper(key string, value string) error {
 	v := viper.New()
-	cname, err := GetCurrentContextName()
+	cname, err := conf.GetCurrentContextName()
 	if err != nil {
 		return err
 	}
-	basedir, err := getContextBaseDir()
+	basedir, err := conf.GetContextBaseDir()
 	if err != nil {
 		return err
 	}
@@ -181,11 +182,11 @@ func setConfigWithViper(key string, value string) error {
 		return fmt.Errorf("key '%s' not found in config", key)
 	}
 	v.Set(key, value)
-	var config ContextConfig
+	var config conf.ContextConfig
 	if err = v.Unmarshal(&config); err != nil {
 		return err
 	}
-	if err = writeConfigToCurrentContext(&config); err != nil {
+	if err = conf.WriteConfigToCurrentContext(&config); err != nil {
 		return err
 	}
 	return nil
@@ -199,12 +200,12 @@ func editConfig(contextName string) error {
 	tempFile.Close()
 	defer os.Remove(tempFile.Name())
 
-	var existingConfig ContextConfig
-	if err = readConfigFromContext(contextName, &existingConfig); err != nil {
+	var existingConfig conf.ContextConfig
+	if err = conf.ReadConfigFromContext(contextName, &existingConfig); err != nil {
 		return err
 	}
 
-	if err = writeConfigToFile(tempFile.Name(), &existingConfig); err != nil {
+	if err = conf.WriteConfigToFile(tempFile.Name(), &existingConfig); err != nil {
 		return err
 	}
 
@@ -224,12 +225,12 @@ func editConfig(contextName string) error {
 		return err
 	}
 
-	var newConfig ContextConfig
-	if err = readConfigFromFile(tempFile.Name(), &newConfig); err != nil {
+	var newConfig conf.ContextConfig
+	if err = conf.ReadConfigFromFile(tempFile.Name(), &newConfig); err != nil {
 		return err
 	}
 
-	if err = writeConfigToContext(contextName, &newConfig); err != nil {
+	if err = conf.WriteConfigToContext(contextName, &newConfig); err != nil {
 		return err
 	}
 

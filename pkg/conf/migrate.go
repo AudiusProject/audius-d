@@ -29,7 +29,7 @@ func MigrateAudiusDockerCompose(ctxname, path string) error {
 	configContext := NewContextConfig()
 	envToContextConfig(nodeType, env, configContext)
 
-	writeConfigToContext(ctxname, configContext)
+	WriteConfigToContext(ctxname, configContext)
 
 	return nil
 }

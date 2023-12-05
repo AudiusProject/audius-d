@@ -1,0 +1,11 @@
+#!/bin/sh
+make | grep -v "Nothing to be done"
+
+ARCH=$(uname -m)
+if [ "$ARCH" = "arm64" ]; then
+    BINARY_NAME="audius-ctl-arm"
+else
+    BINARY_NAME="audius-ctl-x86"
+fi
+
+./bin/$BINARY_NAME "$@"
