@@ -9,7 +9,7 @@ import { formatWei } from "../utils/helpers";
 import useNodes from "../hooks/useNodes";
 import { UptimeResponse } from "../components/Uptime";
 
-const DEPLOYER_CUT_BASE = new BN('100')
+const DEPLOYER_CUT_BASE = new BN("100");
 
 interface NodeResponse {
   blockNumber: number;
@@ -143,93 +143,110 @@ const UptimeTracker = ({ data }: { data: UptimeResponse }) => {
 };
 
 const getUserDelegates = async (delegator: string, audiusLibs: AudiusLibs) => {
-  const delegates = []
-  const increaseDelegateStakeEventsInfo = await audiusLibs.ethContracts?.DelegateManagerClient.getIncreaseDelegateStakeEvents(
-    {
-      delegator
-    }
-  )
-  const increaseDelegateStakeEvents = increaseDelegateStakeEventsInfo!.map(event => ({
-    ...event,
-    _type: 'DelegateIncreaseStake',
-    direction: delegator ? 'Sent' : 'Received'
-  }))
-
-  const pendingUndelegateRequest = await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
-    delegator
-  )
-  let serviceProviders = increaseDelegateStakeEvents.map(e => e.serviceProvider)
-  // @ts-ignore
-  serviceProviders = [...new Set(serviceProviders)]
-  for (let sp of serviceProviders) {
-    const delegators = await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorsList(sp)
-    if (delegators.includes(delegator)) {
-      const amountDelegated = await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorStakeForServiceProvider(
+  const delegates = [];
+  const increaseDelegateStakeEventsInfo =
+    await audiusLibs.ethContracts?.DelegateManagerClient.getIncreaseDelegateStakeEvents(
+      {
         delegator,
-        sp
-      )
-      let activeAmount = amountDelegated
+      },
+    );
+  const increaseDelegateStakeEvents = increaseDelegateStakeEventsInfo!.map(
+    (event) => ({
+      ...event,
+      _type: "DelegateIncreaseStake",
+      direction: delegator ? "Sent" : "Received",
+    }),
+  );
+
+  const pendingUndelegateRequest =
+    await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
+      delegator,
+    );
+  let serviceProviders = increaseDelegateStakeEvents.map(
+    (e) => e.serviceProvider,
+  );
+  // @ts-ignore
+  serviceProviders = [...new Set(serviceProviders)];
+  for (const sp of serviceProviders) {
+    const delegators =
+      await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorsList(
+        sp,
+      );
+    if (delegators.includes(delegator)) {
+      const amountDelegated =
+        await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorStakeForServiceProvider(
+          delegator,
+          sp,
+        );
+      let activeAmount = amountDelegated;
 
       if (
         pendingUndelegateRequest!.lockupExpiryBlock !== 0 &&
         pendingUndelegateRequest!.target === sp
       ) {
-        activeAmount = activeAmount!.sub(pendingUndelegateRequest!.amount)
+        activeAmount = activeAmount!.sub(pendingUndelegateRequest!.amount);
       }
 
       delegates.push({
         wallet: sp,
         amount: amountDelegated,
-        activeAmount
-      })
+        activeAmount,
+      });
     }
   }
-  return [...delegates]
-}
+  return [...delegates];
+};
 
 const getDelegatorAmounts = async (
   wallet: string,
   audiusLibs: AudiusLibs,
-): Promise<Array<{
-  wallet: string 
-  amount: BN
-  activeAmount: BN
-  // name?: string
-  // img: string
-}>> => {
-  const delegators = await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorsList(wallet)
-  let delegatorAmounts = []
-  for (let delegatorWallet of delegators) {
-    const amountDelegated = await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorStakeForServiceProvider(
-      delegatorWallet,
-      wallet
-    )
-    let activeAmount = amountDelegated
-    const pendingUndelegateRequest = await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
-      delegatorWallet
-    )
+): Promise<
+  Array<{
+    wallet: string;
+    amount: BN;
+    activeAmount: BN;
+    // name?: string
+    // img: string
+  }>
+> => {
+  const delegators =
+    await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorsList(
+      wallet,
+    );
+  const delegatorAmounts = [];
+  for (const delegatorWallet of delegators) {
+    const amountDelegated =
+      await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorStakeForServiceProvider(
+        delegatorWallet,
+        wallet,
+      );
+    let activeAmount = amountDelegated;
+    const pendingUndelegateRequest =
+      await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
+        delegatorWallet,
+      );
 
     if (
       pendingUndelegateRequest!.lockupExpiryBlock !== 0 &&
       pendingUndelegateRequest!.target === wallet
     ) {
-      activeAmount = activeAmount!.sub(pendingUndelegateRequest!.amount)
+      activeAmount = activeAmount!.sub(pendingUndelegateRequest!.amount);
     }
 
     delegatorAmounts.push({
       wallet: delegatorWallet,
       amount: amountDelegated,
-      activeAmount
-    })
+      activeAmount,
+    });
   }
-  return delegatorAmounts
-}
+  return delegatorAmounts;
+};
 
 const getUserMetadata = async (
   wallet: string,
   audiusLibs: AudiusLibs,
 ): Promise<User> => {
-  const delegates = await getUserDelegates(wallet, audiusLibs)
+  const delegates = await getUserDelegates(wallet, audiusLibs);
   const totalDelegatorStake =
     await audiusLibs.ethContracts?.DelegateManagerClient.getTotalDelegatorStake(
       wallet,
@@ -259,8 +276,8 @@ const getServiceProviderMetadata = async (
     await audiusLibs.ethContracts?.DelegateManagerClient.getTotalDelegatedToServiceProvider(
       wallet,
     );
-  let delegators = await getDelegatorAmounts(wallet, audiusLibs)
-  delegators.sort((a, b) => (b.activeAmount.gt(a.activeAmount) ? 1 : -1))
+  const delegators = await getDelegatorAmounts(wallet, audiusLibs);
+  delegators.sort((a, b) => (b.activeAmount.gt(a.activeAmount) ? 1 : -1));
 
   const serviceProvider: ServiceProvider | undefined =
     await audiusLibs.ethContracts?.ServiceProviderFactoryClient.getServiceProviderDetails(
@@ -280,21 +297,15 @@ const getServiceProviderMetadata = async (
   };
 };
 
-const getOperatorMetadata = async (
-  wallet: string,
-  audiusLibs: AudiusLibs,
-) => {
+const getOperatorMetadata = async (wallet: string, audiusLibs: AudiusLibs) => {
   const user = await getUserMetadata(wallet, audiusLibs);
-  const serviceProvider = await getServiceProviderMetadata(
-    wallet,
-    audiusLibs,
-  );
+  const serviceProvider = await getServiceProviderMetadata(wallet, audiusLibs);
   const operator = {
     ...user,
     ...serviceProvider,
   };
 
-  return operator
+  return operator;
 };
 
 // Rewards helpers
@@ -323,55 +334,59 @@ const getMintedAmountAtBlock = async ({
   fundingAmount: BN;
   audiusLibs: AudiusLibs;
 }) => {
-  const totalStakedAtFundBlockForClaimer = await audiusLibs.ethContracts?.StakingProxyClient?.totalStakedForAt(
-    wallet,
-    blockNumber
-  )
-  const totalStakedAtFundBlock = await audiusLibs.ethContracts?.StakingProxyClient?.totalStakedAt(blockNumber)
-  const activeStake = totalStakedAtFundBlockForClaimer!.sub(totalLocked)
+  const totalStakedAtFundBlockForClaimer =
+    await audiusLibs.ethContracts?.StakingProxyClient?.totalStakedForAt(
+      wallet,
+      blockNumber,
+    );
+  const totalStakedAtFundBlock =
+    await audiusLibs.ethContracts?.StakingProxyClient?.totalStakedAt(
+      blockNumber,
+    );
+  const activeStake = totalStakedAtFundBlockForClaimer!.sub(totalLocked);
   const rewardsForClaimer = activeStake
     .mul(fundingAmount)
-    .div(totalStakedAtFundBlock)
+    .div(totalStakedAtFundBlock);
 
-  return rewardsForClaimer
-}
+  return rewardsForClaimer;
+};
 
 // Get the operator's active stake = total staked - pending decrease stake + total delegated to operator - operator's delegators' pending decrease stake
 const getOperatorTotalActiveStake = (user: Operator) => {
   const userActiveStake = user.serviceProvider.deployerStake.sub(
-    user.pendingDecreaseStakeRequest?.amount ?? new BN('0')
-  )
+    user.pendingDecreaseStakeRequest?.amount ?? new BN("0"),
+  );
   const userActiveDelegated = user.delegators.reduce((total, delegator) => {
-    return total.add(delegator.activeAmount)
-  }, new BN('0'))
-  const totalActiveStake = userActiveStake.add(userActiveDelegated)
-  return totalActiveStake
-}
+    return total.add(delegator.activeAmount);
+  }, new BN("0"));
+  const totalActiveStake = userActiveStake.add(userActiveDelegated);
+  return totalActiveStake;
+};
 
 // Get the amount locked - pending decrease stake, and the operator's delegator's pending decrease delegation
 export const getOperatorTotalLocked = (user: Operator) => {
   const lockedPendingDecrease =
-    (user as Operator).pendingDecreaseStakeRequest?.amount ?? new BN('0')
+    user.pendingDecreaseStakeRequest?.amount ?? new BN("0");
   // Another way to get the locked delegation value from contract read
   // const lockedDelegation await aud.Delegate.getTotalLockedDelegationForServiceProvider(user.wallet)
   const lockedDelegation = user.delegators.reduce((totalLocked, delegate) => {
-    return totalLocked.add(delegate.amount.sub(delegate.activeAmount))
-  }, new BN('0'))
-  const totalLocked = lockedPendingDecrease.add(lockedDelegation)
-  return totalLocked
-}
+    return totalLocked.add(delegate.amount.sub(delegate.activeAmount));
+  }, new BN("0"));
+  const totalLocked = lockedPendingDecrease.add(lockedDelegation);
+  return totalLocked;
+};
 
 const getOperatorRewards = ({
   user,
   totalRewards,
-  deployerCutBase = DEPLOYER_CUT_BASE
+  deployerCutBase = DEPLOYER_CUT_BASE,
 }: {
-  user: Operator
-  totalRewards: BN
-  deployerCutBase?: BN
+  user: Operator;
+  totalRewards: BN;
+  deployerCutBase?: BN;
 }) => {
-  const totalActiveStake = getOperatorTotalActiveStake(user)
-  const deployerCut = new BN(user.serviceProvider.deployerCut)
+  const totalActiveStake = getOperatorTotalActiveStake(user);
+  const deployerCut = new BN(user.serviceProvider.deployerCut);
 
   const totalDelegatedRewards = user.delegators.reduce((total, delegate) => {
     const delegateRewards = getDelegateRewards({
@@ -379,40 +394,40 @@ const getOperatorRewards = ({
       totalRoundRewards: totalRewards,
       totalActive: totalActiveStake,
       deployerCut,
-      deployerCutBase
-    })
-    return total.add(delegateRewards.delegatorCut)
-  }, new BN('0'))
+      deployerCutBase,
+    });
+    return total.add(delegateRewards.delegatorCut);
+  }, new BN("0"));
 
-  const operatorRewards = totalRewards.sub(totalDelegatedRewards)
-  return operatorRewards
-}
+  const operatorRewards = totalRewards.sub(totalDelegatedRewards);
+  return operatorRewards;
+};
 
 const getDelegateRewards = ({
   delegateAmount,
   totalRoundRewards,
   totalActive,
   deployerCut,
-  deployerCutBase = DEPLOYER_CUT_BASE
+  deployerCutBase = DEPLOYER_CUT_BASE,
 }: {
-  delegateAmount: BN
-  totalRoundRewards: BN
-  totalActive: BN
-  deployerCut: BN
-  deployerCutBase?: BN
+  delegateAmount: BN;
+  totalRoundRewards: BN;
+  totalActive: BN;
+  deployerCut: BN;
+  deployerCutBase?: BN;
 }) => {
   const rewardsPriorToSPCut = delegateAmount
     .mul(totalRoundRewards)
-    .div(totalActive)
+    .div(totalActive);
   const spDeployerCut = delegateAmount
     .mul(totalRoundRewards)
     .mul(deployerCut)
     .div(totalActive)
-    .div(deployerCutBase)
+    .div(deployerCutBase);
   return {
     spCut: spDeployerCut,
-    delegatorCut: rewardsPriorToSPCut.sub(spDeployerCut)
-  }
+    delegatorCut: rewardsPriorToSPCut.sub(spDeployerCut),
+  };
 };
 
 /**
@@ -430,58 +445,58 @@ const getRewardForClaimBlock = async ({
   audiusLibs,
 }: {
   user: User | Operator;
-  fundsPerRound: BN
+  fundsPerRound: BN;
   blockNumber: number;
   audiusLibs: AudiusLibs;
-}): Promise<string> => {
-  let totalRewards = new BN('0')
+}): Promise<BN> => {
+  let totalRewards = new BN("0");
 
   // If the user is a service provider, retrieve their expected rewards for staking
   if ("serviceProvider" in user) {
     const lockedPendingDecrease =
-      user.pendingDecreaseStakeRequest?.amount ?? new BN('0')
+      user.pendingDecreaseStakeRequest?.amount ?? new BN("0");
     const lockedDelegation =
       await audiusLibs.ethContracts?.DelegateManagerClient.getTotalLockedDelegationForServiceProvider(
-        user.wallet
-      )
-    const totalLocked = lockedPendingDecrease.add(lockedDelegation)
+        user.wallet,
+      );
+    const totalLocked = lockedPendingDecrease.add(lockedDelegation);
     const mintedRewards = await getMintedAmountAtBlock({
       totalLocked,
       fundingAmount: fundsPerRound,
       wallet: user.wallet,
       blockNumber,
-      audiusLibs
-    })
+      audiusLibs,
+    });
     const operatorRewards = getOperatorRewards({
-      user: user as Operator,
-      totalRewards: mintedRewards
-    })
-    totalRewards = totalRewards.add(operatorRewards)
+      user: user,
+      totalRewards: mintedRewards,
+    });
+    totalRewards = totalRewards.add(operatorRewards);
   }
 
   // For each service operator the user delegates to, calculate the expected rewards for delegating
   for (const delegate of (user as User).delegates) {
-    const operator = await getOperatorMetadata(delegate.wallet, audiusLibs)
-    const deployerCut = new BN(operator.serviceProvider.deployerCut.toString())
-    const operatorActiveStake = getOperatorTotalActiveStake(operator)
-    const operatorTotalLocked = getOperatorTotalLocked(operator)
+    const operator = await getOperatorMetadata(delegate.wallet, audiusLibs);
+    const deployerCut = new BN(operator.serviceProvider.deployerCut.toString());
+    const operatorActiveStake = getOperatorTotalActiveStake(operator);
+    const operatorTotalLocked = getOperatorTotalLocked(operator);
     const userMintedRewards = await getMintedAmountAtBlock({
       totalLocked: operatorTotalLocked,
       fundingAmount: fundsPerRound,
       wallet: delegate.wallet,
       blockNumber,
       audiusLibs,
-    })
+    });
     const delegateRewards = getDelegateRewards({
       delegateAmount: delegate.activeAmount,
       totalRoundRewards: userMintedRewards,
       totalActive: operatorActiveStake,
-      deployerCut
-    })
-    totalRewards = totalRewards.add(delegateRewards.delegatorCut)
+      deployerCut,
+    });
+    totalRewards = totalRewards.add(delegateRewards.delegatorCut);
   }
-  return formatWei(totalRewards)
-}
+  return totalRewards;
+};
 
 /**
  * Calculates and returns string formatted active stake for address
@@ -492,7 +507,7 @@ const getRewardForClaimBlock = async ({
  *      active delegator stake = (total delegator stake - locked delegator stake)
  *          locked delegator stake = amount of pending undelegateRequest for address
  */
-const calculateActiveStake = (operator: Operator): string => {
+const calculateActiveStake = (operator: Operator): BN => {
   let activeDeployerStake = new BN("0");
   let activeDelegatorStake = new BN("0");
   if ("serviceProvider" in operator) {
@@ -528,7 +543,7 @@ const calculateActiveStake = (operator: Operator): string => {
     activeDelegatorStake = operator.totalDelegatorStake || new BN("0");
   }
   const activeStake = activeDelegatorStake.add(activeDeployerStake);
-  return formatWei(activeStake);
+  return activeStake;
 };
 
 const NodeRow = ({
@@ -550,10 +565,10 @@ const NodeRow = ({
 
   useEffect(() => {
     const fetchAudData = async (wallet: string, audiusLibs: AudiusLibs) => {
-      const operator = await getOperatorMetadata(wallet, audiusLibs)
+      const operator = await getOperatorMetadata(wallet, audiusLibs);
       try {
         const activeStake = calculateActiveStake(operator as Operator);
-        setBondedData(activeStake);
+        setBondedData(formatWei(activeStake));
       } catch (error) {
         console.error(
           `Could not fetch bonded $AUDIO for ${operator.wallet}`,
@@ -562,16 +577,18 @@ const NodeRow = ({
         setBondedDataError(true);
       }
       try {
-        const blockNumber = await audiusLibs.ethWeb3Manager?.web3.eth.getBlockNumber();
+        const blockNumber =
+          await audiusLibs.ethWeb3Manager?.web3.eth.getBlockNumber();
         const fundsPerRound =
-          await audiusLibs.ethContracts?.ClaimsManagerClient.getFundsPerRound()
+          await audiusLibs.ethContracts?.ClaimsManagerClient.getFundsPerRound();
         const weeklyReward = await getRewardForClaimBlock({
           user: operator,
           fundsPerRound: new BN(fundsPerRound!),
-          blockNumber,
-          audiusLibs
+          blockNumber: blockNumber!,
+          audiusLibs,
         });
-        setRewardData(weeklyReward);
+        const est24hReward = weeklyReward.div(new BN(7));
+        setRewardData(formatWei(est24hReward));
       } catch (error) {
         console.error(
           `Could not fetch weekly $AUDIO reward for ${operator.wallet}`,
@@ -607,9 +624,9 @@ const NodeRow = ({
       : "internal/metrics/blobs-served/week?bucket_size=day";
   const { data: requestsData, error: requestsDataError } = useSWR(
     `${node.endpoint}/${requestsPath}`,
-    fetcher
+    fetcher,
   ) as { data: RequestCountsResponse; error: any };
-  const requests = requestsData?.data
+  const requests = requestsData?.data;
   if (requests && requests.length > 0) {
     if (nodeType == "discovery") {
       const lastDay = (requests as DiscoveryRequestCountResponse[])[
@@ -633,7 +650,6 @@ const NodeRow = ({
       }
     }
   }
-
 
   return (
     <tr>
@@ -702,9 +718,9 @@ const NetworkOverview = () => {
   } = useNodes(nodeType);
 
   // For requests header
-  const prevDate = new Date()
-  prevDate.setDate(prevDate.getDate() - 1)
-  const prevDateString = prevDate.toISOString().substring(0, 10)
+  const prevDate = new Date();
+  prevDate.setDate(prevDate.getDate() - 1);
+  const prevDateString = prevDate.toISOString().substring(0, 10);
 
   return (
     <>
@@ -736,7 +752,7 @@ const NetworkOverview = () => {
                         Bond $AUDIO
                       </th>
                       <th scope="col" className="tableHeaderCell">
-                        Reward (7d)
+                        Reward (24H)
                       </th>
                       <th scope="col" className="tableHeaderCell">
                         Requests ({prevDateString})
