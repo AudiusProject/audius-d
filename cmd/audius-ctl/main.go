@@ -12,6 +12,6 @@ func main() {
 			upCmd.Run(cmd, args)
 		},
 	}
-	rootCmd.AddCommand(upCmd, downCmd, devnetCmd, registerCmd, configCmd, guiCmd)
+	rootCmd.AddCommand(upCmd, downCmd, devnetCmd, registerCmd, configCmd, guiCmd, sbCmd)
 	rootCmd.Execute()
 }

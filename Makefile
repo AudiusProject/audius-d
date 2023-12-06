@@ -14,7 +14,7 @@ audius-ctl: bin/audius-ctl-arm bin/audius-ctl-x86
 
 bin/audius-ctl-arm: $(SRC) $(UI_ARTIFACT)
 	@echo "Building arm audius-ctl..."
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audius-ctl-arm ./cmd/audius-ctl
+	GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.imageTag=$(TAG)" -o bin/audius-ctl-arm ./cmd/audius-ctl
 
 bin/audius-ctl-x86: $(SRC) $(UI_ARTIFACT)
 	@echo "Building x86 audius-ctl..."
