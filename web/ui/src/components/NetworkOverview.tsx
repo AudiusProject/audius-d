@@ -4,11 +4,12 @@ import useSWR from "swr";
 import { Tracker, Color } from "@tremor/react";
 import { useEnvVars } from "../providers/EnvVarsProvider";
 import { useAudiusLibs } from "../providers/AudiusLibsProvider";
-// import type { AudiusLibsType } from "../providers/AudiusLibsProvider";
 import type { AudiusLibs } from "@audius/sdk/dist/WebAudiusLibs.d.ts";
 import { formatWei } from "../utils/helpers";
 import useNodes from "../hooks/useNodes";
 import { UptimeResponse } from "../components/Uptime";
+
+const DEPLOYER_CUT_BASE = new BN('100')
 
 interface NodeResponse {
   blockNumber: number;
@@ -58,17 +59,37 @@ type ServiceProvider = {
   validBounds: boolean;
 };
 
+type GetPendingDecreaseStakeRequestResponse = {
+  lockupExpiryBlock: number;
+  amount: BN;
+};
+
 type GetPendingUndelegateRequestResponse = {
   amount: BigNumber;
   lockupExpiryBlock: number;
   target: string;
 };
 
+type Delegate = {
+  wallet: string;
+  amount: BN;
+  activeAmount: BN;
+  name?: string;
+  img?: string;
+};
+
 type User = {
   wallet: string;
+  delegates: Array<Delegate>;
   totalDelegatorStake: BigNumber | undefined;
   pendingUndelegateRequest: GetPendingUndelegateRequestResponse | undefined;
 };
+
+type Operator = {
+  serviceProvider: ServiceProvider;
+  delegators: Array<Delegate>;
+  pendingDecreaseStakeRequest: GetPendingDecreaseStakeRequestResponse;
+} & User;
 
 class FetchError extends Error {
   info: any;
@@ -121,10 +142,94 @@ const UptimeTracker = ({ data }: { data: UptimeResponse }) => {
   return <Tracker data={trackerData} className="w-20 mx-auto mt-2" />;
 };
 
+const getUserDelegates = async (delegator: string, audiusLibs: AudiusLibs) => {
+  const delegates = []
+  const increaseDelegateStakeEventsInfo = await audiusLibs.ethContracts?.DelegateManagerClient.getIncreaseDelegateStakeEvents(
+    {
+      delegator
+    }
+  )
+  const increaseDelegateStakeEvents = increaseDelegateStakeEventsInfo!.map(event => ({
+    ...event,
+    _type: 'DelegateIncreaseStake',
+    direction: delegator ? 'Sent' : 'Received'
+  }))
+
+  const pendingUndelegateRequest = await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
+    delegator
+  )
+  let serviceProviders = increaseDelegateStakeEvents.map(e => e.serviceProvider)
+  // @ts-ignore
+  serviceProviders = [...new Set(serviceProviders)]
+  for (let sp of serviceProviders) {
+    const delegators = await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorsList(sp)
+    if (delegators.includes(delegator)) {
+      const amountDelegated = await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorStakeForServiceProvider(
+        delegator,
+        sp
+      )
+      let activeAmount = amountDelegated
+
+      if (
+        pendingUndelegateRequest!.lockupExpiryBlock !== 0 &&
+        pendingUndelegateRequest!.target === sp
+      ) {
+        activeAmount = activeAmount!.sub(pendingUndelegateRequest!.amount)
+      }
+
+      delegates.push({
+        wallet: sp,
+        amount: amountDelegated,
+        activeAmount
+      })
+    }
+  }
+  return [...delegates]
+}
+
+const getDelegatorAmounts = async (
+  wallet: string,
+  audiusLibs: AudiusLibs,
+): Promise<Array<{
+  wallet: string 
+  amount: BN
+  activeAmount: BN
+  // name?: string
+  // img: string
+}>> => {
+  const delegators = await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorsList(wallet)
+  let delegatorAmounts = []
+  for (let delegatorWallet of delegators) {
+    const amountDelegated = await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorStakeForServiceProvider(
+      delegatorWallet,
+      wallet
+    )
+    let activeAmount = amountDelegated
+    const pendingUndelegateRequest = await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
+      delegatorWallet
+    )
+
+    if (
+      pendingUndelegateRequest!.lockupExpiryBlock !== 0 &&
+      pendingUndelegateRequest!.target === wallet
+    ) {
+      activeAmount = activeAmount!.sub(pendingUndelegateRequest!.amount)
+    }
+
+    delegatorAmounts.push({
+      wallet: delegatorWallet,
+      amount: amountDelegated,
+      activeAmount
+    })
+  }
+  return delegatorAmounts
+}
+
 const getUserMetadata = async (
   wallet: string,
   audiusLibs: AudiusLibs,
 ): Promise<User> => {
+  const delegates = await getUserDelegates(wallet, audiusLibs)
   const totalDelegatorStake =
     await audiusLibs.ethContracts?.DelegateManagerClient.getTotalDelegatorStake(
       wallet,
@@ -136,6 +241,7 @@ const getUserMetadata = async (
 
   const user = {
     wallet,
+    delegates,
     totalDelegatorStake,
     pendingUndelegateRequest,
   };
@@ -153,6 +259,9 @@ const getServiceProviderMetadata = async (
     await audiusLibs.ethContracts?.DelegateManagerClient.getTotalDelegatedToServiceProvider(
       wallet,
     );
+  let delegators = await getDelegatorAmounts(wallet, audiusLibs)
+  delegators.sort((a, b) => (b.activeAmount.gt(a.activeAmount) ? 1 : -1))
+
   const serviceProvider: ServiceProvider | undefined =
     await audiusLibs.ethContracts?.ServiceProviderFactoryClient.getServiceProviderDetails(
       wallet,
@@ -167,7 +276,259 @@ const getServiceProviderMetadata = async (
     pendingDecreaseStakeRequest,
     totalStakedFor,
     delegatedTotal,
+    delegators,
   };
+};
+
+const getOperatorMetadata = async (
+  wallet: string,
+  audiusLibs: AudiusLibs,
+) => {
+  const user = await getUserMetadata(wallet, audiusLibs);
+  const serviceProvider = await getServiceProviderMetadata(
+    wallet,
+    audiusLibs,
+  );
+  const operator = {
+    ...user,
+    ...serviceProvider,
+  };
+
+  return operator
+};
+
+// Rewards helpers
+
+/**
+ * Calculates the net minted amount for a service operator prior to
+ * distribution among the service provider and their delegators
+ * Reference processClaim in the claims manager contract
+ * NOTE: minted amount is calculated using values at the init claim block
+ * wallet The service operator's wallet address
+ * totalLocked The total token currently locked (decrease stake and delegation)
+ * blockNumber The blocknumber of the claim to process
+ * fundingAmount The amount of total funds allocated per claim round
+ * The net minted amount
+ */
+const getMintedAmountAtBlock = async ({
+  wallet,
+  totalLocked,
+  blockNumber,
+  fundingAmount,
+  audiusLibs,
+}: {
+  wallet: string;
+  totalLocked: BN;
+  blockNumber: number;
+  fundingAmount: BN;
+  audiusLibs: AudiusLibs;
+}) => {
+  const totalStakedAtFundBlockForClaimer = await audiusLibs.ethContracts?.StakingProxyClient?.totalStakedForAt(
+    wallet,
+    blockNumber
+  )
+  const totalStakedAtFundBlock = await audiusLibs.ethContracts?.StakingProxyClient?.totalStakedAt(blockNumber)
+  const activeStake = totalStakedAtFundBlockForClaimer!.sub(totalLocked)
+  const rewardsForClaimer = activeStake
+    .mul(fundingAmount)
+    .div(totalStakedAtFundBlock)
+
+  return rewardsForClaimer
+}
+
+// Get the operator's active stake = total staked - pending decrease stake + total delegated to operator - operator's delegators' pending decrease stake
+const getOperatorTotalActiveStake = (user: Operator) => {
+  const userActiveStake = user.serviceProvider.deployerStake.sub(
+    user.pendingDecreaseStakeRequest?.amount ?? new BN('0')
+  )
+  const userActiveDelegated = user.delegators.reduce((total, delegator) => {
+    return total.add(delegator.activeAmount)
+  }, new BN('0'))
+  const totalActiveStake = userActiveStake.add(userActiveDelegated)
+  return totalActiveStake
+}
+
+// Get the amount locked - pending decrease stake, and the operator's delegator's pending decrease delegation
+export const getOperatorTotalLocked = (user: Operator) => {
+  const lockedPendingDecrease =
+    (user as Operator).pendingDecreaseStakeRequest?.amount ?? new BN('0')
+  // Another way to get the locked delegation value from contract read
+  // const lockedDelegation await aud.Delegate.getTotalLockedDelegationForServiceProvider(user.wallet)
+  const lockedDelegation = user.delegators.reduce((totalLocked, delegate) => {
+    return totalLocked.add(delegate.amount.sub(delegate.activeAmount))
+  }, new BN('0'))
+  const totalLocked = lockedPendingDecrease.add(lockedDelegation)
+  return totalLocked
+}
+
+const getOperatorRewards = ({
+  user,
+  totalRewards,
+  deployerCutBase = DEPLOYER_CUT_BASE
+}: {
+  user: Operator
+  totalRewards: BN
+  deployerCutBase?: BN
+}) => {
+  const totalActiveStake = getOperatorTotalActiveStake(user)
+  const deployerCut = new BN(user.serviceProvider.deployerCut)
+
+  const totalDelegatedRewards = user.delegators.reduce((total, delegate) => {
+    const delegateRewards = getDelegateRewards({
+      delegateAmount: delegate.activeAmount,
+      totalRoundRewards: totalRewards,
+      totalActive: totalActiveStake,
+      deployerCut,
+      deployerCutBase
+    })
+    return total.add(delegateRewards.delegatorCut)
+  }, new BN('0'))
+
+  const operatorRewards = totalRewards.sub(totalDelegatedRewards)
+  return operatorRewards
+}
+
+const getDelegateRewards = ({
+  delegateAmount,
+  totalRoundRewards,
+  totalActive,
+  deployerCut,
+  deployerCutBase = DEPLOYER_CUT_BASE
+}: {
+  delegateAmount: BN
+  totalRoundRewards: BN
+  totalActive: BN
+  deployerCut: BN
+  deployerCutBase?: BN
+}) => {
+  const rewardsPriorToSPCut = delegateAmount
+    .mul(totalRoundRewards)
+    .div(totalActive)
+  const spDeployerCut = delegateAmount
+    .mul(totalRoundRewards)
+    .mul(deployerCut)
+    .div(totalActive)
+    .div(deployerCutBase)
+  return {
+    spCut: spDeployerCut,
+    delegatorCut: rewardsPriorToSPCut.sub(spDeployerCut)
+  }
+};
+
+/**
+ * Calculates and returns the string formatted total rewards
+ * for a user from a claim given a blocknumber
+ *
+ * fundsPerRound The amount of rewards given out in a round
+ * blockNumber The block number to process the claim event for
+ * expected rewards for the user at the claim block
+ */
+const getRewardForClaimBlock = async ({
+  user,
+  fundsPerRound,
+  blockNumber,
+  audiusLibs,
+}: {
+  user: User | Operator;
+  fundsPerRound: BN
+  blockNumber: number;
+  audiusLibs: AudiusLibs;
+}): Promise<string> => {
+  let totalRewards = new BN('0')
+
+  // If the user is a service provider, retrieve their expected rewards for staking
+  if ("serviceProvider" in user) {
+    const lockedPendingDecrease =
+      user.pendingDecreaseStakeRequest?.amount ?? new BN('0')
+    const lockedDelegation =
+      await audiusLibs.ethContracts?.DelegateManagerClient.getTotalLockedDelegationForServiceProvider(
+        user.wallet
+      )
+    const totalLocked = lockedPendingDecrease.add(lockedDelegation)
+    const mintedRewards = await getMintedAmountAtBlock({
+      totalLocked,
+      fundingAmount: fundsPerRound,
+      wallet: user.wallet,
+      blockNumber,
+      audiusLibs
+    })
+    const operatorRewards = getOperatorRewards({
+      user: user as Operator,
+      totalRewards: mintedRewards
+    })
+    totalRewards = totalRewards.add(operatorRewards)
+  }
+
+  // For each service operator the user delegates to, calculate the expected rewards for delegating
+  for (const delegate of (user as User).delegates) {
+    const operator = await getOperatorMetadata(delegate.wallet, audiusLibs)
+    const deployerCut = new BN(operator.serviceProvider.deployerCut.toString())
+    const operatorActiveStake = getOperatorTotalActiveStake(operator)
+    const operatorTotalLocked = getOperatorTotalLocked(operator)
+    const userMintedRewards = await getMintedAmountAtBlock({
+      totalLocked: operatorTotalLocked,
+      fundingAmount: fundsPerRound,
+      wallet: delegate.wallet,
+      blockNumber,
+      audiusLibs,
+    })
+    const delegateRewards = getDelegateRewards({
+      delegateAmount: delegate.activeAmount,
+      totalRoundRewards: userMintedRewards,
+      totalActive: operatorActiveStake,
+      deployerCut
+    })
+    totalRewards = totalRewards.add(delegateRewards.delegatorCut)
+  }
+  return formatWei(totalRewards)
+}
+
+/**
+ * Calculates and returns string formatted active stake for address
+ *
+ * Active stake = (active deployer stake + active delegator stake)
+ *      active deployer stake = (direct deployer stake - locked deployer stake)
+ *          locked deployer stake = amount of pending decreaseStakeRequest for address
+ *      active delegator stake = (total delegator stake - locked delegator stake)
+ *          locked delegator stake = amount of pending undelegateRequest for address
+ */
+const calculateActiveStake = (operator: Operator): string => {
+  let activeDeployerStake = new BN("0");
+  let activeDelegatorStake = new BN("0");
+  if ("serviceProvider" in operator) {
+    const deployerStake = operator.serviceProvider?.deployerStake;
+    const {
+      amount: pendingDecreaseStakeAmount = new BN("0"),
+      lockupExpiryBlock = 0,
+    } = operator.pendingDecreaseStakeRequest ?? {};
+
+    if (deployerStake) {
+      if (lockupExpiryBlock !== 0) {
+        activeDeployerStake = deployerStake.sub(pendingDecreaseStakeAmount);
+      } else {
+        activeDeployerStake = deployerStake;
+      }
+    }
+  }
+
+  if (operator.pendingUndelegateRequest?.lockupExpiryBlock !== 0) {
+    // Ensure operator.totalDelegatorStake and operator.pendingUndelegateRequest.amount are defined and are BN
+    if (
+      operator.totalDelegatorStake &&
+      operator.pendingUndelegateRequest?.amount
+    ) {
+      activeDelegatorStake = operator.totalDelegatorStake.sub(
+        operator.pendingUndelegateRequest.amount,
+      );
+    } else {
+      activeDelegatorStake = new BN("0");
+    }
+  } else {
+    // If operator.totalDelegatorStake is not defined, default to BN("0")
+    activeDelegatorStake = operator.totalDelegatorStake || new BN("0");
+  }
+  const activeStake = activeDelegatorStake.add(activeDeployerStake);
+  return formatWei(activeStake);
 };
 
 const NodeRow = ({
@@ -184,74 +545,44 @@ const NodeRow = ({
   const [bondedData, setBondedData] = useState("");
   const [bondedDataError, setBondedDataError] = useState(false);
 
+  const [rewardData, setRewardData] = useState("");
+  const [rewardDataError, setRewardDataError] = useState(false);
+
   useEffect(() => {
-    /**
-     * Calculates and returns active stake for address
-     *
-     * Active stake = (active deployer stake + active delegator stake)
-     *      active deployer stake = (direct deployer stake - locked deployer stake)
-     *          locked deployer stake = amount of pending decreaseStakeRequest for address
-     *      active delegator stake = (total delegator stake - locked delegator stake)
-     *          locked delegator stake = amount of pending undelegateRequest for address
-     */
-    const getActiveStake = async (wallet: string, audiusLibs: AudiusLibs) => {
+    const fetchAudData = async (wallet: string, audiusLibs: AudiusLibs) => {
+      const operator = await getOperatorMetadata(wallet, audiusLibs)
       try {
-        const user = await getUserMetadata(wallet, audiusLibs);
-        const serviceProvider = await getServiceProviderMetadata(
-          wallet,
-          audiusLibs,
-        );
-        const operator = {
-          ...user,
-          ...serviceProvider,
-        };
-
-        let activeDeployerStake = new BN("0");
-        let activeDelegatorStake = new BN("0");
-        if ("serviceProvider" in operator) {
-          const deployerStake = operator.serviceProvider?.deployerStake;
-          const {
-            amount: pendingDecreaseStakeAmount = new BN("0"),
-            lockupExpiryBlock = 0,
-          } = operator.pendingDecreaseStakeRequest ?? {};
-
-          if (deployerStake) {
-            if (lockupExpiryBlock !== 0) {
-              activeDeployerStake = deployerStake.sub(
-                pendingDecreaseStakeAmount,
-              );
-            } else {
-              activeDeployerStake = deployerStake;
-            }
-          }
-        }
-
-        if (operator.pendingUndelegateRequest?.lockupExpiryBlock !== 0) {
-          // Ensure operator.totalDelegatorStake and operator.pendingUndelegateRequest.amount are defined and are BN
-          if (
-            operator.totalDelegatorStake &&
-            operator.pendingUndelegateRequest?.amount
-          ) {
-            activeDelegatorStake = operator.totalDelegatorStake.sub(
-              operator.pendingUndelegateRequest.amount,
-            );
-          } else {
-            activeDelegatorStake = new BN("0");
-          }
-        } else {
-          // If operator.totalDelegatorStake is not defined, default to BN("0")
-          activeDelegatorStake = operator.totalDelegatorStake || new BN("0");
-        }
-        const activeStake = activeDelegatorStake.add(activeDeployerStake);
-        setBondedData(formatWei(activeStake));
+        const activeStake = calculateActiveStake(operator as Operator);
+        setBondedData(activeStake);
       } catch (error) {
-        console.error(`Could not fetch bonded $AUDIO for ${wallet}`, error);
+        console.error(
+          `Could not fetch bonded $AUDIO for ${operator.wallet}`,
+          error,
+        );
         setBondedDataError(true);
+      }
+      try {
+        const blockNumber = await audiusLibs.ethWeb3Manager?.web3.eth.getBlockNumber();
+        const fundsPerRound =
+          await audiusLibs.ethContracts?.ClaimsManagerClient.getFundsPerRound()
+        const weeklyReward = await getRewardForClaimBlock({
+          user: operator,
+          fundsPerRound: new BN(fundsPerRound!),
+          blockNumber,
+          audiusLibs
+        });
+        setRewardData(weeklyReward);
+      } catch (error) {
+        console.error(
+          `Could not fetch weekly $AUDIO reward for ${operator.wallet}`,
+          error,
+        );
+        setRewardDataError(true);
       }
     };
 
     if (node.owner && audiusLibs) {
-      void getActiveStake(node.owner, audiusLibs);
+      void fetchAudData(node.owner, audiusLibs);
     }
   }, [node, audiusLibs]);
 
@@ -343,7 +674,13 @@ const NodeRow = ({
             ? "error"
             : bondedData}
       </td>
-      <td className="tableCell"></td>
+      <td className="tableCell">
+        {!rewardDataError && !rewardData
+          ? "loading..."
+          : rewardDataError
+            ? "error"
+            : rewardData}
+      </td>
       <td className="tableCell">
         {!requestsDataError && requestCount == undefined
           ? "loading..."
@@ -399,7 +736,7 @@ const NetworkOverview = () => {
                         Bond $AUDIO
                       </th>
                       <th scope="col" className="tableHeaderCell">
-                        Reward (24h)
+                        Reward (7d)
                       </th>
                       <th scope="col" className="tableHeaderCell">
                         Requests ({prevDateString})
