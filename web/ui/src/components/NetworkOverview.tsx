@@ -70,6 +70,18 @@ type GetPendingUndelegateRequestResponse = {
   target: string;
 };
 
+type GetIncreaseDelegateStakeEventsResponse = {
+  blockNumber: number;
+  delegator: string;
+  increaseAmount: BN;
+  serviceProvider: string;
+};
+
+type DelegateIncreaseStakeEvent = GetIncreaseDelegateStakeEventsResponse & {
+  _type: "DelegateIncreaseStake";
+  direction: "Received" | "Sent";
+};
+
 type Delegate = {
   wallet: string;
   amount: BN;
@@ -142,37 +154,40 @@ const UptimeTracker = ({ data }: { data: UptimeResponse }) => {
   return <Tracker data={trackerData} className="w-20 mx-auto mt-2" />;
 };
 
+// Operator metadata helpers
+
 const getUserDelegates = async (delegator: string, audiusLibs: AudiusLibs) => {
   const delegates = [];
   const increaseDelegateStakeEventsInfo =
     await audiusLibs.ethContracts?.DelegateManagerClient.getIncreaseDelegateStakeEvents(
       {
         delegator,
+        serviceProvider: "",
+        queryStartBlock: 0,
       },
     );
-  const increaseDelegateStakeEvents = increaseDelegateStakeEventsInfo!.map(
-    (event) => ({
-      ...event,
-      _type: "DelegateIncreaseStake",
-      direction: delegator ? "Sent" : "Received",
-    }),
-  );
+  const increaseDelegateStakeEvents = (
+    increaseDelegateStakeEventsInfo! as GetIncreaseDelegateStakeEventsResponse[]
+  ).map((event) => ({
+    ...event,
+    _type: "DelegateIncreaseStake",
+    direction: delegator ? "Sent" : "Received",
+  }));
 
   const pendingUndelegateRequest =
     await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
       delegator,
     );
-  let serviceProviders = increaseDelegateStakeEvents.map(
-    (e) => e.serviceProvider,
-  );
-  // @ts-ignore
+  let serviceProviders = (
+    increaseDelegateStakeEvents as DelegateIncreaseStakeEvent[]
+  ).map((e) => e.serviceProvider);
   serviceProviders = [...new Set(serviceProviders)];
   for (const sp of serviceProviders) {
     const delegators =
       await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorsList(
         sp,
       );
-    if (delegators.includes(delegator)) {
+    if ((delegators as Array<string>).includes(delegator)) {
       const amountDelegated =
         await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorStakeForServiceProvider(
           delegator,
@@ -217,13 +232,13 @@ const getDelegatorAmounts = async (
   for (const delegatorWallet of delegators) {
     const amountDelegated =
       await audiusLibs.ethContracts?.DelegateManagerClient.getDelegatorStakeForServiceProvider(
-        delegatorWallet,
+        delegatorWallet as string,
         wallet,
       );
     let activeAmount = amountDelegated;
     const pendingUndelegateRequest =
       await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
-        delegatorWallet,
+        delegatorWallet as string,
       );
 
     if (
@@ -235,8 +250,8 @@ const getDelegatorAmounts = async (
 
     delegatorAmounts.push({
       wallet: delegatorWallet,
-      amount: amountDelegated,
-      activeAmount,
+      amount: amountDelegated!,
+      activeAmount: activeAmount!,
     });
   }
   return delegatorAmounts;
@@ -258,7 +273,7 @@ const getUserMetadata = async (
 
   const user = {
     wallet,
-    delegates,
+    delegates: delegates as Delegate[],
     totalDelegatorStake,
     pendingUndelegateRequest,
   };
@@ -312,9 +327,10 @@ const getOperatorMetadata = async (wallet: string, audiusLibs: AudiusLibs) => {
 
 /**
  * Calculates the net minted amount for a service operator prior to
- * distribution among the service provider and their delegators
- * Reference processClaim in the claims manager contract
+ * distribution among the service provider and their delegators.
+ * Reference processClaim in the claims manager contract.
  * NOTE: minted amount is calculated using values at the init claim block
+ *
  * wallet The service operator's wallet address
  * totalLocked The total token currently locked (decrease stake and delegation)
  * blockNumber The blocknumber of the claim to process
@@ -337,7 +353,7 @@ const getMintedAmountAtBlock = async ({
   const totalStakedAtFundBlockForClaimer =
     await audiusLibs.ethContracts?.StakingProxyClient?.totalStakedForAt(
       wallet,
-      blockNumber,
+      blockNumber.toString(),
     );
   const totalStakedAtFundBlock =
     await audiusLibs.ethContracts?.StakingProxyClient?.totalStakedAt(
@@ -346,7 +362,7 @@ const getMintedAmountAtBlock = async ({
   const activeStake = totalStakedAtFundBlockForClaimer!.sub(totalLocked);
   const rewardsForClaimer = activeStake
     .mul(fundingAmount)
-    .div(totalStakedAtFundBlock);
+    .div(totalStakedAtFundBlock!);
 
   return rewardsForClaimer;
 };
@@ -367,8 +383,6 @@ const getOperatorTotalActiveStake = (user: Operator) => {
 export const getOperatorTotalLocked = (user: Operator) => {
   const lockedPendingDecrease =
     user.pendingDecreaseStakeRequest?.amount ?? new BN("0");
-  // Another way to get the locked delegation value from contract read
-  // const lockedDelegation await aud.Delegate.getTotalLockedDelegationForServiceProvider(user.wallet)
   const lockedDelegation = user.delegators.reduce((totalLocked, delegate) => {
     return totalLocked.add(delegate.amount.sub(delegate.activeAmount));
   }, new BN("0"));
@@ -431,8 +445,8 @@ const getDelegateRewards = ({
 };
 
 /**
- * Calculates and returns the string formatted total rewards
- * for a user from a claim given a blocknumber
+ * Calculates and returns the total rewards for a user from a
+ * claim given a blocknumber
  *
  * fundsPerRound The amount of rewards given out in a round
  * blockNumber The block number to process the claim event for
@@ -459,7 +473,7 @@ const getRewardForClaimBlock = async ({
       await audiusLibs.ethContracts?.DelegateManagerClient.getTotalLockedDelegationForServiceProvider(
         user.wallet,
       );
-    const totalLocked = lockedPendingDecrease.add(lockedDelegation);
+    const totalLocked = lockedPendingDecrease.add(lockedDelegation!);
     const mintedRewards = await getMintedAmountAtBlock({
       totalLocked,
       fundingAmount: fundsPerRound,
@@ -477,9 +491,13 @@ const getRewardForClaimBlock = async ({
   // For each service operator the user delegates to, calculate the expected rewards for delegating
   for (const delegate of (user as User).delegates) {
     const operator = await getOperatorMetadata(delegate.wallet, audiusLibs);
-    const deployerCut = new BN(operator.serviceProvider.deployerCut.toString());
-    const operatorActiveStake = getOperatorTotalActiveStake(operator);
-    const operatorTotalLocked = getOperatorTotalLocked(operator);
+    const deployerCut = new BN(
+      operator.serviceProvider!.deployerCut.toString(),
+    );
+    const operatorActiveStake = getOperatorTotalActiveStake(
+      operator as Operator,
+    );
+    const operatorTotalLocked = getOperatorTotalLocked(operator as Operator);
     const userMintedRewards = await getMintedAmountAtBlock({
       totalLocked: operatorTotalLocked,
       fundingAmount: fundsPerRound,
@@ -499,7 +517,7 @@ const getRewardForClaimBlock = async ({
 };
 
 /**
- * Calculates and returns string formatted active stake for address
+ * Calculates and returns the active stake for address
  *
  * Active stake = (active deployer stake + active delegator stake)
  *      active deployer stake = (direct deployer stake - locked deployer stake)
