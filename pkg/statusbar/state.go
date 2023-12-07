@@ -33,6 +33,8 @@ func (ac *AudiusContext) MenuItem(selectedctx string) menuet.MenuItem {
 					Text:       "edit configuration",
 					FontWeight: menuet.WeightRegular,
 					Clicked: func() {
+						confDir, _ := conf.GetContextBaseDir()
+						exec.Command("code", confDir).Run()
 					},
 				},
 			}
