@@ -46,7 +46,7 @@ type BaseServerConfig struct {
 
 type CreatorConfig struct {
 	BaseServerConfig `mapstructure:",squash"`
-	// creator specific stuff here
+	MediorumEnv      string
 }
 
 func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
@@ -56,6 +56,7 @@ func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv["delegateOwnerWallet"] = config.OperatorWallet
 	overrideEnv["delegatePrivateKey"] = config.OperatorPrivateKey
 	overrideEnv["spOwnerWallet"] = config.OperatorRewardsWallet
+	overrideEnv["MEDIORUM_ENV"] = config.MediorumEnv
 
 	return overrideEnv
 }

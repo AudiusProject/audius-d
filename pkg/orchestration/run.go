@@ -16,6 +16,11 @@ func DownDevnet(_ *conf.ContextConfig) {
 }
 
 func RunAudiusWithConfig(config *conf.ContextConfig) {
+	// stand up devnet should it be required
+	if config.Network.Devnet {
+		startDevnetDocker()
+	}
+
 	for cname, cc := range config.CreatorNodes {
 		creatorVolumes := []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db"}
 		override := cc.ToOverrideEnv(config.Network)

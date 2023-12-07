@@ -15,13 +15,19 @@ EthMainnetPort = 8546
 SolanaMainnetRpc = "http://solana-test-validator"
 SolanaMainnetPort = 8899
 
-Tag = "stage"
+Tag = "latest"
 Devnet = true
 
 [CreatorNodes]
 
 [CreatorNodes.creator-1]
+InternalHttpPort = 80
+ExternalHttpPort = 80
+InternalHttpsPort = 443
+ExternalHttpsPort = 443
 Host = "http://localhost"
-Port = 6000
 Tag = "latest"
-OperatorPrivateKey = ""
+OperatorPrivateKey = "62ca4962f99a39b4a2c60a8402f60baea5437c275146abd90e0bfdcf0415184d"
+OperatorWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
+OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
+MediorumEnv = "single"
