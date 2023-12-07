@@ -68,7 +68,7 @@ var (
 			if len(args) > 0 {
 				ctxName = args[0]
 			}
-			if err := editConfig(ctxName); err != nil {
+			if err := EditConfig(ctxName); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -192,7 +192,7 @@ func setConfigWithViper(key string, value string) error {
 	return nil
 }
 
-func editConfig(contextName string) error {
+func EditConfig(contextName string) error {
 	tempFile, err := os.CreateTemp("", contextName)
 	if err != nil {
 		return err

@@ -6,6 +6,7 @@ type ExecutionConfig struct {
 }
 
 type ContextConfig struct {
+	ContextName     string
 	ConfigVersion   string
 	Network         NetworkConfig
 	CreatorNodes    map[string]CreatorConfig

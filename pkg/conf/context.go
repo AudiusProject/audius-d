@@ -111,6 +111,24 @@ func GetContexts() ([]string, error) {
 	return ret, nil
 }
 
+func ReadContext(ctxName string) (*ContextConfig, error) {
+	ctxDir, err := GetContextBaseDir()
+	if err != nil {
+		return nil, err
+	}
+	_, err = ioutil.ReadDir(ctxDir)
+	if err != nil {
+		return nil, err
+	}
+	contextFilePath := filepath.Join(ctxDir, ctxName)
+	var ctx ContextConfig
+	err = ReadConfigFromFile(contextFilePath, &ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &ctx, nil
+}
+
 func UseContext(ctxName string) error {
 	ctxDir, err := GetContextBaseDir()
 	if err != nil {
