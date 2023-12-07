@@ -161,7 +161,6 @@ const getUserDelegates = async (delegator: string, audiusLibs: AudiusLibs) => {
         queryStartBlock: 0,
       },
     );
-
   const pendingUndelegateRequest =
     await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
       delegator,
