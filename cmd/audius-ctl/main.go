@@ -24,6 +24,6 @@ func main() {
 		},
 	}
 	rootCmd.Flags().BoolVar(&displayVersion, "version", false, "--version")
-	rootCmd.AddCommand(upCmd, downCmd, devnetCmd, registerCmd, configCmd, guiCmd)
+	rootCmd.AddCommand(upCmd, downCmd, devnetCmd, registerCmd, configCmd, guiCmd, sbCmd)
 	rootCmd.Execute()
 }
