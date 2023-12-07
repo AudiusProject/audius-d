@@ -1,4 +1,6 @@
 .DS_Store
 bin/*
 !bin/.gitkeep
+.audius_developer_app_private_key
+audius-d
 pkg/gui/dist
