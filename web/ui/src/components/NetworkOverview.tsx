@@ -77,11 +77,6 @@ type GetIncreaseDelegateStakeEventsResponse = {
   serviceProvider: string;
 };
 
-type DelegateIncreaseStakeEvent = GetIncreaseDelegateStakeEventsResponse & {
-  _type: "DelegateIncreaseStake";
-  direction: "Received" | "Sent";
-};
-
 type Delegate = {
   wallet: string;
   amount: BN;
@@ -158,7 +153,7 @@ const UptimeTracker = ({ data }: { data: UptimeResponse }) => {
 
 const getUserDelegates = async (delegator: string, audiusLibs: AudiusLibs) => {
   const delegates = [];
-  const increaseDelegateStakeEventsInfo =
+  const increaseDelegateStakeEvents =
     await audiusLibs.ethContracts?.DelegateManagerClient.getIncreaseDelegateStakeEvents(
       {
         delegator,
@@ -166,20 +161,13 @@ const getUserDelegates = async (delegator: string, audiusLibs: AudiusLibs) => {
         queryStartBlock: 0,
       },
     );
-  const increaseDelegateStakeEvents = (
-    increaseDelegateStakeEventsInfo! as GetIncreaseDelegateStakeEventsResponse[]
-  ).map((event) => ({
-    ...event,
-    _type: "DelegateIncreaseStake",
-    direction: delegator ? "Sent" : "Received",
-  }));
 
   const pendingUndelegateRequest =
     await audiusLibs.ethContracts?.DelegateManagerClient.getPendingUndelegateRequest(
       delegator,
     );
   let serviceProviders = (
-    increaseDelegateStakeEvents as DelegateIncreaseStakeEvent[]
+    increaseDelegateStakeEvents as GetIncreaseDelegateStakeEventsResponse[]
   ).map((e) => e.serviceProvider);
   serviceProviders = [...new Set(serviceProviders)];
   for (const sp of serviceProviders) {
