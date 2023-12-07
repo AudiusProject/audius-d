@@ -19,11 +19,15 @@ audius-ctl: bin/audius-ctl-arm bin/audius-ctl-x86
 
 bin/audius-ctl-arm: $(SRC) $(UI_ARTIFACT)
 	@echo "Building arm audius-ctl..."
-	GOOS=darwin GOARCH=arm64 go build -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm ./cmd/audius-ctl
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm ./cmd/audius-ctl
 
 bin/audius-ctl-x86: $(SRC) $(UI_ARTIFACT)
 	@echo "Building x86 audius-ctl..."
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-x86 ./cmd/audius-ctl
+
+bin/audius-ctl-arm-mac: $(SRC) $(UI_ARTIFACT)
+	@echo "Building arm audius-ctl..."
+	GOOS=darwin GOARCH=arm64 go build -tags mac -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm ./cmd/audius-ctl
 
 $(UI_ARTIFACT): $(UI_SRC)
 	@echo "Building GUI..."
