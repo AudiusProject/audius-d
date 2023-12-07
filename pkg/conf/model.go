@@ -110,6 +110,9 @@ type NetworkConfig struct {
 	SolanaMainnetPort uint
 
 	Tag string
+
+	// starts up local containers for acdc, eth, and solana rpcs
+	Devnet bool
 }
 
 type NodeConfig interface {

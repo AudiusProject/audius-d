@@ -49,7 +49,9 @@ func RunDown(config *conf.ContextConfig) {
 		cnames = append(cnames, cname)
 	}
 	runCommand("docker", cnames...)
-	downDevnetDocker()
+	if config.Network.Devnet {
+		downDevnetDocker()
+	}
 }
 
 func runCommand(name string, args ...string) error {
