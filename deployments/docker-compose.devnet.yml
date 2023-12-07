@@ -1,0 +1,24 @@
+version: '3.9'
+
+services:
+  # service that simulates ethereum mainnet
+  eth-ganache:
+    container_name: eth-ganache
+    image: audius/eth-ganache:latest
+    ports:
+      - "8546:8545"
+  
+  # service that simulates solana mainnet
+  sol-validator:
+    container_name: solana-test-validator
+    image: audius/solana-programs:latest
+    ports:
+      - "8899:8899"
+
+  # service that simulates acdc network
+  acdc-ganache:
+    container_name: acdc-ganache
+    image: audius/acdc-ganache:latest
+    ports:
+      - "8545:8545"
+    
