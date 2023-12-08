@@ -42,14 +42,14 @@ const TxRow = ({
         console.log(log, em);
       }}
     >
-      <td className="tableCell">
+      <td className="tableCellFirst">
         <div className="hover:underline">
           <Link to={`?block=${log.blockNumber.toString()}`}>
             {log.blockNumber.toString()}
           </Link>
         </div>
       </td>
-      <td className="tableCellFirst">
+      <td className="tableCell">
         <div
           className="cursor-pointer text-blue-600 hover:text-blue-800 underline"
           onClick={() => onSelect(log.transactionHash)}
