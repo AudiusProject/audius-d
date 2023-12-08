@@ -41,3 +41,17 @@
 .tableCell {
   @apply whitespace-nowrap px-3 py-4 text-sm text-gray-500;
 }
+
+.card {
+  @apply rounded-xl shadow overflow-scroll mb-8;
+  @apply border border-gray-100;
+}
+
+.card h2 {
+  @apply bg-gray-50 p-2 text-xl;
+}
+
+.chip {
+  @apply flex items-center overflow-hidden rounded-full p-2 pr-4 gap-2 block;
+  @apply border border-gray-100;
+}
