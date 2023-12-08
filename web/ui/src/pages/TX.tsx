@@ -197,11 +197,9 @@ export function TxViewer() {
                   ))}
                 </tbody>
               </table>
-              <div className="w-1/2">
-                {selectedTx && (
-                  <TxDetail tx={selectedTx} onClose={handleCloseModal} />
-                )}
-              </div>
+              {selectedTx && (
+                <TxDetail tx={selectedTx} onClose={handleCloseModal} />
+              )}
             </div>
           </div>
         </div>
