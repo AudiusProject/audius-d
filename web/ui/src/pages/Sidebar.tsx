@@ -12,6 +12,9 @@ const Sidebar: React.FC = () => {
           <li>
             <Link to="/network">/network</Link>
           </li>
+          <li>
+            <Link to="/explorer">/tx-explorer</Link>
+          </li>
         </ul>
       </nav>
     </aside>

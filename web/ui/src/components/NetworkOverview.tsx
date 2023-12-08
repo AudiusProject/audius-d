@@ -5,7 +5,8 @@ import { Tracker, Color } from "@tremor/react";
 import { useEnvVars } from "../providers/EnvVarsProvider";
 import { useAudiusLibs } from "../providers/AudiusLibsProvider";
 import type { AudiusLibs } from "@audius/sdk/dist/WebAudiusLibs.d.ts";
-import { formatWei } from "../utils/helpers";
+import { formatWei } from "../utils/audio";
+import { fetcher } from "../utils/query";
 import useNodes from "../hooks/useNodes";
 import { UptimeResponse } from "../components/Uptime";
 
@@ -97,33 +98,6 @@ type Operator = {
   delegators: Array<Delegate>;
   pendingDecreaseStakeRequest: GetPendingDecreaseStakeRequestResponse;
 } & User;
-
-class FetchError extends Error {
-  info: any;
-  status: number;
-
-  constructor(message: string) {
-    super(message);
-    this.info = null;
-    this.status = 0;
-  }
-}
-
-const fetcher = async (url: string) => {
-  const res = await fetch(url);
-
-  // If the status code is not in the range 200-299,
-  // we still try to parse and throw it.
-  if (!res.ok) {
-    const error = new FetchError("An error occurred while fetching the data.");
-    // Attach extra info to the error object.
-    error.info = await res.json();
-    error.status = res.status;
-    throw error;
-  }
-
-  return res.json();
-};
 
 const UptimeTracker = ({ data }: { data: UptimeResponse }) => {
   if (!data?.uptime_raw_data) {

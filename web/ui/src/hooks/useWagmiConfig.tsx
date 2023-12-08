@@ -7,7 +7,10 @@ import { useEnvVars } from "../providers/EnvVarsProvider.tsx";
 
 export const useWagmiConfig = () => {
   const { ethProviderUrl } = useEnvVars();
-  const localEndpoints = ["http://audius-protocol-eth-ganache-1", "http://localhost:8546"]
+  const localEndpoints = [
+    "http://audius-protocol-eth-ganache-1",
+    "http://localhost:8546",
+  ];
 
   return useMemo(() => {
     // audius-docker-compose configs only allow for one RPC env var, which could be a single endpoint or a comma-separated list of endpoint
@@ -21,10 +24,10 @@ export const useWagmiConfig = () => {
         import("ethers").then((ethers) => {
           const provider = new ethers.JsonRpcProvider(url);
           // advance local ganache chain
-          provider.send("evm_mine", [])
+          provider.send("evm_mine", []);
         });
       }
-    })
+    });
 
     const rpcProviders: Transport[] = providerEndpoints.map((url: string) =>
       url.startsWith("ws") ? webSocket(url) : http(url),
