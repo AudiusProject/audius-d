@@ -140,8 +140,7 @@ func UseContext(ctxName string) error {
 	}
 
 	if _, err := os.Stat(filepath.Join(ctxDir, ctxName)); os.IsNotExist(err) {
-		fmt.Printf("No context named %s\n", ctxName)
-		return nil
+		return fmt.Errorf("No context named %s\n", ctxName)
 	}
 
 	execConf, err := readOrCreateExecutionConfig()

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/AudiusProject/audius-d/hashes"
+	"github.com/AudiusProject/audius-d/pkg/hashes"
 	"github.com/spf13/cobra"
 )
 
