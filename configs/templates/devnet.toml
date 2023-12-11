@@ -13,8 +13,6 @@ SolanaMainnetRpc = "http://localhost:8899"
 EthMainnetNetworkId = "1337"
 Devnet = true
 
-[CreatorNodes]
-
 [CreatorNodes.creator-1]
 InternalHttpPort = 80
 ExternalHttpPort = 80
@@ -22,9 +20,18 @@ InternalHttpsPort = 443
 ExternalHttpsPort = 443
 Host = "http://localhost"
 Tag = "latest"
-# DO NOT CHANGE THIS KEY, IT WORKS
 OperatorPrivateKey = "21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7cf58ab"
 OperatorWallet = "0x0D38e653eC28bdea5A2296fD5940aaB2D0B8875c"
 OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
 
 MediorumEnv = "sandbox"
+
+[DiscoveryNodes.discovery-1]
+InternalHttpPort = 5000
+ExternalHttpPort = 5000
+InternalHttpsPort = 5001
+ExternalHttpsPort = 5001
+Host = "http://localhost"
+OperatorPrivateKey = "c1c36935d3809daacf3aa63243feef5e7a97ba11dc56fe3a923758937362ed6e"
+OperatorWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
+OperatorRewardsWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"

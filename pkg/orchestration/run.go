@@ -28,7 +28,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 		RunNode(config.Network, cc.BaseServerConfig, override, cname, "creator-node", creatorVolumes)
 	}
 	for cname, dc := range config.DiscoveryNodes {
-		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/esdata:/esdata", "/dashboard-dist:/dashboard-dist", "/var/k8s/bolt:/var/k8s/bolt"}
+		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt"}
 		override := dc.ToOverrideEnv(config.Network)
 		RunNode(config.Network, dc.BaseServerConfig, override, cname, "discovery-provider", discoveryVolumes)
 		// discovery requires a few extra things
