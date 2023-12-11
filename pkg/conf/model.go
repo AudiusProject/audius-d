@@ -43,12 +43,13 @@ type BaseServerConfig struct {
 	OperatorWallet        string
 	OperatorRewardsWallet string
 
-	// register the node on startup
-	// requires devnet for now
-	Register bool
-
 	DatabaseUrl string
 	CacheUrl    string
+
+	// operations
+	Register     bool
+	AwaitHealthy bool
+	AutoUpgrade  bool
 }
 
 type CreatorConfig struct {
