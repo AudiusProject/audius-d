@@ -42,6 +42,7 @@ type BaseServerConfig struct {
 	OperatorPrivateKey    string
 	OperatorWallet        string
 	OperatorRewardsWallet string
+	EthOwnerWallet        string
 
 	DatabaseUrl   string
 	CacheUrl      string
@@ -56,7 +57,6 @@ type BaseServerConfig struct {
 type CreatorConfig struct {
 	BaseServerConfig    `mapstructure:",squash"`
 	MediorumEnv         string
-	EthOwnerWallet      string
 	DbConnectionPoolMax uint
 }
 
@@ -90,6 +90,10 @@ type IdentityConfig struct {
 	BaseServerConfig `mapstructure:",squash"`
 	// identity specific stuff here
 	SolanaClaimableTokenProgramAddress string
+	MinimumBalance                     uint
+	RelayerPublicKey                   string
+	UserVerifierPublicKey              string
+	SkipAbuseCheck                     bool
 }
 
 type NetworkConfig struct {
@@ -105,8 +109,9 @@ type NetworkConfig struct {
 	SolanaMainnetRpc string
 
 	// network singletons
-	IdentityServiceUrl string
-	AntiAbuseOracleUrl string
+	IdentityServiceUrl     string
+	AntiAbuseOracleUrl     string
+	AntiAbuseOracleAddress string
 
 	Tag string
 
@@ -116,10 +121,12 @@ type NetworkConfig struct {
 	// eth mainnet config and addresse
 	EthMainnetNetworkId         string
 	EthContractsRegistryAddress string
+	EthTokenAddress             string
 
 	// acdc config and addresses
-	AcdcNetworkId            string
-	AcdcEntityManagerAddress string
+	AcdcNetworkId                string
+	AcdcContractsRegistryAddress string
+	AcdcEntityManagerAddress     string
 
 	SolanaRewardsManagerAccount        string
 	SolanaRewardsManagerProgramAddress string

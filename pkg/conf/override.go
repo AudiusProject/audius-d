@@ -94,10 +94,33 @@ func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 func (config *IdentityConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv := make(map[string]string)
 
-	overrideEnv["solanaClaimableTokenProgramAddress"] = config.SolanaClaimableTokenProgramAddress
-
+	// network config
 	overrideEnv["ethRegistryAddress"] = nc.EthContractsRegistryAddress
 	overrideEnv["entityManagerAddress"] = nc.AcdcEntityManagerAddress
+	overrideEnv["environment"] = nc.Name
+	overrideEnv["acdcChainId"] = nc.AcdcNetworkId
+	overrideEnv["aaoAddress"] = nc.AntiAbuseOracleAddress
+	overrideEnv["aaoEndpoint"] = nc.AntiAbuseOracleUrl
+	overrideEnv["entityManagerAddress"] = nc.AcdcEntityManagerAddress
+	overrideEnv["ethRegistryAddress"] = nc.EthContractsRegistryAddress
+	overrideEnv["ethTokenAddress"] = nc.EthTokenAddress
+	overrideEnv["registryAddress"] = nc.AcdcContractsRegistryAddress
+	overrideEnv["web3Provider"] = nc.AcdcRpc
+	overrideEnv["solanaMintAddress"] = nc.SolanaWaudioMint
+	overrideEnv["solanaUSDCMintAddress"] = nc.SolanaUsdcMint
+	overrideEnv["solanaClaimableTokenProgramAddress"] = config.SolanaClaimableTokenProgramAddress
+	overrideEnv["ethNetworkId"] = nc.EthMainnetNetworkId
+	overrideEnv["ethProviderUrl"] = nc.EthMainnetRpc
+
+	// identity config
+	overrideEnv["redisHost"] = "cache"
+	overrideEnv["redisPort"] = fmt.Sprintf("%d", 6379)
+	overrideEnv["ethOwnerWallet"] = config.EthOwnerWallet
+	overrideEnv["minimumBalance"] = fmt.Sprintf("%d", config.MinimumBalance)
+	overrideEnv["relayerPublicKey"] = config.RelayerPublicKey
+	overrideEnv["userVerifierPublicKey"] = config.UserVerifierPublicKey
+	overrideEnv["skipAbuseCheck"] = fmt.Sprintf("%t", config.SkipAbuseCheck)
+	overrideEnv["dbUrl"] = config.DatabaseUrl
 
 	return overrideEnv
 }
