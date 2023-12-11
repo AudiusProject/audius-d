@@ -11,7 +11,7 @@ if [[ "$(gh release list --exclude-drafts)" == "" ]]; then
   start_commit="$(git rev-list --max-parents=0 HEAD)"
 else
   old_version=$(gh release view --json tagName | jq -r ".tagName")
-  start_commit=$(git show-ref --hash "refs/tags/@audius-ctl/$old_version")
+  start_commit=$(git show-ref --hash "refs/tags/$old_version")
 fi
 
 changelog="$(mktemp)"
