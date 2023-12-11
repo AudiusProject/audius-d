@@ -43,8 +43,9 @@ type BaseServerConfig struct {
 	OperatorWallet        string
 	OperatorRewardsWallet string
 
-	DatabaseUrl string
-	CacheUrl    string
+	DatabaseUrl   string
+	CacheUrl      string
+	EnableRsyslog bool
 
 	// operations
 	Register     bool
@@ -53,8 +54,10 @@ type BaseServerConfig struct {
 }
 
 type CreatorConfig struct {
-	BaseServerConfig `mapstructure:",squash"`
-	MediorumEnv      string
+	BaseServerConfig    `mapstructure:",squash"`
+	MediorumEnv         string
+	EthOwnerWallet      string
+	DbConnectionPoolMax uint
 }
 
 type DiscoveryConfig struct {
@@ -66,7 +69,6 @@ type DiscoveryConfig struct {
 	BlockProcessingWindow          uint
 	GetUsersCnodeTtlSec            uint
 	UserMetadataServiceUrl         string
-	EnableRsyslog                  bool
 	GunicornWorkerClass            string
 	GunicornWorkers                uint
 	SolanaUserBankMinSlot          uint
@@ -116,6 +118,7 @@ type NetworkConfig struct {
 	EthContractsRegistryAddress string
 
 	// acdc config and addresses
+	AcdcNetworkId            string
 	AcdcEntityManagerAddress string
 
 	SolanaRewardsManagerAccount        string

@@ -9,10 +9,12 @@ Tag = "latest"
 AcdcRpc = "http://host.docker.internal:8545"
 EthMainnetRpc = "http://host.docker.internal:8546"
 SolanaMainnetRpc = "http://host.docker.internal:8899"
+
 IdentityServiceUrl = "http://host.docker.internal:7000"
 AntiAbuseOracleUrl = ""
 
 EthMainnetNetworkId = "1337"
+AcdcNetworkId = "1337"
 EthContractsRegistryAddress = "0xABbfF712977dB51f9f212B85e8A4904c818C2b63"
 AcdcEntityManagerAddress = "0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B"
 SolanaRewardsManagerAccount = "DJPzVothq58SmkpRb1ATn5ddN2Rpv1j2TcGvM3XsHf1c"
@@ -36,7 +38,10 @@ OperatorPrivateKey = "21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7
 OperatorWallet = "0x0D38e653eC28bdea5A2296fD5940aaB2D0B8875c"
 OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
 
-MediorumEnv = "sandbox"
+DatabaseUrl = "postgres://postgres:postgres@db:5432/audius_creator_node"
+EthOwnerWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
+DbConnectionPoolMax = 400
+MediorumEnv = "single"
 
 [DiscoveryNodes.discovery-1]
 InternalHttpPort = 5000
@@ -50,6 +55,7 @@ OperatorRewardsWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
 
 DatabaseUrl = "postgresql://postgres:postgres@db:5432/audius_discovery"
 CacheUrl = "redis://cache:6379/00"
+MediorumEnv = "single"
 
 # discovery specific
 CorsAllowAll = true

@@ -63,17 +63,30 @@ func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string
 
 func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv := make(map[string]string)
-
 	overrideEnv["creatorNodeEndpoint"] = config.Host
 	overrideEnv["delegateOwnerWallet"] = config.OperatorWallet
 	overrideEnv["delegatePrivateKey"] = config.OperatorPrivateKey
 	overrideEnv["spOwnerWallet"] = config.OperatorRewardsWallet
-	overrideEnv["MEDIORUM_ENV"] = nc.Name
-	overrideEnv["ethProviderUrl"] = nc.EthMainnetRpc
+	overrideEnv["ethOwnerWallet"] = config.EthOwnerWallet
 
+	// network config
+	overrideEnv["identityService"] = nc.IdentityServiceUrl
+	overrideEnv["ethProviderUrl"] = nc.EthMainnetRpc
+	overrideEnv["ethRegistryAddress"] = nc.EthContractsRegistryAddress
+	overrideEnv["entityManagerAddress"] = nc.AcdcEntityManagerAddress
+	overrideEnv["dataNetworkId"] = nc.AcdcNetworkId
+	overrideEnv["dataProviderUrl"] = nc.AcdcRpc
+	overrideEnv["entityManagerAddress"] = nc.AcdcEntityManagerAddress
+	overrideEnv["ethNetworkId"] = nc.EthMainnetNetworkId
 	overrideEnv["ethRegistryAddress"] = nc.EthContractsRegistryAddress
 
-	overrideEnv["entityManagerAddress"] = nc.AcdcEntityManagerAddress
+	// creator config
+	overrideEnv["dbUrl"] = config.DatabaseUrl
+	overrideEnv["redisHost"] = "cache"
+	overrideEnv["redisPort"] = fmt.Sprintf("%d", 6379)
+	overrideEnv["enableRsyslog"] = fmt.Sprintf("%t", config.EnableRsyslog)
+	overrideEnv["dbConnectionPoolMax"] = fmt.Sprintf("%d", config.DbConnectionPoolMax)
+	overrideEnv["MEDIORUM_ENV"] = config.MediorumEnv
 
 	return overrideEnv
 }
