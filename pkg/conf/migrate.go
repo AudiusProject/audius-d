@@ -82,6 +82,7 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 		base.OperatorPrivateKey = env["delegatePrivateKey"]
 		base.OperatorWallet = env["delegateOwnerWallet"]
 		base.OperatorRewardsWallet = env["spOwnerWallet"]
+		base.Host = env["creatorNodeEndpoint"]
 
 		creatorConf := CreatorConfig{
 			BaseServerConfig: base,
@@ -97,6 +98,7 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 		base.OperatorPrivateKey = env["audius_delegate_private_key"]
 		base.OperatorWallet = env["audius_delegate_owner_wallet"]
 		base.OperatorRewardsWallet = env["audius_delegate_owner_wallet"]
+		base.Host = env["audius_discprov_url"]
 
 		discoveryConf := DiscoveryConfig{
 			BaseServerConfig: base,
@@ -106,6 +108,7 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 
 	net := NetworkConfig{
 		Name: "stage",
+		Tag:  "latest",
 	}
 
 	ctx.Network = net

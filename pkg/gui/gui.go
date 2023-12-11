@@ -17,7 +17,7 @@ func StartGuiServer() {
 	e := echo.New()
 
 	// Isolate 'ui/dist' as a separate segment in the embedded file system for efficient access
-	subFS, err := fs.Sub(embeddedFiles, "ui/dist")
+	subFS, err := fs.Sub(embeddedFiles, "dist")
 	if err != nil {
 		log.Fatalf("failed to create sub filesystem: %v", err)
 	}

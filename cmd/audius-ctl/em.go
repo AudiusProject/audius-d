@@ -8,8 +8,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/AudiusProject/audius-d/acdc"
-	"github.com/AudiusProject/audius-d/hashes"
+	"github.com/AudiusProject/audius-d/pkg/acdc"
+	"github.com/AudiusProject/audius-d/pkg/hashes"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"

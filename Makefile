@@ -57,6 +57,13 @@ push-docker:
 
 build-push: build-docker push-docker
 
+.PHONY: install uninstall
+install: audius-ctl
+	bash scripts/install.sh
+
+uninstall:
+	bash scripts/uninstall.sh
+
 .PHONY: clean
 clean:
 	rm -f bin/*
