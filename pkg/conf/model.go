@@ -42,6 +42,10 @@ type BaseServerConfig struct {
 	OperatorPrivateKey    string
 	OperatorWallet        string
 	OperatorRewardsWallet string
+
+	// register the node on startup
+	// requires devnet for now
+	Register bool
 }
 
 type CreatorConfig struct {
@@ -49,44 +53,14 @@ type CreatorConfig struct {
 	MediorumEnv      string
 }
 
-func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
-	overrideEnv := make(map[string]string)
-
-	overrideEnv["creatorNodeEndpoint"] = config.Host
-	overrideEnv["delegateOwnerWallet"] = config.OperatorWallet
-	overrideEnv["delegatePrivateKey"] = config.OperatorPrivateKey
-	overrideEnv["spOwnerWallet"] = config.OperatorRewardsWallet
-	overrideEnv["MEDIORUM_ENV"] = config.MediorumEnv
-
-	return overrideEnv
-}
-
 type DiscoveryConfig struct {
 	BaseServerConfig `mapstructure:",squash"`
-}
-
-func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
-	overrideEnv := make(map[string]string)
-
-	overrideEnv["audius_discprov_url"] = config.Host
-	overrideEnv["audius_delegate_owner_wallet"] = config.OperatorWallet
-	overrideEnv["audius_delegate_private_key"] = config.OperatorPrivateKey
-
-	return overrideEnv
 }
 
 type IdentityConfig struct {
 	BaseServerConfig `mapstructure:",squash"`
 	// identity specific stuff here
 	SolanaClaimableTokenProgramAddress string
-}
-
-func (config *IdentityConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
-	overrideEnv := make(map[string]string)
-
-	overrideEnv["solanaClaimableTokenProgramAddress"] = config.SolanaClaimableTokenProgramAddress
-
-	return overrideEnv
 }
 
 type NetworkConfig struct {
@@ -97,18 +71,11 @@ type NetworkConfig struct {
 	// doesn't have specific behavior
 	Name string
 
-	// host that running servers will use to talk to the acdc network
-	// example: devnet would have a http://acdc-ganache type string
-	AcdcHost string
+	AcdcRpc          string
+	EthMainnetRpc    string
+	SolanaMainnetRpc string
 
-	// same as AcdcHost but the port if applicable
-	AcdcPort uint
-
-	EthMainnetHost string
-	EthMainnetPort uint
-
-	SolanaMainnetHost string
-	SolanaMainnetPort uint
+	EthMainnetNetworkId string
 
 	Tag string
 

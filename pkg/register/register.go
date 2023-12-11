@@ -57,9 +57,12 @@ func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderU
 	if err != nil {
 		log.Fatal("Failed to retrieve token decimals:", err)
 	}
+
 	if err = tokenABI.UnpackIntoInterface(&tokenDecimals, "decimals", tokenDecimalsResult); err != nil {
 		log.Fatal("Failed to unpack token decimals result:", err)
 	}
+
+	fmt.Println(tokenDecimals)
 
 	coeff := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(tokenDecimals)), nil)
 	stakedTokensAmount := new(big.Int).Mul(big.NewInt(200000), coeff)
@@ -69,12 +72,15 @@ func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderU
 		getContractAddress(client, ethRegistryAddress, "StakingProxy"),
 		stakedTokensAmount,
 	)
+	if err != nil {
+		log.Fatal("Failed to pack abi: ", err)
+	}
 	err = client.SendTransaction(
 		context.Background(),
 		getSignedTx(client, tokenApprovalData, delegateOwnerWallet, ethTokenAddress, pKey),
 	)
 	if err != nil {
-		log.Fatal("Failed to approve tokens:", err)
+		log.Fatal("Failed to approve tokens: ", err)
 	}
 
 	var bytes32NodeType [32]byte

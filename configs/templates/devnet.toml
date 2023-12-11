@@ -5,17 +5,12 @@ example and runnable file for running a devnet configuration of audius protocol 
 
 [Network]
 Name = "devnet"
-
-AcdcRpc = "http://acdc-ganache"
-AcdcPort = 8545
-
-EthMainnetRpc = "http://eth-ganache"
-EthMainnetPort = 8546
-
-SolanaMainnetRpc = "http://solana-test-validator"
-SolanaMainnetPort = 8899
-
 Tag = "latest"
+AcdcRpc = "http://localhost:8545"
+EthMainnetRpc = "http://localhost:8546"
+SolanaMainnetRpc = "http://localhost:8899"
+
+EthMainnetNetworkId = "1337"
 Devnet = true
 
 [CreatorNodes]
@@ -27,7 +22,9 @@ InternalHttpsPort = 443
 ExternalHttpsPort = 443
 Host = "http://localhost"
 Tag = "latest"
-OperatorPrivateKey = "62ca4962f99a39b4a2c60a8402f60baea5437c275146abd90e0bfdcf0415184d"
-OperatorWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
+# DO NOT CHANGE THIS KEY, IT WORKS
+OperatorPrivateKey = "21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7cf58ab"
+OperatorWallet = "0x0D38e653eC28bdea5A2296fD5940aaB2D0B8875c"
 OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
-MediorumEnv = "single"
+
+MediorumEnv = "sandbox"

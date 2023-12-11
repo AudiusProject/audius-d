@@ -20,7 +20,7 @@ var registerCmd = &cobra.Command{
 			register.RegisterNode(
 				"content-node",
 				cc.Host,
-				ctx_config.Network.EthMainnetHost,
+				ctx_config.Network.EthMainnetRpc,
 				"0xdcB2fC9469808630DD0744b0adf97C0003fC29B2", // hardcoded ganache address
 				"0xABbfF712977dB51f9f212B85e8A4904c818C2b63", // "
 				cc.OperatorWallet,
