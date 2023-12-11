@@ -5,6 +5,8 @@ run your own node.
 ## Installation
 ### Latest release
 
+Download from the [releases page](https://github.com/AudiusProject/audius-d/releases), **OR** run the following:
+
 ```bash
 ARCH=x86 # Linux x86_64
 ARCH=arm # MacOS
@@ -28,6 +30,15 @@ sudo make install  # installs to /usr/local/bin/
 ```bash
 sudo make uninstall
 ```
+
+### (Experimental) Build macos version with statusbar feature
+
+```bash
+make audius-ctl-arm-mac
+```
+
+Install using same steps as above
+
 
 ## Run
 
