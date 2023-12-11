@@ -41,10 +41,10 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 	}
 
 	// initialize override.env file
-	localOverridePath := fmt.Sprintf("./local.%s.env", nodeType)
-	// if err := godotenv.Write(override, localOverridePath); err != nil {
-	// 	return err
-	// }
+	localOverridePath := fmt.Sprintf("./%s-override.env", containerName)
+	if err := godotenv.Write(override, localOverridePath); err != nil {
+		return err
+	}
 
 	envCmd := fmt.Sprintf("docker cp %s %s:/root/audius-docker-compose/%s/override.env", localOverridePath, containerName, nodeType)
 	if err := Sh(envCmd); err != nil {

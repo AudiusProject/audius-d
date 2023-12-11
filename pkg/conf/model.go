@@ -46,6 +46,9 @@ type BaseServerConfig struct {
 	// register the node on startup
 	// requires devnet for now
 	Register bool
+
+	DatabaseUrl string
+	CacheUrl    string
 }
 
 type CreatorConfig struct {
@@ -55,6 +58,29 @@ type CreatorConfig struct {
 
 type DiscoveryConfig struct {
 	BaseServerConfig `mapstructure:",squash"`
+
+	CorsAllowAll                   bool
+	OpenRestyEnable                bool
+	BlockProcessingWindowBlacklist uint
+	BlockProcessingWindow          uint
+	GetUsersCnodeTtlSec            uint
+	UserMetadataServiceUrl         string
+	EnableRsyslog                  bool
+	GunicornWorkerClass            string
+	GunicornWorkers                uint
+	SolanaUserBankMinSlot          uint
+	SolanaRewardsManagerMinSlot    uint
+
+	// notifications
+	NotificationsMaxBlockDiff uint
+	// elasticsearch
+	ElasticSearchUrl     string
+	ElasticSearchEnabled bool
+	// relay
+	RelayUseAntiAbuseOracle bool
+	// comms
+	CommsDevMode bool
+	// trpc (none present)
 }
 
 type IdentityConfig struct {
@@ -75,18 +101,29 @@ type NetworkConfig struct {
 	EthMainnetRpc    string
 	SolanaMainnetRpc string
 
-	EthMainnetNetworkId string
+	// network singletons
+	IdentityServiceUrl string
+	AntiAbuseOracleUrl string
 
 	Tag string
 
 	// starts up local containers for acdc, eth, and solana rpcs
 	Devnet bool
 
-	// eth mainnet config and addresses
+	// eth mainnet config and addresse
+	EthMainnetNetworkId         string
 	EthContractsRegistryAddress string
 
 	// acdc config and addresses
 	AcdcEntityManagerAddress string
+
+	SolanaRewardsManagerAccount        string
+	SolanaRewardsManagerProgramAddress string
+	SolanaSignerGroupAddress           string
+	SolanaTrackListenCountAddress      string
+	SolanaUserBankProgramAddress       string
+	SolanaWaudioMint                   string
+	SolanaUsdcMint                     string
 }
 
 type NodeConfig interface {

@@ -6,11 +6,23 @@ example and runnable file for running a devnet configuration of audius protocol 
 [Network]
 Name = "devnet"
 Tag = "latest"
-AcdcRpc = "http://localhost:8545"
-EthMainnetRpc = "http://localhost:8546"
-SolanaMainnetRpc = "http://localhost:8899"
+AcdcRpc = "http://host.docker.internal:8545"
+EthMainnetRpc = "http://host.docker.internal:8546"
+SolanaMainnetRpc = "http://host.docker.internal:8899"
+IdentityServiceUrl = "http://host.docker.internal:7000"
+AntiAbuseOracleUrl = ""
 
 EthMainnetNetworkId = "1337"
+EthContractsRegistryAddress = "0xABbfF712977dB51f9f212B85e8A4904c818C2b63"
+AcdcEntityManagerAddress = "0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B"
+SolanaRewardsManagerAccount = "DJPzVothq58SmkpRb1ATn5ddN2Rpv1j2TcGvM3XsHf1c"
+SolanaRewardsManagerProgramAddress = "testLsJKtyABc9UXJF8JWFKf1YH4LmqCWBC42c6akPb"
+SolanaSignerGroupAddress = "HwecRT7whduwiLhJXiWmvrhcCh8zJhwJ4B9fXniPUDyz"
+SolanaTrackListenCountAddress = "testEjzEibm3nq77VQcqCCmSMx6m3KdJHuepBH1rnue"
+SolanaUserBankProgramAddress = "testHKV1B56fbvop4w6f2cTGEub9dRQ2Euta5VmqdX9"
+SolanaWaudioMint = "37RCjhgV1qGV2Q54EHFScdxZ22ydRMdKMtVgod47fDP3"
+SolanaUsdcMint = "26Q7gP8UfkDzi7GMFEQxTJaNJ8D2ybCUjex58M5MLu8y"
+
 Devnet = true
 
 [CreatorNodes.creator-1]
@@ -35,6 +47,34 @@ Host = "http://localhost"
 OperatorPrivateKey = "c1c36935d3809daacf3aa63243feef5e7a97ba11dc56fe3a923758937362ed6e"
 OperatorWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
 OperatorRewardsWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
+
+DatabaseUrl = "postgresql://postgres:postgres@db:5432/audius_discovery"
+CacheUrl = "redis://cache:6379/00"
+
+# discovery specific
+CorsAllowAll = true
+OpenRestyEnable = true
+BlockProcessingWindowBlacklist = 1200
+BlockProcessingWindow = 100
+GetUsersCnodeTtlSec = 300
+UserMetadataServiceUrl = "http://host.docker.internal:80"
+EnableRsyslog = false
+GunicornWorkerClass = "eventlet"
+GunicornWorkers = 16
+SolanaRewardsManagerMinSlot = 0
+SolanaUserBankMinSlot = 0
+
+# plugins
+# notifs
+NotificationsMaxBlockDiff = 10
+# elasticsearch
+ElasticSearchUrl = "http://elasticsearch:9200"
+ElasticSearchEnabled = true
+# relay
+RelayUseAntiAbuseOracle = false
+# comms
+CommsDevMode = true
+
 
 [IdentityService.identity-1]
 SolanaClaimableTokenProgramAddress = "testHKV1B56fbvop4w6f2cTGEub9dRQ2Euta5VmqdX9"
