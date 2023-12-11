@@ -35,3 +35,11 @@ Host = "http://localhost"
 OperatorPrivateKey = "c1c36935d3809daacf3aa63243feef5e7a97ba11dc56fe3a923758937362ed6e"
 OperatorWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
 OperatorRewardsWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
+
+[IdentityService.identity-1]
+SolanaClaimableTokenProgramAddress = "testHKV1B56fbvop4w6f2cTGEub9dRQ2Euta5VmqdX9"
+InternalHttpPort = 7000
+ExternalHttpPort = 7000
+InternalHttpsPort = 7001
+ExternalHttpsPort = 7001
+Host = "http://localhost"
