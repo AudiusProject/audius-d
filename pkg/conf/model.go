@@ -81,6 +81,12 @@ type NetworkConfig struct {
 
 	// starts up local containers for acdc, eth, and solana rpcs
 	Devnet bool
+
+	// eth mainnet config and addresses
+	EthContractsRegistryAddress string
+
+	// acdc config and addresses
+	AcdcEntityManagerAddress string
 }
 
 type NodeConfig interface {
