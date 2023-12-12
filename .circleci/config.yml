@@ -240,7 +240,7 @@ jobs:
       - run:
           name: test invalid modify context
           command: |
-            if audius-ctl-x86 config set Network.EthMainnetRpc 420; then
+            if audius-ctl-x86 config set Network.Devnet 420; then
               echo Should not have succeeded due to type error
               false
             fi
