@@ -40,6 +40,7 @@ Tag = "latest"
 OperatorPrivateKey = "21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7cf58ab"
 OperatorWallet = "0x0D38e653eC28bdea5A2296fD5940aaB2D0B8875c"
 OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
+AwaitHealthy = true
 
 DatabaseUrl = "postgres://postgres:postgres@db:5432/audius_creator_node"
 EthOwnerWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
@@ -55,6 +56,7 @@ Host = "http://localhost"
 OperatorPrivateKey = "c1c36935d3809daacf3aa63243feef5e7a97ba11dc56fe3a923758937362ed6e"
 OperatorWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
 OperatorRewardsWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
+AwaitHealthy = true
 
 DatabaseUrl = "postgresql://postgres:postgres@db:5432/audius_discovery"
 CacheUrl = "redis://cache:6379/00"
@@ -92,6 +94,7 @@ ExternalHttpPort = 7000
 InternalHttpsPort = 7001
 ExternalHttpsPort = 7001
 Host = "http://localhost"
+AwaitHealthy = true
 
 EthOwnerWallet = "0x855FA758c77D68a04990E992aA4dcdeF899F654A"
 MinimumBalance = 1

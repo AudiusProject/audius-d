@@ -51,7 +51,7 @@ type BaseServerConfig struct {
 	// operations
 	Register     bool
 	AwaitHealthy bool
-	AutoUpgrade  bool
+	AutoUpgrade  string
 }
 
 type CreatorConfig struct {

@@ -70,9 +70,14 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 		return err
 	}
 
-	// if err := os.Remove(localOverridePath); err != nil {
-	// 	return err
-	// }
+	if err := os.Remove(localOverridePath); err != nil {
+		return err
+	}
+
+	if serverConfig.AutoUpgrade != "" {
+		// "*/15 * * * *""
+		audiusCli(containerName, "auto-upgrade", serverConfig.AutoUpgrade)
+	}
 
 	// assemble inner command and run
 	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, containerName, nodeType)

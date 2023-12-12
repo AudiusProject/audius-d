@@ -5,6 +5,7 @@ import (
 	"os/exec"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/register"
 )
 
 func StartDevnet(_ *conf.ContextConfig) {
@@ -16,9 +17,9 @@ func DownDevnet(_ *conf.ContextConfig) {
 }
 
 func RunAudiusWithConfig(config *conf.ContextConfig) {
-	// stand up devnet should it be required
 	if config.Network.Devnet {
 		startDevnetDocker()
+		// gated on devnet for safety right now
 		registerDevnetNodes(config)
 	}
 
@@ -26,6 +27,9 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 		creatorVolumes := []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db"}
 		override := cc.ToOverrideEnv(config.Network)
 		RunNode(config.Network, cc.BaseServerConfig, override, cname, "creator-node", creatorVolumes)
+		if cc.AwaitHealthy {
+			awaitHealthy(cname, cc.Host, cc.ExternalHttpPort)
+		}
 	}
 	for cname, dc := range config.DiscoveryNodes {
 		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt"}
@@ -35,11 +39,17 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 		if !config.Network.Devnet {
 			audiusCli(cname, "launch-chain")
 		}
+		if dc.AwaitHealthy {
+			awaitHealthy(cname, dc.Host, dc.ExternalHttpPort)
+		}
 	}
 	for cname, id := range config.IdentityService {
 		identityVolumes := []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
 		override := id.ToOverrideEnv(config.Network)
 		RunNode(config.Network, id.BaseServerConfig, override, cname, "identity-service", identityVolumes)
+		if id.AwaitHealthy {
+			awaitHealthy(cname, id.Host, id.ExternalHttpPort)
+		}
 	}
 }
 
@@ -63,28 +73,32 @@ func RunDown(config *conf.ContextConfig) {
 }
 
 func registerDevnetNodes(config *conf.ContextConfig) {
-	// for _, cc := range config.CreatorNodes {
-	// 	register.RegisterNode(
-	// 		"content-node",
-	// 		cc.Host,
-	// 		config.Network.EthMainnetRpc,
-	// 		"0xdcB2fC9469808630DD0744b0adf97C0003fC29B2", // hardcoded ganache address
-	// 		"0xABbfF712977dB51f9f212B85e8A4904c818C2b63", // "
-	// 		cc.OperatorWallet,
-	// 		cc.OperatorPrivateKey,
-	// 	)
-	// }
-	// for _, dc := range config.DiscoveryNodes {
-	// 	register.RegisterNode(
-	// 		"content-node",
-	// 		dc.Host,
-	// 		config.Network.EthMainnetRpc,
-	// 		"0xdcB2fC9469808630DD0744b0adf97C0003fC29B2", // hardcoded ganache address
-	// 		"0xABbfF712977dB51f9f212B85e8A4904c818C2b63", // "
-	// 		dc.OperatorWallet,
-	// 		dc.OperatorPrivateKey,
-	// 	)
-	// }
+	for _, cc := range config.CreatorNodes {
+		if cc.Register {
+			register.RegisterNode(
+				"content-node",
+				cc.Host,
+				config.Network.EthMainnetRpc,
+				config.Network.EthTokenAddress,
+				config.Network.EthContractsRegistryAddress,
+				cc.OperatorWallet,
+				cc.OperatorPrivateKey,
+			)
+		}
+	}
+	for _, dc := range config.DiscoveryNodes {
+		if dc.Register {
+			register.RegisterNode(
+				"discovery-provider",
+				dc.Host,
+				config.Network.EthMainnetRpc,
+				config.Network.EthTokenAddress,
+				config.Network.EthContractsRegistryAddress,
+				dc.OperatorWallet,
+				dc.OperatorPrivateKey,
+			)
+		}
+	}
 }
 
 func runCommand(name string, args ...string) error {
