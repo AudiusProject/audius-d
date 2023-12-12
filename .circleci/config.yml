@@ -235,16 +235,16 @@ jobs:
       - run:
           name: test modify context
           command: |
-            audius-ctl-x86 config set Network.EthMainnetPort 8765
-            audius-ctl-x86 config | grep 'EthMainnetPort = 8765'
+            audius-ctl-x86 config set Network.EthMainnetRpc test-str
+            audius-ctl-x86 config | grep 'EthMainnetRpc = "test-str"'
       - run:
           name: test invalid modify context
           command: |
-            if audius-ctl-x86 config set Network.EthMainnetPort 8asdf; then
+            if audius-ctl-x86 config set Network.EthMainnetRpc 8asdf; then
               echo Should not have succeeded
               false
             fi
-            audius-ctl-x86 config | grep 'EthMainnetPort = 8765'
+            audius-ctl-x86 config | grep 'EthMainnetRpc = "test-str"
       - run:
           name: test delete context
           command: |
