@@ -46,5 +46,11 @@ func StartGuiServer() {
 		return c.HTMLBlob(http.StatusOK, content)
 	})
 
-	e.Logger.Fatal(e.Start(":2024"))
+	// Start the server with TLS (HTTPS)
+	// openssl req -x509 -newkey rsa:4096 -keyout /tls/key.pem -out /tls/cert.pem -days 365 -nodes
+	e.Logger.Fatal(e.StartTLS(":2024", "/tls/cert.pem", "/tls/key.pem"))
+}
+
+func main() {
+	StartGuiServer()
 }
