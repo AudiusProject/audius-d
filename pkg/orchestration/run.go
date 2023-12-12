@@ -25,7 +25,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 	}
 
 	for cname, cc := range config.CreatorNodes {
-		creatorVolumes := []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db"}
+		creatorVolumes := []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db", "/var/k8s/bolt:/var/k8s/bolt"}
 		override := cc.ToOverrideEnv(config.Network)
 		RunNode(config.Network, cc.BaseServerConfig, override, cname, "creator-node", creatorVolumes)
 		if cc.AwaitHealthy {
@@ -33,7 +33,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 		}
 	}
 	for cname, dc := range config.DiscoveryNodes {
-		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt"}
+		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt", "/esdata:/esdata", "/dashboard-dist:/dashboard-dist"}
 		override := dc.ToOverrideEnv(config.Network)
 		RunNode(config.Network, dc.BaseServerConfig, override, cname, "discovery-provider", discoveryVolumes)
 		// discovery requires a few extra things
