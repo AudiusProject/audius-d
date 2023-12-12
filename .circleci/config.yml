@@ -244,7 +244,7 @@ jobs:
               echo Should not have succeeded due to type error
               false
             fi
-            audius-ctl-x86 config | grep 'EthMainnetRpc = "test-str"
+            audius-ctl-x86 config | grep 'EthMainnetRpc = "test-str"'
       - run:
           name: test delete context
           command: |
