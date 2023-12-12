@@ -41,11 +41,12 @@ OperatorPrivateKey = "21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7
 OperatorWallet = "0x0D38e653eC28bdea5A2296fD5940aaB2D0B8875c"
 OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
 AwaitHealthy = true
+Register = true
 
 DatabaseUrl = "postgres://postgres:postgres@db:5432/audius_creator_node"
 EthOwnerWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
 DbConnectionPoolMax = 400
-MediorumEnv = "single"
+MediorumEnv = "sandbox"
 
 [DiscoveryNodes.discovery-1]
 InternalHttpPort = 5000
@@ -53,14 +54,14 @@ ExternalHttpPort = 5000
 InternalHttpsPort = 5001
 ExternalHttpsPort = 5001
 Host = "http://localhost"
-OperatorPrivateKey = "c1c36935d3809daacf3aa63243feef5e7a97ba11dc56fe3a923758937362ed6e"
-OperatorWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
-OperatorRewardsWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
+OperatorPrivateKey = "d09ba371c359f10f22ccda12fd26c598c7921bda3220c9942174562bc6a36fe8"
+OperatorWallet = "0x73EB6d82CFB20bA669e9c178b718d770C49BB52f"
+OperatorRewardsWallet = "0x73EB6d82CFB20bA669e9c178b718d770C49BB52f"
 AwaitHealthy = true
+Register = true
 
 DatabaseUrl = "postgresql://postgres:postgres@db:5432/audius_discovery"
 CacheUrl = "redis://cache:6379/00"
-MediorumEnv = "single"
 
 # discovery specific
 CorsAllowAll = true

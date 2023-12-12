@@ -7,14 +7,13 @@ import (
 )
 
 func awaitHealthy(containerName, host string, port uint) {
-	tries := 10
+	tries := 30
 
 	for tries > 0 {
 		url := fmt.Sprintf("%s:%d/health_check", host, port)
 		resp, err := http.Get(url)
 
-		if resp.StatusCode != http.StatusOK || err != nil {
-			resp.Body.Close()
+		if err != nil || resp.StatusCode != http.StatusOK {
 			fmt.Printf("service: %s not ready yet\n", containerName)
 			time.Sleep(3 * time.Second)
 			tries--
@@ -22,9 +21,11 @@ func awaitHealthy(containerName, host string, port uint) {
 		}
 
 		fmt.Printf("service: %s is healthy! 🎸\n", containerName)
-		resp.Body.Close()
+		if resp != nil {
+			resp.Body.Close()
+		}
 		return
 	}
 
-	fmt.Printf("%s never got healthy", containerName)
+	fmt.Printf("%s never got healthy\n", containerName)
 }

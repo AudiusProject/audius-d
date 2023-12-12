@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -78,7 +79,7 @@ func registerDevnetNodes(config *conf.ContextConfig) {
 			register.RegisterNode(
 				"content-node",
 				cc.Host,
-				config.Network.EthMainnetRpc,
+				"http://localhost:8546",
 				config.Network.EthTokenAddress,
 				config.Network.EthContractsRegistryAddress,
 				cc.OperatorWallet,
@@ -86,12 +87,13 @@ func registerDevnetNodes(config *conf.ContextConfig) {
 			)
 		}
 	}
+	fmt.Println("content nodes registered")
 	for _, dc := range config.DiscoveryNodes {
 		if dc.Register {
 			register.RegisterNode(
 				"discovery-provider",
 				dc.Host,
-				config.Network.EthMainnetRpc,
+				"http://localhost:8546",
 				config.Network.EthTokenAddress,
 				config.Network.EthContractsRegistryAddress,
 				dc.OperatorWallet,
@@ -99,6 +101,7 @@ func registerDevnetNodes(config *conf.ContextConfig) {
 			)
 		}
 	}
+	fmt.Println("discovery providers registered")
 }
 
 func runCommand(name string, args ...string) error {
