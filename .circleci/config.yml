@@ -240,8 +240,8 @@ jobs:
       - run:
           name: test invalid modify context
           command: |
-            if audius-ctl-x86 config set Network.EthMainnetRpc 8asdf; then
-              echo Should not have succeeded
+            if audius-ctl-x86 config set Network.EthMainnetRpc 420; then
+              echo Should not have succeeded due to type error
               false
             fi
             audius-ctl-x86 config | grep 'EthMainnetRpc = "test-str"
