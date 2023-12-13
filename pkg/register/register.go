@@ -152,14 +152,6 @@ func getSignedTx(client *ethclient.Client, txData []byte, from common.Address, t
 	if err != nil {
 		log.Fatal("Failed to get chain id:", err)
 	}
-	// _, err := client.EstimateGas(
-	// 	context.Background(),
-	// 	ethereum.CallMsg{
-	// 		From: from,
-	// 		To:   &to,
-	// 		Data: txData,
-	// 	},
-	// )
 	if err != nil {
 		if strings.Contains(err.Error(), "Endpoint already registered") {
 			log.Println("endpoint already registered")
@@ -171,6 +163,7 @@ func getSignedTx(client *ethclient.Client, txData []byte, from common.Address, t
 	if err != nil {
 		log.Fatal("Failed to suggest gas price:", err)
 	}
+	// hardcoded gas price while in dev
 	tx := types.NewTransaction(nonce, to, big.NewInt(0), 20000000, gasPrice, txData)
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
 	if err != nil {

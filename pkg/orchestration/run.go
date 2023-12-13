@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/register"
@@ -24,8 +25,18 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 		registerDevnetNodes(config)
 	}
 
+	dashboardVolume := "/dashboard-dist:/dashboard-dist"
+	esDataVolume := "/esdata:/esdata"
+
+	// mac local volumes need some extra stuff
+	// stick into /var/k8s as if these existed then
+	if runtime.GOOS == "darwin" {
+		esDataVolume = "/var/k8s/esdata:/esdata"
+		dashboardVolume = "/var/k8s/dashboard-dist:/dashboard-dist"
+	}
+
 	for cname, cc := range config.CreatorNodes {
-		creatorVolumes := []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db", "/var/k8s/bolt:/var/k8s/bolt"}
+		creatorVolumes := []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db", "/var/k8s/bolt:/var/k8s/bolt", dashboardVolume}
 		override := cc.ToOverrideEnv(config.Network)
 		RunNode(config.Network, cc.BaseServerConfig, override, cname, "creator-node", creatorVolumes)
 		if cc.AwaitHealthy {
@@ -33,7 +44,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 		}
 	}
 	for cname, dc := range config.DiscoveryNodes {
-		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt", "/esdata:/esdata", "/dashboard-dist:/dashboard-dist"}
+		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt", esDataVolume, dashboardVolume}
 		override := dc.ToOverrideEnv(config.Network)
 		RunNode(config.Network, dc.BaseServerConfig, override, cname, "discovery-provider", discoveryVolumes)
 		// discovery requires a few extra things
