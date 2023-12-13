@@ -21,7 +21,7 @@ func MigrateAudiusDockerCompose(ctxname, path string) error {
 		return err
 	}
 
-	env, err := readOverrideEnv(path, nodeType)
+	env, err := readEnv(path, nodeType)
 	if err != nil {
 		return err
 	}
@@ -63,15 +63,65 @@ func determineNodeType(adcpath string) (string, error) {
 	return "", errors.New("neither creator or discovery node detected, aborting migration")
 }
 
-func readOverrideEnv(path, nodeType string) (map[string]string, error) {
-	orpath := fmt.Sprintf("%s/%s/override.env", path, nodeType)
-	return godotenv.Read(orpath)
+func readEnv(path, nodeType string) (map[string]string, error) {
+	allEnv := make(map[string]string)
+	hiddenEnv, err := godotenv.Read(fmt.Sprintf("%s/%s/.env", path, nodeType))
+	if err != nil {
+		hiddenEnv = make(map[string]string)
+	}
+	if network := hiddenEnv["NETWORK"]; network == "stage" || network == "prod" {
+		networkEnv, err := godotenv.Read(fmt.Sprintf("%s/%s/%s.env", path, nodeType, network))
+		if err != nil {
+			networkEnv = make(map[string]string)
+		}
+		for k, v := range networkEnv {
+			allEnv[k] = v
+		}
+	}
+
+	orenv, err := godotenv.Read(fmt.Sprintf("%s/%s/override.env", path, nodeType))
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range orenv {
+		allEnv[k] = v
+	}
+	return allEnv, nil
 }
 
 func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConfig) {
 	base := BaseServerConfig{
-		Host: "http://localhost",
+		Host:           "http://localhost",
+		Tag:            "latest",
+		OverrideConfig: make(map[string]string),
+	}
+	net := NetworkConfig{
+		Name: "stage",
 		Tag:  "latest",
+	}
+	discoveryConf := DiscoveryConfig{}
+	creatorConf := CreatorConfig{}
+	for k, v := range env {
+		switch k {
+		case "delegatePrivateKey", "audius_delegate_private_key":
+			base.OperatorPrivateKey = v
+		case "delegateOwnerWallet", "audius_delegate_owner_wallet":
+			base.OperatorWallet = v
+			// Allow "spOwnerWallet" to override
+			if base.OperatorRewardsWallet == "" {
+				base.OperatorRewardsWallet = v
+			}
+		case "spOwnerWallet":
+			base.OperatorRewardsWallet = v
+		case "creatorNodeEndpoint", "audius_discprov_url":
+			base.Host = v
+		case "autoUpgradeEnabled", "audius_auto_upgrade_enabled":
+			base.AutoUpgrade = "*/15 * * * *"
+		case "NETWORK":
+			net.Name = v
+		default:
+			base.OverrideConfig[k] = v
+		}
 	}
 	if nodeType == "creator-node" {
 		base.ExternalHttpPort = 80
@@ -79,37 +129,17 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 		base.ExternalHttpsPort = 443
 		base.InternalHttpsPort = 443
 
-		base.OperatorPrivateKey = env["delegatePrivateKey"]
-		base.OperatorWallet = env["delegateOwnerWallet"]
-		base.OperatorRewardsWallet = env["spOwnerWallet"]
-		base.Host = env["creatorNodeEndpoint"]
-
-		creatorConf := CreatorConfig{
-			BaseServerConfig: base,
-		}
+		creatorConf.BaseServerConfig = base
 		ctx.CreatorNodes["creator-node"] = creatorConf
 	}
 	if nodeType == "discovery-provider" {
-		base.ExternalHttpPort = 5000
-		base.InternalHttpPort = 5000
-		base.ExternalHttpsPort = 5001
-		base.InternalHttpsPort = 5001
+		base.ExternalHttpPort = 80
+		base.InternalHttpPort = 80
+		base.ExternalHttpsPort = 443
+		base.InternalHttpsPort = 443
 
-		base.OperatorPrivateKey = env["audius_delegate_private_key"]
-		base.OperatorWallet = env["audius_delegate_owner_wallet"]
-		base.OperatorRewardsWallet = env["audius_delegate_owner_wallet"]
-		base.Host = env["audius_discprov_url"]
-
-		discoveryConf := DiscoveryConfig{
-			BaseServerConfig: base,
-		}
+		discoveryConf.BaseServerConfig = base
 		ctx.DiscoveryNodes["discovery-provider"] = discoveryConf
 	}
-
-	net := NetworkConfig{
-		Name: "stage",
-		Tag:  "latest",
-	}
-
 	ctx.Network = net
 }

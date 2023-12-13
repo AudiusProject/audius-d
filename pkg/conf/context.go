@@ -206,8 +206,10 @@ func WriteConfigToCurrentContext(ctxConfig *ContextConfig) error {
 
 func CreateContextFromTemplate(name string, templateFilePath string) error {
 	var ctxConfig ContextConfig
-	if err := ReadConfigFromFile(templateFilePath, &ctxConfig); err != nil {
-		return err
+	if templateFilePath != "" {
+		if err := ReadConfigFromFile(templateFilePath, &ctxConfig); err != nil {
+			return err
+		}
 	}
 	if err := WriteConfigToContext(name, &ctxConfig); err != nil {
 		return err
