@@ -91,9 +91,13 @@ func readEnv(path, nodeType string) (map[string]string, error) {
 
 func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConfig) {
 	base := BaseServerConfig{
-		Host:           "http://localhost",
-		Tag:            "latest",
-		OverrideConfig: make(map[string]string),
+		Host:              "http://localhost",
+		Tag:               "latest",
+		OverrideConfig:    make(map[string]string),
+		ExternalHttpPort:  80,
+		InternalHttpPort:  80,
+		ExternalHttpsPort: 443,
+		InternalHttpsPort: 443,
 	}
 	net := NetworkConfig{
 		Name: "stage",
@@ -124,20 +128,10 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 		}
 	}
 	if nodeType == "creator-node" {
-		base.ExternalHttpPort = 80
-		base.InternalHttpPort = 80
-		base.ExternalHttpsPort = 443
-		base.InternalHttpsPort = 443
-
 		creatorConf.BaseServerConfig = base
 		ctx.CreatorNodes["creator-node"] = creatorConf
 	}
 	if nodeType == "discovery-provider" {
-		base.ExternalHttpPort = 80
-		base.InternalHttpPort = 80
-		base.ExternalHttpsPort = 443
-		base.InternalHttpsPort = 443
-
 		discoveryConf.BaseServerConfig = base
 		ctx.DiscoveryNodes["discovery-provider"] = discoveryConf
 	}
