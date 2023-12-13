@@ -5,43 +5,101 @@ example and runnable file for running a devnet configuration of audius protocol 
 
 [Network]
 Name = "devnet"
+Tag = "latest"
+AcdcRpc = "http://host.docker.internal:8545"
+EthMainnetRpc = "http://host.docker.internal:8546"
+SolanaMainnetRpc = "http://host.docker.internal:8899"
 
-AcdcRpc = "http://acdc-ganache"
-AcdcPort = 8545
+IdentityServiceUrl = "http://host.docker.internal:7000"
+AntiAbuseOracleUrl = "http://anti-abuse-oracle:8000"
 
-EthMainnetRpc = "http://eth-ganache"
-EthMainnetPort = 8546
+EthMainnetNetworkId = "1337"
+AcdcNetworkId = "1337"
+EthContractsRegistryAddress = "0xABbfF712977dB51f9f212B85e8A4904c818C2b63"
+AcdcContractsRegistryAddress = "0xCfEB869F69431e42cdB54A4F4f105C19C080A601"
+AcdcEntityManagerAddress = "0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B"
+SolanaRewardsManagerAccount = "DJPzVothq58SmkpRb1ATn5ddN2Rpv1j2TcGvM3XsHf1c"
+SolanaRewardsManagerProgramAddress = "testLsJKtyABc9UXJF8JWFKf1YH4LmqCWBC42c6akPb"
+SolanaSignerGroupAddress = "HwecRT7whduwiLhJXiWmvrhcCh8zJhwJ4B9fXniPUDyz"
+SolanaTrackListenCountAddress = "testEjzEibm3nq77VQcqCCmSMx6m3KdJHuepBH1rnue"
+SolanaUserBankProgramAddress = "testHKV1B56fbvop4w6f2cTGEub9dRQ2Euta5VmqdX9"
+SolanaWaudioMint = "37RCjhgV1qGV2Q54EHFScdxZ22ydRMdKMtVgod47fDP3"
+SolanaUsdcMint = "26Q7gP8UfkDzi7GMFEQxTJaNJ8D2ybCUjex58M5MLu8y"
+AntiAbuseOracleAddress = "0xF0D5BC18421fa04D0a2A2ef540ba5A9f04014BE3"
+EthTokenAddress = "0xdcB2fC9469808630DD0744b0adf97C0003fC29B2"
 
-SolanaMainnetRpc = "http://solana-test-validator"
-SolanaMainnetPort = 8899
-
-Tag = "stage" # git hash, stage, prod, dev
-
-[CreatorNodes]
+Devnet = true
 
 [CreatorNodes.creator-1]
+InternalHttpPort = 80
+ExternalHttpPort = 80
+InternalHttpsPort = 443
+ExternalHttpsPort = 443
 Host = "http://localhost"
-Port = 6000
 Tag = "latest"
-OperatorPrivateKey = ""
-Register = true
+OperatorPrivateKey = "21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7cf58ab"
+OperatorWallet = "0x0D38e653eC28bdea5A2296fD5940aaB2D0B8875c"
+OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
 AwaitHealthy = true
+Register = true
 
-[CreatorNodes.creator-2]
-Host = "http://localhost"
-Port = 6001
-OperatorPrivateKey = ""
-
-[DiscoveryNodes]
+DatabaseUrl = "postgres://postgres:postgres@db:5432/audius_creator_node"
+EthOwnerWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
+DbConnectionPoolMax = 400
+MediorumEnv = "sandbox"
 
 [DiscoveryNodes.discovery-1]
+InternalHttpPort = 5000
+ExternalHttpPort = 5000
+InternalHttpsPort = 5001
+ExternalHttpsPort = 5001
 Host = "http://localhost"
-Port = 5000
-Tag = "af284fb773a385371cdc2cae43b39ee6c6bf47b7"
-OperatorPrivateKey = ""
+OperatorPrivateKey = "d09ba371c359f10f22ccda12fd26c598c7921bda3220c9942174562bc6a36fe8"
+OperatorWallet = "0x73EB6d82CFB20bA669e9c178b718d770C49BB52f"
+OperatorRewardsWallet = "0x73EB6d82CFB20bA669e9c178b718d770C49BB52f"
+AwaitHealthy = true
+Register = true
 
-[IdentityService]
+DatabaseUrl = "postgresql://postgres:postgres@db:5432/audius_discovery"
+CacheUrl = "redis://cache:6379/00"
+
+# discovery specific
+CorsAllowAll = true
+OpenRestyEnable = true
+BlockProcessingWindowBlacklist = 1200
+BlockProcessingWindow = 100
+GetUsersCnodeTtlSec = 300
+UserMetadataServiceUrl = "http://host.docker.internal:80"
+EnableRsyslog = false
+GunicornWorkerClass = "eventlet"
+GunicornWorkers = 16
+SolanaRewardsManagerMinSlot = 0
+SolanaUserBankMinSlot = 0
+
+# plugins
+# notifs
+NotificationsMaxBlockDiff = 10
+# elasticsearch
+ElasticSearchUrl = "http://elasticsearch:9200"
+ElasticSearchEnabled = true
+# relay
+RelayUseAntiAbuseOracle = false
+# comms
+CommsDevMode = true
+
 
 [IdentityService.identity-1]
+SolanaClaimableTokenProgramAddress = "testHKV1B56fbvop4w6f2cTGEub9dRQ2Euta5VmqdX9"
+InternalHttpPort = 7000
+ExternalHttpPort = 7000
+InternalHttpsPort = 7001
+ExternalHttpsPort = 7001
 Host = "http://localhost"
-Port = 7000
+AwaitHealthy = true
+
+EthOwnerWallet = "0x855FA758c77D68a04990E992aA4dcdeF899F654A"
+MinimumBalance = 1
+RelayerPublicKey = "0xaaaa90Fc2bfa70028D6b444BB9754066d9E2703b"
+UserVerifierPublicKey = "0xbbbb93A6B3A1D6fDd27909729b95CCB0cc9002C0"
+SkipAbuseCheck = true
+DatabaseUrl = "postgres://postgres:postgres@db:5432/postgres"

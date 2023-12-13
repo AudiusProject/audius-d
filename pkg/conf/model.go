@@ -43,50 +43,58 @@ type BaseServerConfig struct {
 	OperatorPrivateKey    string
 	OperatorWallet        string
 	OperatorRewardsWallet string
+	EthOwnerWallet        string
+
+	DatabaseUrl   string
+	CacheUrl      string
+	EnableRsyslog bool
+
+	// operations
+	Register     bool
+	AwaitHealthy bool
+	AutoUpgrade  string
 }
 
 type CreatorConfig struct {
-	BaseServerConfig `mapstructure:",squash"`
-	// creator specific stuff here
-}
-
-func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
-	overrideEnv := make(map[string]string)
-
-	overrideEnv["creatorNodeEndpoint"] = config.Host
-	overrideEnv["delegateOwnerWallet"] = config.OperatorWallet
-	overrideEnv["delegatePrivateKey"] = config.OperatorPrivateKey
-	overrideEnv["spOwnerWallet"] = config.OperatorRewardsWallet
-
-	return overrideEnv
+	BaseServerConfig    `mapstructure:",squash"`
+	MediorumEnv         string
+	DbConnectionPoolMax uint
 }
 
 type DiscoveryConfig struct {
 	BaseServerConfig `mapstructure:",squash"`
-}
 
-func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
-	overrideEnv := make(map[string]string)
+	CorsAllowAll                   bool
+	OpenRestyEnable                bool
+	BlockProcessingWindowBlacklist uint
+	BlockProcessingWindow          uint
+	GetUsersCnodeTtlSec            uint
+	UserMetadataServiceUrl         string
+	GunicornWorkerClass            string
+	GunicornWorkers                uint
+	SolanaUserBankMinSlot          uint
+	SolanaRewardsManagerMinSlot    uint
 
-	overrideEnv["audius_discprov_url"] = config.Host
-	overrideEnv["audius_delegate_owner_wallet"] = config.OperatorWallet
-	overrideEnv["audius_delegate_private_key"] = config.OperatorPrivateKey
-
-	return overrideEnv
+	// notifications
+	NotificationsMaxBlockDiff uint
+	// elasticsearch
+	ElasticSearchUrl     string
+	ElasticSearchEnabled bool
+	// relay
+	RelayUseAntiAbuseOracle bool
+	// comms
+	CommsDevMode bool
+	// trpc (none present)
 }
 
 type IdentityConfig struct {
 	BaseServerConfig `mapstructure:",squash"`
 	// identity specific stuff here
 	SolanaClaimableTokenProgramAddress string
-}
-
-func (config *IdentityConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
-	overrideEnv := make(map[string]string)
-
-	overrideEnv["solanaClaimableTokenProgramAddress"] = config.SolanaClaimableTokenProgramAddress
-
-	return overrideEnv
+	MinimumBalance                     uint
+	RelayerPublicKey                   string
+	UserVerifierPublicKey              string
+	SkipAbuseCheck                     bool
 }
 
 type NetworkConfig struct {
@@ -97,20 +105,37 @@ type NetworkConfig struct {
 	// doesn't have specific behavior
 	Name string
 
-	// host that running servers will use to talk to the acdc network
-	// example: devnet would have a http://acdc-ganache type string
-	AcdcHost string
+	AcdcRpc          string
+	EthMainnetRpc    string
+	SolanaMainnetRpc string
 
-	// same as AcdcHost but the port if applicable
-	AcdcPort uint
-
-	EthMainnetHost string
-	EthMainnetPort uint
-
-	SolanaMainnetHost string
-	SolanaMainnetPort uint
+	// network singletons
+	IdentityServiceUrl     string
+	AntiAbuseOracleUrl     string
+	AntiAbuseOracleAddress string
 
 	Tag string
+
+	// starts up local containers for acdc, eth, and solana rpcs
+	Devnet bool
+
+	// eth mainnet config and addresse
+	EthMainnetNetworkId         string
+	EthContractsRegistryAddress string
+	EthTokenAddress             string
+
+	// acdc config and addresses
+	AcdcNetworkId                string
+	AcdcContractsRegistryAddress string
+	AcdcEntityManagerAddress     string
+
+	SolanaRewardsManagerAccount        string
+	SolanaRewardsManagerProgramAddress string
+	SolanaSignerGroupAddress           string
+	SolanaTrackListenCountAddress      string
+	SolanaUserBankProgramAddress       string
+	SolanaWaudioMint                   string
+	SolanaUsdcMint                     string
 }
 
 type NodeConfig interface {

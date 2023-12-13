@@ -166,7 +166,7 @@ jobs:
             cd ~/audius-d
             audius-ctl-x86 down
 
-  test-audius-d-stage:
+  test-audius-d-devnet:
     machine:
       image: ubuntu-2204:current
     resource_class: large
@@ -177,10 +177,10 @@ jobs:
           at: ~/audius-d
       - configure-path
       - run:
-          name: standup ci env against stage
+          name: standup isolated ci env
           command: |
             cd ~/audius-d
-            audius-ctl-x86 config create-context ci -f configs/templates/ci.toml 
+            audius-ctl-x86 config create-context ci -f configs/templates/devnet.toml 
             audius-ctl-x86
       - basic-health-check # creator node default
       - basic-health-check:
@@ -210,7 +210,7 @@ jobs:
           name: register delegateOwnerWallet
           command: |
             cd ~/audius-d
-            audius-ctl-x86 config create-context ci -f configs/templates/ci.toml 
+            audius-ctl-x86 config create-context ci -f configs/templates/devnet.toml 
             audius-ctl-x86
             audius-ctl-x86 register
 
@@ -235,16 +235,16 @@ jobs:
       - run:
           name: test modify context
           command: |
-            audius-ctl-x86 config set Network.EthMainnetPort 8765
-            audius-ctl-x86 config | grep 'EthMainnetPort = 8765'
+            audius-ctl-x86 config set Network.EthMainnetRpc test-str
+            audius-ctl-x86 config | grep 'EthMainnetRpc = "test-str"'
       - run:
           name: test invalid modify context
           command: |
-            if audius-ctl-x86 config set Network.EthMainnetPort 8asdf; then
-              echo Should not have succeeded
+            if audius-ctl-x86 config set Network.Devnet 420; then
+              echo Should not have succeeded due to type error
               false
             fi
-            audius-ctl-x86 config | grep 'EthMainnetPort = 8765'
+            audius-ctl-x86 config | grep 'EthMainnetRpc = "test-str"'
       - run:
           name: test delete context
           command: |
@@ -291,7 +291,7 @@ workflows:
               ignore:
                 - main
                 - bin
-      - test-audius-d-stage:
+      - test-audius-d-devnet:
           context: github
           requires:
             - build-job
@@ -324,8 +324,9 @@ workflows:
             - build-job
           filters:
             branches:
-              only:
-                - dummy-branch-disable-test  # temporarily disabled while we figure out host.docker.internal alternative
+              ignore:
+                - main
+                - bin
 
   build-test-publish:
     jobs:
@@ -335,7 +336,7 @@ workflows:
             branches:
               only:
                 - main
-      - test-audius-d-stage:
+      - test-audius-d-devnet:
           context: github
           requires:
             - build-job
@@ -362,7 +363,7 @@ workflows:
       - publish-job:
           context: github
           requires:
-            - test-audius-d-stage
+            - test-audius-d-devnet
             - test-devnet-deps
           filters:
             branches:

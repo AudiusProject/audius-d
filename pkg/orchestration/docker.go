@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/joho/godotenv"
@@ -51,6 +52,20 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 		return err
 	}
 
+	// if configured for devnet, remove the .env files and just rely on override as to not cross pollinate
+	if nconf.Devnet {
+		rmstage := fmt.Sprintf(`docker exec %s sh -c "cp %s/stage.env %s/unused.stage.env && echo '' > %s/stage.env"`, containerName, nodeType, nodeType, nodeType)
+		if err := Sh(rmstage); err != nil {
+			return err
+		}
+
+		rmprod := fmt.Sprintf(`docker exec %s sh -c "cp %s/prod.env %s/unused.prod.env && echo '' > %s/prod.env"`, containerName, nodeType, nodeType, nodeType)
+		if err := Sh(rmprod); err != nil {
+			return err
+		}
+		fmt.Println("set testnet and mainnet configs to be unused, relying purely on override.env")
+	}
+
 	cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, containerName)
 	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
 		return err
@@ -58,6 +73,11 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 
 	if err := os.Remove(localOverridePath); err != nil {
 		return err
+	}
+
+	if serverConfig.AutoUpgrade != "" {
+		// "*/15 * * * *""
+		audiusCli(containerName, "auto-upgrade", serverConfig.AutoUpgrade)
 	}
 
 	// assemble inner command and run
@@ -116,6 +136,7 @@ func removeContainerByName(containerName string) error {
 func startDevnetDocker() {
 	fmt.Println("Starting local eth, sol, and acdc chains")
 	runCommand("docker", "compose", "-f", "./deployments/docker-compose.devnet.yml", "up", "-d")
+	time.Sleep(5 * time.Second)
 }
 
 func downDevnetDocker() {

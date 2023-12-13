@@ -57,6 +57,7 @@ func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderU
 	if err != nil {
 		log.Fatal("Failed to retrieve token decimals:", err)
 	}
+
 	if err = tokenABI.UnpackIntoInterface(&tokenDecimals, "decimals", tokenDecimalsResult); err != nil {
 		log.Fatal("Failed to unpack token decimals result:", err)
 	}
@@ -69,12 +70,15 @@ func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderU
 		getContractAddress(client, ethRegistryAddress, "StakingProxy"),
 		stakedTokensAmount,
 	)
+	if err != nil {
+		log.Fatal("Failed to pack abi: ", err)
+	}
 	err = client.SendTransaction(
 		context.Background(),
 		getSignedTx(client, tokenApprovalData, delegateOwnerWallet, ethTokenAddress, pKey),
 	)
 	if err != nil {
-		log.Fatal("Failed to approve tokens:", err)
+		log.Fatal("Failed to approve tokens: ", err)
 	}
 
 	var bytes32NodeType [32]byte
@@ -148,22 +152,19 @@ func getSignedTx(client *ethclient.Client, txData []byte, from common.Address, t
 	if err != nil {
 		log.Fatal("Failed to get chain id:", err)
 	}
-	gasLimit, err := client.EstimateGas(
-		context.Background(),
-		ethereum.CallMsg{
-			From: from,
-			To:   &to,
-			Data: txData,
-		},
-	)
 	if err != nil {
-		log.Fatal("Failed to estimate gas limit:", err)
+		if strings.Contains(err.Error(), "Endpoint already registered") {
+			log.Println("endpoint already registered")
+		} else {
+			log.Fatal("Failed to estimate gas limit:", err)
+		}
 	}
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		log.Fatal("Failed to suggest gas price:", err)
 	}
-	tx := types.NewTransaction(nonce, to, big.NewInt(0), gasLimit, gasPrice, txData)
+	// hardcoded gas price while in dev
+	tx := types.NewTransaction(nonce, to, big.NewInt(0), 20000000, gasPrice, txData)
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
 	if err != nil {
 		log.Fatal("Failed to sign tx:", err)
