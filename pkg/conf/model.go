@@ -60,7 +60,13 @@ type DiscoveryConfig struct {
 }
 
 type IdentityConfig struct {
-	BaseServerConfig `mapstructure:",squash"`
+	BaseServerConfig       `mapstructure:",squash"`
+	UserVerifierPrivateKey string
+	SolanaFeePayerWallets  string
+	EthRelayerWallets      string
+	RelayerPrivateKey      string
+	SolanaSignerPrivateKey string
+	RelayerWallets         string
 }
 
 type NetworkConfig struct {
