@@ -99,6 +99,7 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         },
         apiKey: apiKey,
         apiSecret: apiSecret,
+        appName: "DDEX Demo",
       });
       setAudiusSdk(sdkInst);
     }
