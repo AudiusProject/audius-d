@@ -33,7 +33,7 @@ const TxRow = ({
   isSelected: boolean;
 }) => {
   const rowStyle = isSelected ? "bg-sky-100" : "";
-  const em = decodeEmLog(log.data);
+  const em = decodeEmLog(log);
   return (
     <tr
       key={idx}

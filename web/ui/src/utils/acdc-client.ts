@@ -13,10 +13,7 @@ export function useEthersProvider() {
     : "https://acdc-gateway.staging.audius.co";
 
   return useMemo(() => {
-    return new ethers.JsonRpcProvider(rpcEndpoint, undefined, {
-      // lua script doesn't handle multiple RPCs in one request atm
-      batchMaxSize: 1,
-    });
+    return new ethers.providers.JsonRpcProvider(rpcEndpoint);
   }, [rpcEndpoint]);
 }
 
@@ -82,6 +79,6 @@ const iface = new ethers.utils.Interface([
   },
 ]);
 
-export function decodeEmLog(data: string) {
-  return iface.decodeEventLog("ManageEntity", data);
+export function decodeEmLog(log: { data: string; topics: string[] }) {
+  return iface.parseLog(log).args;
 }

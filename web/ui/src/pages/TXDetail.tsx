@@ -20,7 +20,8 @@ export function TxDetail({ tx, onClose }: { tx: string; onClose: () => void }) {
     queryFn: async () => {
       const receipt = await provider.getTransactionReceipt(tx);
       if (!receipt) return {};
-      const em = decodeEmLog(receipt.logs[0].data);
+      const em = decodeEmLog(receipt.logs[0]);
+      console.log(em);
       return { receipt, em };
     },
   });
@@ -53,7 +54,7 @@ export function TxDetail({ tx, onClose }: { tx: string; onClose: () => void }) {
 
         <div className="card text-xs">
           <h2>Decoded ABI</h2>
-          <pre>{JSON.stringify(em.toObject(), undefined, 2)}</pre>
+          <pre>{JSON.stringify(em, undefined, 2)}</pre>
         </div>
 
         {metadata ? (

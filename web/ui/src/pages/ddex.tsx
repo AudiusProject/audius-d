@@ -348,7 +348,9 @@ export const Ddex = () => {
         <AudiusLogin audiusLibs={audiusLibs} />
       ) : (
         <>
-          <div>{"Logged in as"}</div>
+          <div>{`Logged in as @${
+            audiusLibs.Account.getCurrentUser().handle
+          }`}</div>
           <XmlImporter />
         </>
       )}

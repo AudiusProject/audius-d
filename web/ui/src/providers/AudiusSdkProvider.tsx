@@ -56,16 +56,14 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         initialSelectedNode = "https://discoveryprovider.staging.audius.co";
       }
       const logger = new Logger({ logLevel: "info" });
-      // todo (michelle)
-      // const apiKey =
-      //   audiusLibs?.hedgehog?.wallet?.getAddressString() ||
-      //   "f8f1df516f1ed192c668bf3f781df8db7ed73024";
-      // const apiSecret =
-      //   audiusLibs.hedgehog?.getWallet()?.privateKey ||
-      //   "b178a83612c99e3ae295743bed7b0186a489cc007985f1a06c6ae873dbdf9145";
-      const apiKey = "f8f1df516f1ed192c668bf3f781df8db7ed73024";
+      // todo (michelle) get the actual api key and secret for the account, this isn't it
+      const apiKey =
+        audiusLibs?.hedgehog?.wallet?.getAddressString() ||
+        "f8f1df516f1ed192c668bf3f781df8db7ed73024";
       const apiSecret =
+        audiusLibs.hedgehog?.getWallet()?.privateKey ||
         "b178a83612c99e3ae295743bed7b0186a489cc007985f1a06c6ae873dbdf9145";
+      console.log(apiKey);
 
       const discoveryNodeSelector = new DiscoveryNodeSelector({
         initialSelectedNode,
@@ -101,7 +99,7 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    if (window.Web3 && audiusLibs?.hedgehog?.wallet) {
+    if (window.Web3 && audiusLibs?.Account?.getCurrentUser()) {
       void initSdk();
     }
   }, [audiusLibs]);
