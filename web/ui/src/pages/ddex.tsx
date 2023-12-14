@@ -1,6 +1,6 @@
-import { useState, DragEvent } from "react";
+import { useState, ChangeEvent, DragEvent } from "react";
 import { useAudiusSdk } from "../providers/AudiusSdkProvider";
-import type { AudiusSdk as AudiusSdkType } from "@audius/sdk/dist/sdk/sdk.d.ts";
+import type { AudiusSdk } from "@audius/sdk/dist/sdk/sdk.d.ts";
 import { useAudiusLibs } from "../providers/AudiusLibsProvider";
 import type { AudiusLibs } from "@audius/sdk/dist/WebAudiusLibs.d.ts";
 
@@ -10,16 +10,14 @@ import { Genre, UploadTrackRequest } from "@audius/sdk";
 const fetchResource = async (url: string, filename: string) => {
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(
-      `HTTP error when fetching clipper.jpg. Status: ${res.status}`,
-    );
+    throw new Error(`HTTP error when fetching ${url}. Status: ${res.status}`);
   }
   const blob = await res.blob();
   const mimeType = res.headers.get("Content-Type");
   return new File([blob], filename, { type: mimeType! });
 };
 
-const processXml = async (document: any, audiusSdk: AudiusSdkType) => {
+const processXml = async (document: any, audiusSdk: AudiusSdk) => {
   // todo remove this and upload images and tracks from xml without hardcoding
   const [clipperImg, snareAudio] = await Promise.all([
     fetchResource("/ddex-examples/clipper.jpg", "todo_img_name"),
@@ -99,27 +97,23 @@ const validXmlFile = (file: File) => {
   return file.type === "text/xml" && file.name.endsWith(".xml");
 };
 
-const AudiusLogin = ({ audiusLibs }: { audiusLibs: AudiusLibs }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [loginLoading, setLoginLoading] = useState(false);
-
-  const handleLogin = async (e) => {
-    setLoginLoading(true);
-    e.preventDefault();
-    try {
-      const { error } = await audiusLibs.Account!.login(email, password);
-      if (error) {
-        throw new Error(error as string);
-      }
-    } catch (error) {
-      setLoginError((error as Error).message);
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
+const AudiusLogin = ({
+  email,
+  password,
+  loginError,
+  loginLoading,
+  onEmailChange,
+  onPasswordChange,
+  onLogin,
+}: {
+  email: string;
+  password: string;
+  loginError: string | null;
+  loginLoading: boolean;
+  onEmailChange: (e: ChangeEvent) => void;
+  onPasswordChange: (e: ChangeEvent) => void;
+  onLogin: () => Promise<void>;
+}) => {
   return (
     <div className="bg-gray-200 flex justify-center items-center h-screen">
       <div className="bg-white p-6 rounded shadow-md w-96 mx-auto">
@@ -138,7 +132,7 @@ const AudiusLogin = ({ audiusLibs }: { audiusLibs: AudiusLibs }) => {
               name="email"
               required
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={onEmailChange}
             />
           </div>
           <div>
@@ -154,26 +148,45 @@ const AudiusLogin = ({ audiusLibs }: { audiusLibs: AudiusLibs }) => {
               name="password"
               required
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={onPasswordChange}
             />
           </div>
           <button
             type="submit"
             className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-            onClick={handleLogin}
+            onClick={onLogin}
             disabled={!email || !password || loginLoading}
           >
             {loginLoading ? "Logging in..." : "Login"}
           </button>
+          {loginError && <div className="text-red-500">{loginError}</div>}
         </form>
-        {loginError && <div className="text-red-500">{loginError}</div>}
       </div>
     </div>
   );
 };
 
-const XmlImporter = () => {
-  const { audiusSdk } = useAudiusSdk();
+const ManageAudiusAccount = ({
+  audiusLibs,
+  logoutLoading,
+  onLogout,
+}: {
+  audiusLibs: AudiusLibs;
+  logoutLoading: boolean;
+  onLogout: () => Promise<void>;
+}) => {
+  return (
+    <div className="flex justify-between items-center">
+      <div>{`Logged in as @${audiusLibs?.Account?.getCurrentUser()
+        ?.handle}`}</div>
+      <button className="btn btn-blue" onClick={onLogout}>
+        {logoutLoading ? "Logging out..." : "Logout"}
+      </button>
+    </div>
+  );
+};
+
+const XmlImporter = ({ audiusSdk }: { audiusSdk: AudiusSdk }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -233,10 +246,10 @@ const XmlImporter = () => {
       return;
     }
 
-    readXml(selectedFile, audiusSdk!);
+    readXml(selectedFile, audiusSdk);
   };
 
-  const readXml = (file: File, audiusSdk: AudiusSdkType) => {
+  const readXml = (file: File, audiusSdk: AudiusSdk) => {
     setIsUploading(true);
     const reader = new FileReader();
     reader.onload = async (event: ProgressEvent<FileReader>) => {
@@ -266,92 +279,152 @@ const XmlImporter = () => {
     reader.readAsText(file);
   };
 
-  return (
-    <>
-      <label
-        className={`flex justify-center h-32 px-4 transition bg-white border-2 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-400 focus:outline-none ${
-          isDragging ? "border-gray-400" : "border-gray-300 "
-        }`}
-        onDragEnter={handleDragIn}
-        onDragLeave={handleDragOut}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
-        <span className="flex items-center space-x-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-6 h-6 text-gray-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-            />
-          </svg>
-          <span className="font-medium text-gray-600">
-            {"Drop files to upload, or "}
-            <span className="text-blue-600 underline">browse</span>
-          </span>
-        </span>
-        <input
-          type="file"
-          name="file_upload"
-          accept="text/xml,application/xml"
-          className="hidden"
-          onChange={(e) => handleFileChange(e.target.files[0])}
-        />
-      </label>
-      {selectedFile && (
-        <>
-          <div>Selected file:</div>
-          <div className="flex space-x-4">
-            <div>{selectedFile.name}</div>
-            <button
-              className="text-xs w-8 p-1 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none"
-              onClick={clearSelection}
+  if (!audiusSdk) {
+    return <div className="text-red-500">{"Error loading XML importer"}</div>;
+  } else {
+    return (
+      <>
+        <label
+          className={`flex justify-center h-32 px-4 transition bg-white border-2 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-400 focus:outline-none ${
+            isDragging ? "border-gray-400" : "border-gray-300 "
+          }`}
+          onDragEnter={handleDragIn}
+          onDragLeave={handleDragOut}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
+          <span className="flex items-center space-x-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-6 h-6 text-gray-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              x
-            </button>
-          </div>
-          <button
-            className="btn btn-blue"
-            onClick={handleUpload}
-            disabled={isUploading}
-          >
-            {isUploading ? "Uploading..." : "Upload"}
-          </button>
-          {uploadError && (
-            <div className="text-red-500">
-              {("Error uploading file: ", uploadError)}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+            <span className="font-medium text-gray-600">
+              {"Drop files to upload, or "}
+              <span className="text-blue-600 underline">browse</span>
+            </span>
+          </span>
+          <input
+            type="file"
+            name="file_upload"
+            accept="text/xml,application/xml"
+            className="hidden"
+            onChange={(e) => handleFileChange(e.target.files[0])}
+          />
+        </label>
+        {selectedFile && (
+          <>
+            <div>Selected file:</div>
+            <div className="flex space-x-4">
+              <div>{selectedFile.name}</div>
+              <button
+                className="text-xs w-8 p-1 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none"
+                onClick={clearSelection}
+              >
+                x
+              </button>
             </div>
-          )}
-          {uploadSucceeded && (
-            <div className="text-green-500">Upload success!</div>
-          )}
-        </>
-      )}
-    </>
-  );
+            <button
+              className="btn btn-blue"
+              onClick={handleUpload}
+              disabled={isUploading}
+            >
+              {isUploading ? "Uploading..." : "Upload"}
+            </button>
+            {uploadError && (
+              <div className="text-red-500">
+                {("Error uploading file: ", uploadError)}
+              </div>
+            )}
+            {uploadSucceeded && (
+              <div className="text-green-500">Upload success!</div>
+            )}
+          </>
+        )}
+      </>
+    );
+  }
 };
 
 export const Ddex = () => {
   const { audiusLibs } = useAudiusLibs();
+  const { audiusSdk, initSdk, removeSdk } = useAudiusSdk();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
+  const handleEmailChange = (e: ChangeEvent) => {
+    setLoginError(null);
+    setEmail(e.target.value);
+  };
+
+  const handlePasswordChange = (e: ChangeEvent) => {
+    setLoginError(null);
+    setPassword(e.target.value);
+  };
+
+  const handleLogin = async () => {
+    setLoginLoading(true);
+    try {
+      const { error } = await audiusLibs!.Account!.login(email, password);
+      if (error) {
+        throw new Error(error as string);
+      }
+    } catch (error) {
+      if ((error as Error).message.includes("400")) {
+        setLoginError("Email or password is incorrect");
+      } else {
+        setLoginError((error as Error).message);
+      }
+    } finally {
+      // Libs throws an error even if the user was successfully logged in.
+      // initSdk will check whether there is a current user and init accordingly.
+      await initSdk();
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setLoginError(null);
+    setLogoutLoading(true);
+    await audiusLibs!.Account!.logout();
+    removeSdk();
+    setLogoutLoading(false);
+  };
+
   return (
     <div className="flex flex-col space-y-4">
       {!audiusLibs || !audiusLibs.Account ? (
         "loading..."
       ) : !audiusLibs.Account.getCurrentUser() ? (
-        <AudiusLogin audiusLibs={audiusLibs} />
+        <AudiusLogin
+          email={email}
+          password={password}
+          loginError={loginError}
+          loginLoading={loginLoading}
+          onEmailChange={handleEmailChange}
+          onPasswordChange={handlePasswordChange}
+          onLogin={handleLogin}
+        />
       ) : (
         <>
-          <div>{`Logged in as @${
-            audiusLibs.Account.getCurrentUser().handle
-          }`}</div>
-          <XmlImporter />
+          <ManageAudiusAccount
+            audiusLibs={audiusLibs}
+            logoutLoading={logoutLoading}
+            onLogout={handleLogout}
+          />
+          <XmlImporter audiusSdk={audiusSdk} />
         </>
       )}
     </div>

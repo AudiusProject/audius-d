@@ -1,6 +1,5 @@
 import type { AudiusSdk as AudiusSdkType } from "@audius/sdk/dist/sdk/sdk.d.ts";
 import { useAudiusLibs } from "../providers/AudiusLibsProvider";
-import type { AudiusLibs } from "@audius/sdk/dist/WebAudiusLibs.d.ts";
 import {
   ReactNode,
   createContext,
@@ -12,28 +11,40 @@ import { useEnvVars } from "../providers/EnvVarsProvider";
 
 type AudiusSdkContextType = {
   audiusSdk: AudiusSdkType | null;
+  initSdk: () => Promise<void>;
+  removeSdk: () => void;
   isLoading: boolean;
-  isReadOnly: boolean;
 };
 
 const AudiusSdkContext = createContext<AudiusSdkContextType>({
   audiusSdk: null,
+  initSdk: async () => {},
+  removeSdk: () => {},
   isLoading: true,
-  isReadOnly: true,
 });
 
 export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
   const { audiusLibs } = useAudiusLibs();
   const [audiusSdk, setAudiusSdk] = useState<AudiusSdkType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isReadOnly, setIsReadOnly] = useState(true);
   const envVars = useEnvVars();
 
   // @ts-expect-error ts(2741). This is only here for debugging and should eventually be removed
   window.audiusSdk = audiusSdk;
 
   const initSdk = async () => {
+    console.log("init sdk start");
+    if (
+      !window.Web3 ||
+      !audiusLibs?.Account?.getCurrentUser() ||
+      !audiusLibs?.hedgehog
+    ) {
+      return;
+    }
+
     if (!audiusSdk) {
+      // todo (michelle) remove
+      console.log("initializing sdk");
       // Dynamically import so sdk uses window.Web3 after it is assigned
       const {
         AppAuth,
@@ -56,14 +67,12 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         initialSelectedNode = "https://discoveryprovider.staging.audius.co";
       }
       const logger = new Logger({ logLevel: "info" });
-      // todo (michelle) get the actual api key and secret for the account, this isn't it
       const apiKey =
         audiusLibs?.hedgehog?.wallet?.getAddressString() ||
         "f8f1df516f1ed192c668bf3f781df8db7ed73024";
       const apiSecret =
-        audiusLibs.hedgehog?.getWallet()?.privateKey ||
+        audiusLibs?.hedgehog?.wallet?.getPrivateKeyString() ||
         "b178a83612c99e3ae295743bed7b0186a489cc007985f1a06c6ae873dbdf9145";
-      console.log(apiKey);
 
       const discoveryNodeSelector = new DiscoveryNodeSelector({
         initialSelectedNode,
@@ -93,21 +102,22 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
       });
       setAudiusSdk(sdkInst);
     }
-    // todo delete read-only?
-    setIsReadOnly(false);
     setIsLoading(false);
   };
 
+  const removeSdk = () => {
+    setAudiusSdk(null);
+  };
+
   useEffect(() => {
-    if (window.Web3 && audiusLibs?.Account?.getCurrentUser()) {
-      void initSdk();
-    }
+    void initSdk();
   }, [audiusLibs]);
 
   const contextValue = {
     audiusSdk,
+    initSdk,
+    removeSdk,
     isLoading,
-    isReadOnly,
   };
   return (
     <AudiusSdkContext.Provider value={contextValue}>

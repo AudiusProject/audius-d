@@ -21,7 +21,6 @@ export function TxDetail({ tx, onClose }: { tx: string; onClose: () => void }) {
       const receipt = await provider.getTransactionReceipt(tx);
       if (!receipt) return {};
       const em = decodeEmLog(receipt.logs[0]);
-      console.log(em);
       return { receipt, em };
     },
   });
