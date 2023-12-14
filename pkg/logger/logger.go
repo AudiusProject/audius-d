@@ -18,7 +18,7 @@ var (
 
 func init() {
 	// configure loggers
-	stdoutLogger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
+	stdoutLogger = log.New(os.Stdout, "", 0)
 	stderrLogger = slog.Default()
 }
 
