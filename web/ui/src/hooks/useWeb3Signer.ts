@@ -55,7 +55,7 @@ const useWeb3Signer = (chainId?: number): Web3Type | undefined => {
         const signer = await walletClientToSigner(walletClient);
 
         // @ts-expect-error ts(2339) - provider does exist on type Provider
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
         const web3 = new Web3(signer.provider.provider as any);
         setWeb3Instance(web3);
       }

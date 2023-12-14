@@ -42,8 +42,8 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         developmentConfig,
         stagingConfig,
         productionConfig,
-        sdk
-      } = await import('@audius/sdk');
+        sdk,
+      } = await import("@audius/sdk");
       let config = developmentConfig as ServicesConfig;
       let initialSelectedNode = "http://audius-protocol-discovery-provider-1";
       if (envVars.env === "prod") {
@@ -51,15 +51,19 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         initialSelectedNode = "https://discoveryprovider.audius.co";
       } else if (envVars.env === "stage") {
         config = stagingConfig as ServicesConfig;
-        initialSelectedNode = "https://discoveryprovider.staging.audius.co"
+        initialSelectedNode = "https://discoveryprovider.staging.audius.co";
       }
       const logger = new Logger({ logLevel: "info" });
       // todo (michelle)
-      const apiKey = process.env.audius_api_key || "f8f1df516f1ed192c668bf3f781df8db7ed73024"
-      const apiSecret = process.env.audius_api_secret || "b178a83612c99e3ae295743bed7b0186a489cc007985f1a06c6ae873dbdf9145"
+      const apiKey =
+        process.env.audius_api_key ||
+        "f8f1df516f1ed192c668bf3f781df8db7ed73024";
+      const apiSecret =
+        process.env.audius_api_secret ||
+        "b178a83612c99e3ae295743bed7b0186a489cc007985f1a06c6ae873dbdf9145";
 
       const discoveryNodeSelector = new DiscoveryNodeSelector({
-        initialSelectedNode
+        initialSelectedNode,
       });
       const storageNodeSelector = new StorageNodeSelector({
         auth: new AppAuth(apiKey, apiSecret),
@@ -89,7 +93,7 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
     // todo delete read-only?
     setIsReadOnly(false);
     setIsLoading(false);
-  }
+  };
 
   useEffect(() => {
     if (window.Web3) {
@@ -107,7 +111,7 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AudiusSdkContext.Provider>
   );
-}
+};
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAudiusSdk = () => useContext(AudiusSdkContext);
