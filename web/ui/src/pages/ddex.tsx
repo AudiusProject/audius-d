@@ -1,7 +1,8 @@
 import { useState, DragEvent } from "react";
 import { useAudiusSdk } from "../providers/AudiusSdkProvider";
-import "dotenv/config";
 import type { AudiusSdk as AudiusSdkType } from "@audius/sdk/dist/sdk/sdk.d.ts";
+import { useAudiusLibs } from "../providers/AudiusLibsProvider";
+import type { AudiusLibs } from "@audius/sdk/dist/WebAudiusLibs.d.ts";
 
 import { DOMParser } from "linkedom";
 import { Genre, UploadTrackRequest } from "@audius/sdk";
@@ -9,27 +10,21 @@ import { Genre, UploadTrackRequest } from "@audius/sdk";
 const fetchResource = async (url: string, filename: string) => {
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`HTTP error when fetching clipper.jpg. Status: ${res.status}`);
+    throw new Error(
+      `HTTP error when fetching clipper.jpg. Status: ${res.status}`,
+    );
   }
   const blob = await res.blob();
-  const mimeType = res.headers.get('Content-Type');
-  console.log(mimeType);
-  return new File([blob], filename, { type: mimeType });
-  // const buffer = await res.arrayBuffer()
-  // return new Blob([buffer], { type: mimeType! });
-}
+  const mimeType = res.headers.get("Content-Type");
+  return new File([blob], filename, { type: mimeType! });
+};
 
 const processXml = async (document: any, audiusSdk: AudiusSdkType) => {
   // todo remove this and upload images and tracks from xml without hardcoding
   const [clipperImg, snareAudio] = await Promise.all([
-    fetchResource('/ddex-examples/clipper.jpg', "todo_img_name"),
-    fetchResource('/ddex-examples/snare.wav', "todo_audio_name"),
+    fetchResource("/ddex-examples/clipper.jpg", "todo_img_name"),
+    fetchResource("/ddex-examples/snare.wav", "todo_audio_name"),
   ]);
-  console.log(clipperImg);
-  console.log(snareAudio);
-  const fileTypeBrowser = await import('file-type/browser');
-  const whatisthis = await fileTypeBrowser.fromBlob(clipperImg);
-  console.log(typeof whatisthis);
 
   // extract SoundRecording
   const trackNodes = queryAll(document, "SoundRecording", "track");
@@ -104,7 +99,80 @@ const validXmlFile = (file: File) => {
   return file.type === "text/xml" && file.name.endsWith(".xml");
 };
 
-export const XmlImporter = () => {
+const AudiusLogin = ({ audiusLibs }: { audiusLibs: AudiusLibs }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    setLoginLoading(true);
+    e.preventDefault();
+    try {
+      const { error } = await audiusLibs.Account!.login(email, password);
+      if (error) {
+        throw new Error(error as string);
+      }
+    } catch (error) {
+      setLoginError((error as Error).message);
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-gray-200 flex justify-center items-center h-screen">
+      <div className="bg-white p-6 rounded shadow-md w-96 mx-auto">
+        <form className="space-y-4">
+          <h2 className="text-center text-2xl font-bold">Login to Audius</h2>
+          <div>
+            <label
+              htmlFor="email"
+              className="block mb-2 text-sm font-medium text-gray-700"
+            >
+              Email:
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="password"
+              className="block mb-2 text-sm font-medium text-gray-700"
+            >
+              Password:
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+            onClick={handleLogin}
+            disabled={!email || !password || loginLoading}
+          >
+            {loginLoading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+        {loginError && <div className="text-red-500">{loginError}</div>}
+      </div>
+    </div>
+  );
+};
+
+const XmlImporter = () => {
   const { audiusSdk } = useAudiusSdk();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -199,7 +267,7 @@ export const XmlImporter = () => {
   };
 
   return (
-    <div className="flex flex-col space-y-4">
+    <>
       <label
         className={`flex justify-center h-32 px-4 transition bg-white border-2 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-400 focus:outline-none ${
           isDragging ? "border-gray-400" : "border-gray-300 "
@@ -262,10 +330,26 @@ export const XmlImporter = () => {
             </div>
           )}
           {uploadSucceeded && (
-            <div className="text-green-500">
-              Upload success!
-            </div>
+            <div className="text-green-500">Upload success!</div>
           )}
+        </>
+      )}
+    </>
+  );
+};
+
+export const Ddex = () => {
+  const { audiusLibs } = useAudiusLibs();
+  return (
+    <div className="flex flex-col space-y-4">
+      {!audiusLibs || !audiusLibs.Account ? (
+        "loading..."
+      ) : !audiusLibs.Account.getCurrentUser() ? (
+        <AudiusLogin audiusLibs={audiusLibs} />
+      ) : (
+        <>
+          <div>{"Logged in as"}</div>
+          <XmlImporter />
         </>
       )}
     </div>

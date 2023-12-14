@@ -1,5 +1,6 @@
 import type { AudiusSdk as AudiusSdkType } from "@audius/sdk/dist/sdk/sdk.d.ts";
-import type { ServicesConfig } from "@audius/sdk/dist/sdk/config/types.d.ts";
+import { useAudiusLibs } from "../providers/AudiusLibsProvider";
+import type { AudiusLibs } from "@audius/sdk/dist/WebAudiusLibs.d.ts";
 import {
   ReactNode,
   createContext,
@@ -22,6 +23,7 @@ const AudiusSdkContext = createContext<AudiusSdkContextType>({
 });
 
 export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
+  const { audiusLibs } = useAudiusLibs();
   const [audiusSdk, setAudiusSdk] = useState<AudiusSdkType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isReadOnly, setIsReadOnly] = useState(true);
@@ -44,22 +46,25 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         productionConfig,
         sdk,
       } = await import("@audius/sdk");
-      let config = developmentConfig as ServicesConfig;
+      let config = developmentConfig;
       let initialSelectedNode = "http://audius-protocol-discovery-provider-1";
       if (envVars.env === "prod") {
-        config = productionConfig as ServicesConfig;
+        config = productionConfig;
         initialSelectedNode = "https://discoveryprovider.audius.co";
       } else if (envVars.env === "stage") {
-        config = stagingConfig as ServicesConfig;
+        config = stagingConfig;
         initialSelectedNode = "https://discoveryprovider.staging.audius.co";
       }
       const logger = new Logger({ logLevel: "info" });
       // todo (michelle)
-      const apiKey =
-        process.env.audius_api_key ||
-        "f8f1df516f1ed192c668bf3f781df8db7ed73024";
+      // const apiKey =
+      //   audiusLibs?.hedgehog?.wallet?.getAddressString() ||
+      //   "f8f1df516f1ed192c668bf3f781df8db7ed73024";
+      // const apiSecret =
+      //   audiusLibs.hedgehog?.getWallet()?.privateKey ||
+      //   "b178a83612c99e3ae295743bed7b0186a489cc007985f1a06c6ae873dbdf9145";
+      const apiKey = "f8f1df516f1ed192c668bf3f781df8db7ed73024";
       const apiSecret =
-        process.env.audius_api_secret ||
         "b178a83612c99e3ae295743bed7b0186a489cc007985f1a06c6ae873dbdf9145";
 
       const discoveryNodeSelector = new DiscoveryNodeSelector({
@@ -88,7 +93,7 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         apiKey: apiKey,
         apiSecret: apiSecret,
       });
-      setAudiusSdk(sdkInst as AudiusSdkType);
+      setAudiusSdk(sdkInst);
     }
     // todo delete read-only?
     setIsReadOnly(false);
@@ -96,10 +101,10 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    if (window.Web3) {
+    if (window.Web3 && audiusLibs?.hedgehog?.wallet) {
       void initSdk();
     }
-  });
+  }, [audiusLibs]);
 
   const contextValue = {
     audiusSdk,
