@@ -6,11 +6,15 @@ import "fmt"
 
 func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv := make(map[string]string)
+	for k, v := range config.OverrideConfig {
+		overrideEnv[k] = v
+	}
 	overrideEnv["audius_delegate_owner_wallet"] = config.OperatorWallet
 	overrideEnv["audius_delegate_private_key"] = config.OperatorPrivateKey
 	overrideEnv["audius_discprov_url"] = config.Host
 
 	// network config
+	overrideEnv["NETWORK"] = nc.Name
 	overrideEnv["audius_contracts_registry"] = nc.EthContractsRegistryAddress
 	overrideEnv["audius_eth_contracts_registry"] = nc.EthContractsRegistryAddress
 	overrideEnv["audius_contracts_entity_manager_address"] = nc.AcdcEntityManagerAddress
@@ -46,6 +50,7 @@ func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string
 	overrideEnv["audius_gunicorn_workers"] = fmt.Sprintf("%d", config.GunicornWorkers)
 	overrideEnv["audius_solana_rewards_manager_min_slot"] = fmt.Sprintf("%d", config.SolanaRewardsManagerMinSlot)
 	overrideEnv["audius_solana_user_bank_min_slot"] = fmt.Sprintf("%d", config.SolanaUserBankMinSlot)
+	overrideEnv["audius_auto_upgrade_enabled"] = fmt.Sprintf("%t", config.AutoUpgrade != "")
 
 	// notifications
 	overrideEnv["audius_discprov_notifications_max_block_diff"] = fmt.Sprintf("%d", config.NotificationsMaxBlockDiff)
@@ -58,7 +63,19 @@ func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string
 	overrideEnv["audius_aao_endpoint"] = nc.AntiAbuseOracleUrl
 	overrideEnv["audius_use_aao"] = fmt.Sprintf("%t", config.RelayUseAntiAbuseOracle)
 
-	return overrideEnv
+	// Everything else we don't yet capture in audius-d models
+	for k, v := range config.OverrideConfig {
+		overrideEnv[k] = v
+	}
+
+	// Remove empty configs
+	result := make(map[string]string)
+	for k, v := range overrideEnv {
+		if v != "" {
+			result[k] = v
+		}
+	}
+	return result
 }
 
 func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
@@ -70,6 +87,7 @@ func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv["ethOwnerWallet"] = config.EthOwnerWallet
 
 	// network config
+	overrideEnv["NETWORK"] = nc.Name
 	overrideEnv["identityService"] = nc.IdentityServiceUrl
 	overrideEnv["ethProviderUrl"] = nc.EthMainnetRpc
 	overrideEnv["ethRegistryAddress"] = nc.EthContractsRegistryAddress
@@ -86,9 +104,24 @@ func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv["redisPort"] = fmt.Sprintf("%d", 6379)
 	overrideEnv["enableRsyslog"] = fmt.Sprintf("%t", config.EnableRsyslog)
 	overrideEnv["dbConnectionPoolMax"] = fmt.Sprintf("%d", config.DbConnectionPoolMax)
-	overrideEnv["MEDIORUM_ENV"] = config.MediorumEnv
+	if config.MediorumEnv != "" {
+		overrideEnv["MEDIORUM_ENV"] = config.MediorumEnv
+	}
+	overrideEnv["autoUpgradeEnabled"] = fmt.Sprintf("%t", config.AutoUpgrade != "")
 
-	return overrideEnv
+	// Everything else we don't yet capture in audius-d models
+	for k, v := range config.OverrideConfig {
+		overrideEnv[k] = v
+	}
+
+	// Remove empty configs
+	result := make(map[string]string)
+	for k, v := range overrideEnv {
+		if v != "" {
+			result[k] = v
+		}
+	}
+	return result
 }
 
 func (config *IdentityConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {

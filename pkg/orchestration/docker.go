@@ -66,6 +66,12 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 		fmt.Println("set testnet and mainnet configs to be unused, relying purely on override.env")
 	}
 
+	// run crond to allow auto upgrades
+	cronCmd := fmt.Sprintf(`docker exec %s sh -c crond`, containerName)
+	if err := runCommand("/bin/sh", "-c", cronCmd); err != nil {
+		return err
+	}
+
 	cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, containerName)
 	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
 		return err

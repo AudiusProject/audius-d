@@ -53,6 +53,10 @@ type BaseServerConfig struct {
 	Register     bool
 	AwaitHealthy bool
 	AutoUpgrade  string
+
+	// Stores any as-yet unstructured configuration
+	// (for compatibility with audius-docker-compose migrations)
+	OverrideConfig map[string]string
 }
 
 type CreatorConfig struct {
