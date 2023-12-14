@@ -49,7 +49,7 @@ regen-abis:
 .PHONY: build-docker push-docker build-push
 build-docker:
 	@echo "Building Docker image..."
-	docker buildx build --load --build-arg NETWORK=$(NETWORK) -t audius/audius-docker-compose:$(TAG) .
+	docker buildx build --no-cache --load --build-arg NETWORK=$(NETWORK) -t audius/audius-docker-compose:$(TAG) .
 
 push-docker:
 	@echo "Pushing Docker image..."

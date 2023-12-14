@@ -1,13 +1,11 @@
 package orchestration
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
-	"github.com/AudiusProject/audius-d/pkg/register"
 )
 
 func StartDevnet(_ *conf.ContextConfig) {
@@ -21,8 +19,6 @@ func DownDevnet(_ *conf.ContextConfig) {
 func RunAudiusWithConfig(config *conf.ContextConfig) {
 	if config.Network.Devnet {
 		startDevnetDocker()
-		// gated on devnet for safety right now
-		registerDevnetNodes(config)
 	}
 
 	dashboardVolume := "/dashboard-dist:/dashboard-dist"
@@ -84,36 +80,36 @@ func RunDown(config *conf.ContextConfig) {
 	}
 }
 
-func registerDevnetNodes(config *conf.ContextConfig) {
-	for _, cc := range config.CreatorNodes {
-		if cc.Register {
-			register.RegisterNode(
-				"content-node",
-				cc.Host,
-				"http://localhost:8546",
-				config.Network.EthTokenAddress,
-				config.Network.EthContractsRegistryAddress,
-				cc.OperatorWallet,
-				cc.OperatorPrivateKey,
-			)
-		}
-	}
-	fmt.Println("content nodes registered")
-	for _, dc := range config.DiscoveryNodes {
-		if dc.Register {
-			register.RegisterNode(
-				"discovery-provider",
-				dc.Host,
-				"http://localhost:8546",
-				config.Network.EthTokenAddress,
-				config.Network.EthContractsRegistryAddress,
-				dc.OperatorWallet,
-				dc.OperatorPrivateKey,
-			)
-		}
-	}
-	fmt.Println("discovery providers registered")
-}
+// func registerDevnetNodes(config *conf.ContextConfig) {
+// 	for _, cc := range config.CreatorNodes {
+// 		if cc.Register {
+// 			register.RegisterNode(
+// 				"content-node",
+// 				cc.Host,
+// 				"http://localhost:8546",
+// 				config.Network.EthTokenAddress,
+// 				config.Network.EthContractsRegistryAddress,
+// 				cc.OperatorWallet,
+// 				cc.OperatorPrivateKey,
+// 			)
+// 		}
+// 	}
+// 	fmt.Println("content nodes registered")
+// 	for _, dc := range config.DiscoveryNodes {
+// 		if dc.Register {
+// 			register.RegisterNode(
+// 				"discovery-provider",
+// 				dc.Host,
+// 				"http://localhost:8546",
+// 				config.Network.EthTokenAddress,
+// 				config.Network.EthContractsRegistryAddress,
+// 				dc.OperatorWallet,
+// 				dc.OperatorPrivateKey,
+// 			)
+// 		}
+// 	}
+// 	fmt.Println("discovery providers registered")
+// }
 
 func runCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
