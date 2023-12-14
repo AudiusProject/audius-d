@@ -1,9 +1,8 @@
 package main
 
 import (
-	"log"
-
 	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/AudiusProject/audius-d/pkg/register"
 	"github.com/spf13/cobra"
 )
@@ -14,7 +13,8 @@ var registerCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx_config, err := conf.ReadOrCreateContextConfig()
 		if err != nil {
-			log.Fatal("Failed to retrieve context: ", err)
+			logger.Error("Failed to retrieve context: ", err)
+			return
 		}
 		for _, cc := range ctx_config.CreatorNodes {
 			register.RegisterNode(

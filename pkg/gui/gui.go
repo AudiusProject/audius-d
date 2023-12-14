@@ -2,11 +2,12 @@ package gui
 
 import (
 	"embed"
+	"fmt"
 	"io/fs"
-	"log"
 	"net/http"
 	"strings"
 
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/labstack/echo/v4"
 )
 
@@ -19,7 +20,9 @@ func StartGuiServer() {
 	// Isolate 'ui/dist' as a separate segment in the embedded file system for efficient access
 	subFS, err := fs.Sub(embeddedFiles, "dist")
 	if err != nil {
-		log.Fatalf("failed to create sub filesystem: %v", err)
+		errmsg := fmt.Sprintf("failed to create sub filesystem: %v", err)
+		logger.Error(errmsg)
+		return
 	}
 
 	// Create a file server for the embedded files

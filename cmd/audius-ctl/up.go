@@ -1,9 +1,8 @@
 package main
 
 import (
-	"log"
-
 	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/AudiusProject/audius-d/pkg/orchestration"
 	"github.com/spf13/cobra"
 )
@@ -50,7 +49,8 @@ func init() {
 func readOrCreateContext() *conf.ContextConfig {
 	ctx_config, err := conf.ReadOrCreateContextConfig()
 	if err != nil {
-		log.Fatal("Failed to retrieve context: ", err)
+		logger.Error("Failed to retrieve context: ", err)
+		return nil
 	}
 	return ctx_config
 }

@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +16,7 @@ func main() {
 		Short: "CLI for provisioning and interacting with audius nodes",
 		Run: func(cmd *cobra.Command, args []string) {
 			if displayVersion {
-				fmt.Println(Version)
+				logger.Info(Version)
 			} else {
 				upCmd.Run(cmd, args)
 			}

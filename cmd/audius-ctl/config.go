@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -29,19 +30,22 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx_config, err := conf.ReadOrCreateContextConfig()
 			if err != nil {
-				log.Fatal("Failed to retrieve context. ", err)
+				logger.Error("Failed to retrieve context. ", err)
+				return
 			}
 			if dumpOutfile != "" {
 				err := conf.WriteConfigToFile(dumpOutfile, ctx_config)
 				if err != nil {
-					log.Fatal("Failed to write config to file:", err)
+					logger.Error("Failed to write config to file:", err)
+					return
 				}
 			} else {
 				str, err := conf.StringifyConfig(ctx_config)
 				if err != nil {
-					log.Fatal("Failed to dump config:", err)
+					logger.Error("Failed to dump config:", err)
+					return
 				}
-				fmt.Println(str)
+				logger.Out(str)
 			}
 		},
 	}
@@ -52,7 +56,8 @@ var (
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := setConfigWithViper(args[0], args[1]); err != nil {
-				log.Fatal("Failed to set config value: ", err)
+				logger.Error("Failed to set config value: ", err)
+				return
 			}
 		},
 	}
@@ -63,13 +68,15 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			ctxName, err := conf.GetCurrentContextName()
 			if err != nil {
-				log.Fatal(err)
+				logger.Error(err)
+				return
 			}
 			if len(args) > 0 {
 				ctxName = args[0]
 			}
 			if err := EditConfig(ctxName); err != nil {
-				log.Fatal(err)
+				logger.Error(err)
+				return
 			}
 		},
 	}
@@ -82,7 +89,8 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			err := conf.CreateContextFromTemplate(args[0], confFileTemplate)
 			if err != nil {
-				log.Fatal("Failed to create context:", err)
+				logger.Error("Failed to create context:", err)
+				return
 			}
 			useContextCmd.Run(cmd, args)
 		},
@@ -103,7 +111,8 @@ var (
 		Args: cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := conf.MigrateAudiusDockerCompose(args[0], args[1]); err != nil {
-				log.Fatal("audius-docker-compose migration failed: ", err)
+				logger.Error("audius-docker-compose migration failed: ", err)
+				return
 			}
 			log.Println("audius-docker-compose migration successful 🎉")
 		},
@@ -114,9 +123,10 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx, err := conf.GetCurrentContextName()
 			if err != nil {
-				log.Fatal("Failed to retrieve current context: ", err)
+				logger.Error("Failed to retrieve current context: ", err)
+				return
 			}
-			fmt.Println(ctx)
+			logger.Out(ctx)
 		},
 	}
 	getContextsCmd = &cobra.Command{
@@ -125,10 +135,11 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			ctxs, err := conf.GetContexts()
 			if err != nil {
-				log.Fatal("Failed to retrieve current context: ", err)
+				logger.Error("Failed to retrieve current context: ", err)
+				return
 			}
 			for _, ctx := range ctxs {
-				fmt.Println(ctx)
+				logger.Out(ctx)
 			}
 		},
 	}
@@ -139,9 +150,11 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			err := conf.UseContext(args[0])
 			if err != nil {
-				log.Fatal("Failed to set context: ", err)
+				logger.Error("Failed to set context: ", err)
+				return
 			}
-			fmt.Printf("Context set to %s\n", args[0])
+			logger.Out(args[0])
+			logger.Info("Context set to %s\n", args[0])
 		},
 	}
 	deleteContextCmd = &cobra.Command{
@@ -150,9 +163,11 @@ var (
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := conf.DeleteContext(args[0]); err != nil {
-				log.Fatal("Failed to delete context: ", err)
+				logger.Error("Failed to delete context: ", err)
+				return
 			}
-			fmt.Printf("Context %s deleted.\n", args[0])
+			logger.Out(args[0])
+			logger.Info("Context %s deleted.\n", args[0])
 		},
 	}
 )
@@ -211,8 +226,8 @@ func EditConfig(contextName string) error {
 
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
-		fmt.Println("Please set $EDITOR in your shell profile to your preferred text editor.")
-		fmt.Println("Defaulting to nano")
+		logger.Info("Please set $EDITOR in your shell profile to your preferred text editor.")
+		logger.Info("Defaulting to nano")
 		editor = "nano"
 	}
 

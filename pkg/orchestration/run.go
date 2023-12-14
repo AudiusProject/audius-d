@@ -1,12 +1,12 @@
 package orchestration
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/AudiusProject/audius-d/pkg/register"
 )
 
@@ -98,7 +98,7 @@ func registerDevnetNodes(config *conf.ContextConfig) {
 			)
 		}
 	}
-	fmt.Println("content nodes registered")
+	logger.Info("content nodes registered")
 	for _, dc := range config.DiscoveryNodes {
 		if dc.Register {
 			register.RegisterNode(
@@ -112,7 +112,7 @@ func registerDevnetNodes(config *conf.ContextConfig) {
 			)
 		}
 	}
-	fmt.Println("discovery providers registered")
+	logger.Info("discovery providers registered")
 }
 
 func runCommand(name string, args ...string) error {

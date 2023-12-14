@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/joho/godotenv"
 )
 
@@ -17,12 +18,12 @@ type OverrideEnv = map[string]string
 // deploys a server node generically
 func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, override OverrideEnv, containerName string, nodeType string, internalVolumes []string) error {
 	if isContainerRunning(containerName) {
-		fmt.Printf("container %s already running\n", containerName)
+		logger.Infof("container %s already running\n", containerName)
 		return nil
 	}
 
 	if isContainerNameInUse(containerName) {
-		fmt.Printf("container %s already exists, removing and starting with current config\n", containerName)
+		logger.Infof("container %s already exists, removing and starting with current config\n", containerName)
 		if err := removeContainerByName(containerName); err != nil {
 			return err
 		}
@@ -63,7 +64,7 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 		if err := Sh(rmprod); err != nil {
 			return err
 		}
-		fmt.Println("set testnet and mainnet configs to be unused, relying purely on override.env")
+		logger.Info("set testnet and mainnet configs to be unused, relying purely on override.env")
 	}
 
 	cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, containerName)
@@ -90,7 +91,7 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 }
 
 func Sh(cmd string) error {
-	fmt.Println(cmd)
+	logger.Info(cmd)
 	return runCommand("/bin/sh", "-c", cmd)
 }
 
@@ -98,7 +99,7 @@ func isContainerRunning(containerName string) bool {
 	cmd := exec.Command("docker", "ps", "-q", "-f", "name="+containerName)
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Println(err)
+		logger.Error(err)
 		return false
 	}
 	return len(strings.TrimSpace(string(output))) > 0
@@ -108,7 +109,7 @@ func isContainerNameInUse(containerName string) bool {
 	cmd := exec.Command("docker", "ps", "-a", "--format", "{{.Names}}")
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Println(err)
+		logger.Error(err)
 		return false
 	}
 
@@ -134,7 +135,7 @@ func removeContainerByName(containerName string) error {
 }
 
 func startDevnetDocker() {
-	fmt.Println("Starting local eth, sol, and acdc chains")
+	logger.Info("Starting local eth, sol, and acdc chains")
 	runCommand("docker", "compose", "-f", "./deployments/docker-compose.devnet.yml", "up", "-d")
 	time.Sleep(5 * time.Second)
 }
@@ -173,7 +174,7 @@ func awaitDockerStart() {
 }
 
 func exitWithError(msg ...interface{}) {
-	fmt.Println(msg...)
+	logger.Info("", msg...)
 	os.Exit(1)
 }
 
@@ -204,7 +205,7 @@ func configureChainSpec(nodeType string, network string) {
 	}
 
 	networkId := specData["params"].(map[string]interface{})["networkID"].(string)
-	fmt.Printf("Network id: %s\n", networkId)
+	logger.Infof("Network id: %s\n", networkId)
 
 	specData["genesis"].(map[string]interface{})["extraData"] = extraData
 
