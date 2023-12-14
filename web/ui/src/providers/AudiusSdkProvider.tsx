@@ -33,7 +33,6 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
   window.audiusSdk = audiusSdk;
 
   const initSdk = async () => {
-    console.log("init sdk start");
     if (
       !window.Web3 ||
       !audiusLibs?.Account?.getCurrentUser() ||
@@ -43,8 +42,6 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (!audiusSdk) {
-      // todo (michelle) remove
-      console.log("initializing sdk");
       // Dynamically import so sdk uses window.Web3 after it is assigned
       const {
         AppAuth,
@@ -57,6 +54,10 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         productionConfig,
         sdk,
       } = await import("@audius/sdk");
+
+      const logger = new Logger({ logLevel: "info" });
+
+      // Determine config to use
       let config = developmentConfig;
       let initialSelectedNode = "http://audius-protocol-discovery-provider-1";
       if (envVars.env === "prod") {
@@ -66,14 +67,16 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         config = stagingConfig;
         initialSelectedNode = "https://discoveryprovider.staging.audius.co";
       }
-      const logger = new Logger({ logLevel: "info" });
-      const apiKey =
-        audiusLibs?.hedgehog?.wallet?.getAddressString() ||
-        "f8f1df516f1ed192c668bf3f781df8db7ed73024";
-      const apiSecret =
-        audiusLibs?.hedgehog?.wallet?.getPrivateKeyString() ||
-        "b178a83612c99e3ae295743bed7b0186a489cc007985f1a06c6ae873dbdf9145";
 
+      // Get keys
+      const apiKey = audiusLibs?.hedgehog?.wallet?.getAddressString();
+      const apiSecret = audiusLibs?.hedgehog?.wallet?.getPrivateKeyString();
+      if (!apiKey || !apiSecret) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Init SDK
       const discoveryNodeSelector = new DiscoveryNodeSelector({
         initialSelectedNode,
       });
@@ -101,8 +104,10 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         apiSecret: apiSecret,
         appName: "DDEX Demo",
       });
+
       setAudiusSdk(sdkInst);
     }
+
     setIsLoading(false);
   };
 
