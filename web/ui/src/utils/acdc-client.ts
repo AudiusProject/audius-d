@@ -1,4 +1,4 @@
-import { Interface, ethers } from "ethers";
+import { ethers } from "ethers";
 import { useEnvVars } from "../providers/EnvVarsProvider";
 import { useMemo } from "react";
 
@@ -36,7 +36,7 @@ export function useSomeContentEndpoint() {
     : "https://creatornode12.staging.audius.co";
 }
 
-const iface = new Interface([
+const iface = new ethers.utils.Interface([
   {
     anonymous: false,
     inputs: [

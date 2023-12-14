@@ -36,8 +36,7 @@ const useWeb3Signer = (chainId?: number): Web3Type | undefined => {
     let isMounted = true;
 
     const instantiateWeb3 = async () => {
-      // Dynamically import hefty libraries so that we don't have to include them in the main index bundle
-      const { default: Web3 } = await import("web3");
+      const Web3 = window.Web3;
 
       if (
         isMounted &&
