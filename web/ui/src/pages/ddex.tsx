@@ -13,8 +13,7 @@ const fetchResource = async (url: string, filename: string) => {
     throw new Error(`HTTP error when fetching ${url}. Status: ${res.status}`);
   }
   const blob = await res.blob();
-  const mimeType = res.headers.get("Content-Type");
-  return new File([blob], filename, { type: mimeType! });
+  return new File([blob], filename, { type: blob.type });
 };
 
 const processXml = async (document: any, audiusSdk: AudiusSdk) => {
