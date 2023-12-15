@@ -39,6 +39,10 @@ type BaseServerConfig struct {
 	// "latest", "stage", "prod", etc may have specific behavior
 	// git hashes are also eligible
 	Tag string
+	// use an existing override .env file
+	// instead of creating one on the fly
+	// based on toml
+	OverrideEnvPath string
 
 	OperatorPrivateKey    string
 	OperatorWallet        string
