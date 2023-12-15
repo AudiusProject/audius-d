@@ -2,6 +2,15 @@ import { ethers } from "ethers";
 import { useEnvVars } from "../providers/EnvVarsProvider";
 import { useMemo } from "react";
 
+export interface Log {
+  data: string;
+  topics: string[];
+  address: string;
+  blockHash: string;
+  blockNumber: number;
+  transactionHash: string;
+}
+
 // todo: env config
 export const EM_ADDRESS = "0x1cd8a543596d499b9b6e7a6ec15ecd2b7857fd64";
 
@@ -79,6 +88,6 @@ const iface = new ethers.utils.Interface([
   },
 ]);
 
-export function decodeEmLog(log: { data: string; topics: string[] }) {
+export function decodeEmLog(log: Log) {
   return iface.parseLog(log).args;
 }

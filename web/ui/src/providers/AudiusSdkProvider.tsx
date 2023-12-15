@@ -1,4 +1,7 @@
-import type { AudiusSdk as AudiusSdkType } from "@audius/sdk/dist/sdk/sdk.d.ts";
+import type {
+  AudiusSdk as AudiusSdkType,
+  ServicesConfig,
+} from "@audius/sdk/dist/sdk/index.d.ts";
 import { useAudiusLibs } from "../providers/AudiusLibsProvider";
 import {
   ReactNode,
@@ -44,27 +47,36 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
     if (!audiusSdk) {
       // Dynamically import so sdk uses window.Web3 after it is assigned
       const {
+        // @ts-expect-error (TS2339): Property 'AppAuth' does not exist on type
         AppAuth,
+        // @ts-expect-error (TS2339): Property 'DiscoveryNodeSelector' does not exist on type
         DiscoveryNodeSelector,
+        // @ts-expect-error (TS2339): Property 'EntityManager' does not exist on type
         EntityManager,
+        // @ts-expect-error (TS2339): Property 'Logger' does not exist on type
         Logger,
+        // @ts-expect-error (TS2339): Property 'StorageNodeSelector' does not exist on type
         StorageNodeSelector,
+        // @ts-expect-error (TS2339): Property 'developmentConfig' does not exist on type
         developmentConfig,
+        // @ts-expect-error (TS2339): Property 'stagingConfig' does not exist on type
         stagingConfig,
+        // @ts-expect-error (TS2339): Property 'productionConfig' does not exist on type
         productionConfig,
+        // @ts-expect-error (TS2339): Property 'sdk' does not exist on type
         sdk,
       } = await import("@audius/sdk");
 
       const logger = new Logger({ logLevel: "info" });
 
       // Determine config to use
-      let config = developmentConfig;
+      let config = developmentConfig as ServicesConfig;
       let initialSelectedNode = "http://audius-protocol-discovery-provider-1";
       if (envVars.env === "prod") {
-        config = productionConfig;
+        config = productionConfig as ServicesConfig;
         initialSelectedNode = "https://discoveryprovider.audius.co";
       } else if (envVars.env === "stage") {
-        config = stagingConfig;
+        config = stagingConfig as ServicesConfig;
         initialSelectedNode = "https://discoveryprovider.staging.audius.co";
       }
 
@@ -105,7 +117,7 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
         appName: "DDEX Demo",
       });
 
-      setAudiusSdk(sdkInst);
+      setAudiusSdk(sdkInst as AudiusSdkType);
     }
 
     setIsLoading(false);
@@ -117,6 +129,7 @@ export const AudiusSdkProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     void initSdk();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audiusLibs]);
 
   const contextValue = {

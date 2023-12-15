@@ -1,11 +1,13 @@
 import { useState, ChangeEvent, DragEvent } from "react";
 import { useAudiusSdk } from "../providers/AudiusSdkProvider";
-import type { AudiusSdk } from "@audius/sdk/dist/sdk/sdk.d.ts";
 import { useAudiusLibs } from "../providers/AudiusLibsProvider";
 import type { AudiusLibs } from "@audius/sdk/dist/WebAudiusLibs.d.ts";
-
+import type {
+  AudiusSdk,
+  Genre,
+  UploadTrackRequest,
+} from "@audius/sdk/dist/sdk/index.d.ts";
 import { DOMParser } from "linkedom";
-import { Genre, UploadTrackRequest } from "@audius/sdk";
 
 const fetchResource = async (url: string, filename: string) => {
   const res = await fetch(url);
@@ -27,6 +29,11 @@ const processXml = async (document: any, audiusSdk: AudiusSdk) => {
   const trackNodes = queryAll(document, "SoundRecording", "track");
 
   for (const trackNode of Array.from(trackNodes)) {
+    const releaseDateValue = firstValue(
+      trackNode,
+      "OriginalReleaseDate",
+      "originalReleaseDate",
+    );
     const tt = {
       title: firstValue(trackNode, "TitleText", "trackTitle"),
 
@@ -35,9 +42,7 @@ const processXml = async (document: any, audiusSdk: AudiusSdk) => {
       genre: "Metal" as Genre,
 
       // todo: need to parse release date if present
-      releaseDate: new Date(
-        firstValue(trackNode, "OriginalReleaseDate", "originalReleaseDate"),
-      ),
+      releaseDate: new Date(releaseDateValue as string | number | Date),
       // releaseDate: new Date(),
 
       isUnlisted: false,
@@ -57,6 +62,9 @@ const processXml = async (document: any, audiusSdk: AudiusSdk) => {
     const { data: users } = await audiusSdk.users.searchUsers({
       query: artistName,
     });
+    if (!users || users.length === 0) {
+      throw new Error(`Could not find user ${artistName}`);
+    }
     const userId = users[0].id;
     const uploadTrackRequest: UploadTrackRequest = {
       userId: userId,
@@ -71,10 +79,10 @@ const processXml = async (document: any, audiusSdk: AudiusSdk) => {
     console.log(result);
   }
 
+  // todo
   // extract Release
-  for (const releaseNode of queryAll(document, "Release", "release")) {
-    //todo
-  }
+  // for (const releaseNode of queryAll(document, "Release", "release")) {
+  // }
 };
 
 const queryAll = (node: any, ...fields: string[]) => {
@@ -109,8 +117,8 @@ const AudiusLogin = ({
   password: string;
   loginError: string | null;
   loginLoading: boolean;
-  onEmailChange: (e: ChangeEvent) => void;
-  onPasswordChange: (e: ChangeEvent) => void;
+  onEmailChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onPasswordChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onLogin: () => Promise<void>;
 }) => {
   return (
@@ -185,7 +193,11 @@ const ManageAudiusAccount = ({
   );
 };
 
-const XmlImporter = ({ audiusSdk }: { audiusSdk: AudiusSdk }) => {
+const XmlImporter = ({
+  audiusSdk,
+}: {
+  audiusSdk: AudiusSdk | undefined | null;
+}) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -245,7 +257,7 @@ const XmlImporter = ({ audiusSdk }: { audiusSdk: AudiusSdk }) => {
       return;
     }
 
-    readXml(selectedFile, audiusSdk);
+    readXml(selectedFile, audiusSdk!);
   };
 
   const readXml = (file: File, audiusSdk: AudiusSdk) => {
@@ -317,7 +329,7 @@ const XmlImporter = ({ audiusSdk }: { audiusSdk: AudiusSdk }) => {
             name="file_upload"
             accept="text/xml,application/xml"
             className="hidden"
-            onChange={(e) => handleFileChange(e.target.files[0])}
+            onChange={(e) => handleFileChange(e.target.files![0])}
           />
         </label>
         {selectedFile && (
@@ -341,7 +353,7 @@ const XmlImporter = ({ audiusSdk }: { audiusSdk: AudiusSdk }) => {
             </button>
             {uploadError && (
               <div className="text-red-500">
-                {("Error uploading file: ", uploadError)}
+                {`Error uploading file: ${uploadError}`}
               </div>
             )}
             {uploadSucceeded && (
@@ -363,12 +375,12 @@ export const Ddex = () => {
   const [loginLoading, setLoginLoading] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
 
-  const handleEmailChange = (e: ChangeEvent) => {
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
     setLoginError(null);
     setEmail(e.target.value);
   };
 
-  const handlePasswordChange = (e: ChangeEvent) => {
+  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     setLoginError(null);
     setPassword(e.target.value);
   };

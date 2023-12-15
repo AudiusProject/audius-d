@@ -24,5 +24,5 @@ export const formatNumberCommas = (num: string) => {
 
 export const formatWei = (amount: BN | null) => {
   if (!BN.isBN(amount)) return "";
-  return formatNumberCommas(getAud(amount as BN));
+  return formatNumberCommas(getAud(amount));
 };

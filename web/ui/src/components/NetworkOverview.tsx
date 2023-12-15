@@ -160,7 +160,7 @@ const getUserDelegates = async (delegator: string, audiusLibs: AudiusLibs) => {
         pendingUndelegateRequest!.lockupExpiryBlock !== 0 &&
         pendingUndelegateRequest!.target === sp
       ) {
-        activeAmount = activeAmount.sub(pendingUndelegateRequest!.amount);
+        activeAmount = activeAmount!.sub(pendingUndelegateRequest!.amount);
       }
 
       delegates.push({
@@ -206,7 +206,7 @@ const getDelegatorAmounts = async (
       pendingUndelegateRequest!.lockupExpiryBlock !== 0 &&
       pendingUndelegateRequest!.target === wallet
     ) {
-      activeAmount = activeAmount.sub(pendingUndelegateRequest!.amount);
+      activeAmount = activeAmount!.sub(pendingUndelegateRequest!.amount);
     }
 
     delegatorAmounts.push({
@@ -215,7 +215,7 @@ const getDelegatorAmounts = async (
       activeAmount: activeAmount,
     });
   }
-  return delegatorAmounts;
+  return delegatorAmounts as Delegate[];
 };
 
 const getUserMetadata = async (
@@ -320,10 +320,10 @@ const getMintedAmountAtBlock = async ({
     await audiusLibs.ethContracts?.StakingProxyClient?.totalStakedAt(
       blockNumber,
     );
-  const activeStake = totalStakedAtFundBlockForClaimer.sub(totalLocked);
+  const activeStake = totalStakedAtFundBlockForClaimer!.sub(totalLocked);
   const rewardsForClaimer = activeStake
     .mul(fundingAmount)
-    .div(totalStakedAtFundBlock);
+    .div(totalStakedAtFundBlock!);
 
   return rewardsForClaimer;
 };
@@ -434,7 +434,7 @@ const getRewardForClaimBlock = async ({
       await audiusLibs.ethContracts?.DelegateManagerClient.getTotalLockedDelegationForServiceProvider(
         user.wallet,
       );
-    const totalLocked = lockedPendingDecrease.add(lockedDelegation);
+    const totalLocked = lockedPendingDecrease.add(lockedDelegation!);
     const mintedRewards = await getMintedAmountAtBlock({
       totalLocked,
       fundingAmount: fundsPerRound,

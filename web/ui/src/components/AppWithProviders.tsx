@@ -6,11 +6,10 @@ import { AudiusSdkProvider } from "../providers/AudiusSdkProvider";
 import App from "./App.tsx";
 import { useWagmiConfig } from "../hooks/useWagmiConfig.tsx";
 import Web3 from "web3";
-import type Web3Type from "web3";
 
 declare global {
   interface Window {
-    Web3: Web3Type;
+    Web3: any;
   }
 }
 
