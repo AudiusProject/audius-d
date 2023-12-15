@@ -57,9 +57,9 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 		return err
 	}
 
-	// if err := os.Remove(localOverridePath); err != nil {
-	// 	return err
-	// }
+	if err := os.Remove(localOverridePath); err != nil {
+		return err
+	}
 
 	if serverConfig.AutoUpgrade != "" {
 		// "*/15 * * * *""
