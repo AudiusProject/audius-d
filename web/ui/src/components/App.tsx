@@ -4,7 +4,7 @@ import Layout from "./Layout";
 import Status from "../pages/Status";
 import Network from "../pages/Network";
 import { TxViewer } from "../pages/TX";
-import { Ddex } from "../pages/ddex";
+import { Ddex } from "../pages/DDEX";
 
 const App: React.FC = () => {
   return (
