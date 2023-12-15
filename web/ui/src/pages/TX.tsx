@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
+  Log,
   EM_ADDRESS,
   decodeEmLog,
   useEthersProvider,
@@ -9,15 +10,6 @@ import {
 } from "../utils/acdc-client";
 import { useEnvVars } from "../providers/EnvVarsProvider";
 import { TxDetail } from "./TXDetail";
-
-interface Log {
-  address: string;
-  blockHash: string;
-  blockNumber: number;
-  data: string;
-  provider: any;
-  transactionHash: string;
-}
 
 const TxRow = ({
   log,
@@ -33,7 +25,7 @@ const TxRow = ({
   isSelected: boolean;
 }) => {
   const rowStyle = isSelected ? "bg-sky-100" : "";
-  const em = decodeEmLog(log.data);
+  const em = decodeEmLog(log);
   return (
     <tr
       key={idx}
