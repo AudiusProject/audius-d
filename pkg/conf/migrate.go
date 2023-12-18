@@ -100,8 +100,7 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 		InternalHttpsPort: 443,
 	}
 	net := NetworkConfig{
-		Name: "stage",
-		Tag:  "latest",
+		Tag: "latest",
 	}
 	discoveryConf := DiscoveryConfig{}
 	creatorConf := CreatorConfig{}
@@ -122,7 +121,7 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 		case "autoUpgradeEnabled", "audius_auto_upgrade_enabled":
 			base.AutoUpgrade = "*/15 * * * *"
 		case "NETWORK":
-			net.Name = v
+			net.AudiusComposeNetwork = v
 		default:
 			base.OverrideConfig[k] = v
 		}

@@ -39,15 +39,15 @@ type BaseServerConfig struct {
 	// "latest", "stage", "prod", etc may have specific behavior
 	// git hashes are also eligible
 	Tag string
+	// use an existing override .env file
+	// instead of creating one on the fly
+	// based on toml
+	OverrideEnvPath string
 
 	OperatorPrivateKey    string
 	OperatorWallet        string
 	OperatorRewardsWallet string
 	EthOwnerWallet        string
-
-	DatabaseUrl   string
-	CacheUrl      string
-	EnableRsyslog bool
 
 	// operations
 	Register     bool
@@ -60,54 +60,25 @@ type BaseServerConfig struct {
 }
 
 type CreatorConfig struct {
-	BaseServerConfig    `mapstructure:",squash"`
-	MediorumEnv         string
-	DbConnectionPoolMax uint
+	BaseServerConfig `mapstructure:",squash"`
 }
 
 type DiscoveryConfig struct {
 	BaseServerConfig `mapstructure:",squash"`
-
-	CorsAllowAll                   bool
-	OpenRestyEnable                bool
-	BlockProcessingWindowBlacklist uint
-	BlockProcessingWindow          uint
-	GetUsersCnodeTtlSec            uint
-	UserMetadataServiceUrl         string
-	GunicornWorkerClass            string
-	GunicornWorkers                uint
-	SolanaUserBankMinSlot          uint
-	SolanaRewardsManagerMinSlot    uint
-
-	// notifications
-	NotificationsMaxBlockDiff uint
-	// elasticsearch
-	ElasticSearchUrl     string
-	ElasticSearchEnabled bool
-	// relay
-	RelayUseAntiAbuseOracle bool
-	// comms
-	CommsDevMode bool
-	// trpc (none present)
 }
 
 type IdentityConfig struct {
-	BaseServerConfig `mapstructure:",squash"`
-	// identity specific stuff here
-	SolanaClaimableTokenProgramAddress string
-	MinimumBalance                     uint
-	RelayerPublicKey                   string
-	UserVerifierPublicKey              string
-	SkipAbuseCheck                     bool
+	BaseServerConfig       `mapstructure:",squash"`
+	UserVerifierPrivateKey string
+	SolanaFeePayerWallets  string
+	EthRelayerWallets      string
+	RelayerPrivateKey      string
+	SolanaSignerPrivateKey string
+	RelayerWallets         string
 }
 
 type NetworkConfig struct {
-	// name of the network this/these server(s) belong to
-	// analogous to "audius-cli set-network"
-	// "dev", "stage", "prod", etc may have specific behavior
-	// for a private network set this to any valid string that
-	// doesn't have specific behavior
-	Name string
+	AudiusComposeNetwork string
 
 	AcdcRpc          string
 	EthMainnetRpc    string
@@ -122,24 +93,6 @@ type NetworkConfig struct {
 
 	// starts up local containers for acdc, eth, and solana rpcs
 	Devnet bool
-
-	// eth mainnet config and addresse
-	EthMainnetNetworkId         string
-	EthContractsRegistryAddress string
-	EthTokenAddress             string
-
-	// acdc config and addresses
-	AcdcNetworkId                string
-	AcdcContractsRegistryAddress string
-	AcdcEntityManagerAddress     string
-
-	SolanaRewardsManagerAccount        string
-	SolanaRewardsManagerProgramAddress string
-	SolanaSignerGroupAddress           string
-	SolanaTrackListenCountAddress      string
-	SolanaUserBankProgramAddress       string
-	SolanaWaudioMint                   string
-	SolanaUsdcMint                     string
 }
 
 type NodeConfig interface {
