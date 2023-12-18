@@ -4,7 +4,6 @@ example and runnable file for running a devnet configuration of audius protocol 
 """
 
 [Network]
-Name = "devnet"
 AudiusComposeNetwork = "dev"
 Tag = "alec-test"
 Devnet = true

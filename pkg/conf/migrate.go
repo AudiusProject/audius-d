@@ -107,8 +107,7 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 	}
 
 	net := NetworkConfig{
-		Name: "stage",
-		Tag:  "latest",
+		Tag: "latest",
 	}
 
 	ctx.Network = net

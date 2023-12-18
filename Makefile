@@ -1,4 +1,5 @@
 NETWORK ?= stage
+BRANCH ?= main
 TAG ?= latest
 
 UI_DIR := web/ui
@@ -49,11 +50,11 @@ regen-abis:
 .PHONY: build-docker push-docker build-push
 build-docker:
 	@echo "Building Docker image..."
-	docker buildx build --no-cache --load --build-arg NETWORK=$(NETWORK) -t audius/audius-docker-compose:$(TAG) .
+	docker buildx build --load --build-arg NETWORK=$(NETWORK) --build-arg BRANCH=$(BRANCH) -t audius/audius-docker-compose:$(TAG) .
 
 push-docker:
 	@echo "Pushing Docker image..."
-	docker buildx build --platform linux/amd64,linux/arm64 --push --build-arg NETWORK=$(NETWORK) -t audius/audius-docker-compose:$(TAG) .
+	docker buildx build --platform linux/amd64,linux/arm64 --push --build-arg NETWORK=$(NETWORK) --build-arg BRANCH=$(BRANCH) -t audius/audius-docker-compose:$(TAG) .
 
 build-push: build-docker push-docker
 

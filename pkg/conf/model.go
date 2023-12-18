@@ -74,12 +74,6 @@ type IdentityConfig struct {
 }
 
 type NetworkConfig struct {
-	// name of the network this/these server(s) belong to
-	// analogous to "audius-cli set-network"
-	// "dev", "stage", "prod", etc may have specific behavior
-	// for a private network set this to any valid string that
-	// doesn't have specific behavior
-	Name                 string
 	AudiusComposeNetwork string
 
 	AcdcRpc          string

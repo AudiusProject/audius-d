@@ -237,9 +237,7 @@ func createDefaultContextIfNotExists() error {
 
 	conf = ContextConfig{
 		ConfigVersion: ConfigVersion,
-		Network: NetworkConfig{
-			Name: "stage",
-		},
+		Network:       NetworkConfig{},
 	}
 
 	if err = WriteConfigToFile(filepath.Join(contextDir, "default"), &conf); err != nil {
