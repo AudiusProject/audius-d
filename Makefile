@@ -1,11 +1,13 @@
 NETWORK ?= stage
-BRANCH ?= main
-TAG ?= latest
+ADC_TAG ?= latest
+# One of patch, minor, or major
+UPGRADE_TYPE ?= patch
 
 UI_DIR := web/ui
 UI_ARTIFACT_DIR := pkg/gui/dist
 UI_ARTIFACT := $(UI_ARTIFACT_DIR)/index.html
 UI_SRC := $(shell find $(UI_DIR) -type f -not -path '$(UI_DIR)/node_modules/*')
+UI_PKG_INSTALL_CMD := npm install
 
 ABI_DIR := pkg/register/ABIs
 SRC := $(shell find . -type f -name '*.go') go.mod go.sum $(UI_ARTIFACT)
@@ -32,14 +34,15 @@ bin/audius-ctl-arm-mac: $(SRC) $(UI_ARTIFACT)
 
 $(UI_ARTIFACT): $(UI_SRC)
 	@echo "Building GUI..."
-	cd $(UI_DIR) && npm i && npm run build
+	cd $(UI_DIR) && $(UI_PKG_INSTALL_CMD) && npm run build
 
-.PHONY: release-audius-ctl audius-ctl-versioned
-release-audius-ctl: clean audius-ctl-versioned
+.PHONY: release-audius-ctl audius-ctl-production-build
+release-audius-ctl:
 	bash scripts/github_release.sh
 
-audius-ctl-versioned: VERSION_LDFLAG := -X main.Version=$(shell jq -r .version $(VERSION_FILE))
-audius-ctl-versioned: audius-ctl
+audius-ctl-production-build: VERSION_LDFLAG := -X main.Version=0.0.4 #$(shell bash scripts/get_new_version.sh $(UPGRADE_TYPE))  # uncomment after dummy release
+audius-ctl-production-build: UI_PKG_INSTALL_CMD := npm ci
+audius-ctl-production-build: clean audius-ctl
 
 .PHONY: regen-abis
 regen-abis:
@@ -47,19 +50,17 @@ regen-abis:
 	curl -s https://raw.githubusercontent.com/AudiusProject/audius-protocol/main/packages/libs/src/eth-contracts/ABIs/Registry.json | jq '.abi' > $(ABI_DIR)/Registry.json
 	curl -s https://raw.githubusercontent.com/AudiusProject/audius-protocol/main/packages/libs/src/eth-contracts/ABIs/ServiceProviderFactory.json | jq '.abi' > $(ABI_DIR)/ServiceProviderFactory.json
 
-.PHONY: build-docker push-docker build-push
-build-docker:
-	@echo "Building Docker image..."
-	docker buildx build --load --build-arg NETWORK=$(NETWORK) --build-arg BRANCH=$(BRANCH) -t audius/audius-docker-compose:$(TAG) .
+.PHONY: build-docker-local build-push-docker
+build-docker-local:
+	@echo "Building Docker image for local platform..."
+	docker buildx build --load --build-arg NETWORK=$(NETWORK) -t audius/audius-docker-compose:$(ADC_TAG) .
 
-push-docker:
-	@echo "Pushing Docker image..."
-	docker buildx build --platform linux/amd64,linux/arm64 --push --build-arg NETWORK=$(NETWORK) --build-arg BRANCH=$(BRANCH) -t audius/audius-docker-compose:$(TAG) .
-
-build-push: build-docker push-docker
+build-push-docker:
+	@echo "Building and pushing Docker images for all platforms..."
+	docker buildx build --platform linux/amd64,linux/arm64 --push --build-arg NETWORK=$(NETWORK) -t audius/audius-docker-compose:$(ADC_TAG) .
 
 .PHONY: install uninstall
-install: audius-ctl
+install:
 	bash scripts/install.sh
 
 uninstall:
