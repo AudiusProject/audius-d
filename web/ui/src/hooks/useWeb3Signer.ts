@@ -3,14 +3,13 @@ import type { Signer } from "ethers";
 import type { WalletClient } from "viem";
 import { useEffect, useState } from "react";
 import { useWalletClient } from "wagmi";
+import { ethers } from "ethers";
 
 // This should be import type { Web3 } from web3, but Audius libs forces us to use a version of web3 without this type
 type Web3Type = any;
 
 // Converts a WalletClient to an ethers.js Signer
-const walletClientToSigner = async (
-  walletClient: WalletClient,
-): Promise<Signer> => {
+const walletClientToSigner = (walletClient: WalletClient): Signer => {
   const { account, chain } = walletClient;
   const network = {
     chainId: chain!.id,
@@ -18,9 +17,7 @@ const walletClientToSigner = async (
     ensAddress: chain!.contracts?.ensRegistry?.address,
   };
 
-  // Dynamically import hefty libraries so that we don't have to include them in the main index bundle
-  const ethers = await import("ethers");
-  const provider = new ethers.JsonRpcProvider(undefined, network);
+  const provider = new ethers.providers.JsonRpcProvider(undefined, network);
   const signer = provider.getSigner(account!.address);
   return signer;
 };
@@ -35,9 +32,8 @@ const useWeb3Signer = (chainId?: number): Web3Type | undefined => {
   useEffect(() => {
     let isMounted = true;
 
-    const instantiateWeb3 = async () => {
-      // Dynamically import hefty libraries so that we don't have to include them in the main index bundle
-      const { default: Web3 } = await import("web3");
+    const instantiateWeb3 = () => {
+      const Web3 = window.Web3;
 
       if (
         isMounted &&
@@ -53,10 +49,9 @@ const useWeb3Signer = (chainId?: number): Web3Type | undefined => {
         //   return
         // }
 
-        const signer = await walletClientToSigner(walletClient);
+        const signer = walletClientToSigner(walletClient);
 
         // @ts-expect-error ts(2339) - provider does exist on type Provider
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const web3 = new Web3(signer.provider.provider as any);
         setWeb3Instance(web3);
       }

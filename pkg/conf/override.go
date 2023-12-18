@@ -4,11 +4,26 @@ package conf
 
 func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv := make(map[string]string)
+	for k, v := range config.OverrideConfig {
+		overrideEnv[k] = v
+	}
 	overrideEnv["audius_delegate_owner_wallet"] = config.OperatorWallet
 	overrideEnv["audius_delegate_private_key"] = config.OperatorPrivateKey
 	overrideEnv["audius_discprov_url"] = config.Host
 
-	return overrideEnv
+	// Everything else we don't yet capture in audius-d models
+	for k, v := range config.OverrideConfig {
+		overrideEnv[k] = v
+	}
+
+	// Remove empty configs
+	result := make(map[string]string)
+	for k, v := range overrideEnv {
+		if v != "" {
+			result[k] = v
+		}
+	}
+	return result
 }
 
 func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
