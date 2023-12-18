@@ -80,37 +80,6 @@ func RunDown(config *conf.ContextConfig) {
 	}
 }
 
-// func registerDevnetNodes(config *conf.ContextConfig) {
-// 	for _, cc := range config.CreatorNodes {
-// 		if cc.Register {
-// 			register.RegisterNode(
-// 				"content-node",
-// 				cc.Host,
-// 				"http://localhost:8546",
-// 				config.Network.EthTokenAddress,
-// 				config.Network.EthContractsRegistryAddress,
-// 				cc.OperatorWallet,
-// 				cc.OperatorPrivateKey,
-// 			)
-// 		}
-// 	}
-// 	fmt.Println("content nodes registered")
-// 	for _, dc := range config.DiscoveryNodes {
-// 		if dc.Register {
-// 			register.RegisterNode(
-// 				"discovery-provider",
-// 				dc.Host,
-// 				"http://localhost:8546",
-// 				config.Network.EthTokenAddress,
-// 				config.Network.EthContractsRegistryAddress,
-// 				dc.OperatorWallet,
-// 				dc.OperatorPrivateKey,
-// 			)
-// 		}
-// 	}
-// 	fmt.Println("discovery providers registered")
-// }
-
 func runCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
