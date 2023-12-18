@@ -3,34 +3,271 @@
 
 version: 2.1
 
-setup: true
-
 orbs:
-  continuation: circleci/continuation@0.3.1
+  gh: circleci/github-cli@2.3.0
 
-parameters:
-  workflow:
-    type: string
-    default: 'main'
+commands:
+  setup-audius-ctl:
+    description: Checkout and install audius-ctl built in previous job
+    steps:
+      - checkout:
+          path: ~/audius-d
+      - attach_workspace:
+          at: ~/audius-d
+      - run:
+          name: Uninstall any existing audius-ctl binary
+          command: make uninstall
+      - run:
+          name: Install audius-ctl
+          command: make install
+
+  basic-health-check:
+    description: 'Perform a basic health check on an audius node'
+    parameters:
+      port:
+        type: integer
+        default: 80
+      jqkey:
+        type: string
+        default: '.data.healthy'
+    steps:
+      - run:
+          name: 'Basic health check'
+          command: |
+            timeout=0
+            while [[ "$(curl -Lsko /dev/null -w "%{http_code}" http://localhost:<< parameters.port >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 180 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+            cresult="$(curl -Lkv http://localhost:<< parameters.port >>/health_check | jq '<< parameters.jqkey >>')"
+            echo $cresult
+            [ "$cresult" = true ] || [ "$cresult" = false ]
 
 jobs:
-  # Generate the CircleCI continue_config.yml from .circleci/src
-  generate-config:
-    executor: continuation/default
+  build:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
     steps:
-      # The circleci cli exposed in the image doesn't support config packing
-      # so we install a version that does
+      - attach_workspace:
+          at: ~/workspace
+      - checkout:
+          path: ~/audius-d
+      - gh/setup
       - run:
-          name: Install cli
-          command: curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/master/install.sh | DESTDIR=~/cli bash
-      - checkout
+          name: install go
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y golang
       - run:
-          name: Generate config
-          command: ~/cli config pack .circleci/src > .circleci/continue_config.yml
-      - continuation/continue:
-          configuration_path: .circleci/continue_config.yml
+          name: Build audius-docker-compose docker image
+          command: |
+            cd ~/audius-d
+
+            REPO_OWNER="AudiusProject"
+            REPO_NAME="audius-docker-compose"
+            BRANCH_NAME="stage"
+            COMPOSE_COMMIT_SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/branches/$BRANCH_NAME" | \
+              jq -r '.commit.sha')
+            DOCKER_IMAGE="audius/audius-docker-compose:$COMPOSE_COMMIT_SHA"
+
+            echo "export COMPOSE_COMMIT_SHA=$COMPOSE_COMMIT_SHA" >> $BASH_ENV
+
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            
+            if docker buildx imagetools inspect $DOCKER_IMAGE >/dev/null 2>&1; then
+              echo "Docker image $DOCKER_IMAGE already exists. Skipping build."
+            else
+              echo "Docker image $DOCKER_IMAGE not found. Building and pushing..."
+              docker buildx create --use
+              make build-push-docker ADC_TAG=$COMPOSE_COMMIT_SHA
+              make build-push-docker ADC_TAG=latest
+            fi
+      - restore_cache:
+          keys:
+            - node-modules-{{ checksum "~/audius-d/web/ui/package-lock.json" }}
+            - node-modules-
+      - run:
+          name: Build audius-ctl for production
+          command: |
+            cd ~/audius-d
+            make audius-ctl-production-build
+      - save_cache:
+          key: node-modules-{{ checksum "~/audius-d/web/ui/package-lock.json" }}
+          paths:
+            - ~/audius-d/web/ui/node_modules
+      - persist_to_workspace:
+          root: ~/audius-d
+          paths:
+            - bin/audius-ctl-arm
+            - bin/audius-ctl-x86
+
+  test-devnet-deps:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - setup-audius-ctl
+      - run: audius-ctl devnet
+      - run: docker ps
+      - run:
+          name: Wait for acdc-ganache to start
+          command: |
+            timeout=0
+            while [[ "$(curl -sf -w "%{http_code}" -o /dev/null -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+            if [ "$timeout" -ge 60 ]; then
+              echo "Server didn't respond within 60 seconds. Exiting due to timeout."
+              exit 1
+            fi
+      - run:
+          name: Wait for mainnet-ganache to start
+          command: |
+            timeout=0
+            while [[ "$(curl -sf -w "%{http_code}" -o /dev/null -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8546)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+            if [ "$timeout" -ge 60 ]; then
+              echo "Server didn't respond within 60 seconds. Exiting due to timeout."
+              exit 1
+            fi
+      - run:
+          name: Wait for mainnet-solana to start
+          command: |
+            timeout=0
+            while [[ "$(curl http://localhost:8899 -o /dev/null -X POST -H "Content-Type: application/json" -w "%{http_code}" -d '{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}')" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+              sleep 3
+              ((timeout=timeout+3))
+              echo "Waiting for server to start... $timeout"
+            done
+            if [ "$timeout" -ge 60 ]; then
+              echo "Server didn't respond within 60 seconds. Exiting due to timeout."
+              exit 1
+            fi
+      - run: audius-ctl devnet down
+
+  test-audius-d-devnet:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - setup-audius-ctl
+      - run:
+          name: standup isolated ci env
+          command: |
+            cd ~/audius-d
+            audius-ctl config create-context ci -f configs/templates/devnet.toml 
+            audius-ctl up
+      - basic-health-check # creator node default
+      - basic-health-check:
+          port: 5000
+          jqkey: '.data.discovery_provider_healthy'
+      - basic-health-check:
+          port: 7000
+          jqkey: '.healthy'
+      - run: audius-ctl down
+
+  test-eth-registration:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large
+    steps:
+      - setup-audius-ctl
+      - run: audius-ctl devnet
+      - run:
+          name: register delegateOwnerWallet
+          command: |
+            cd ~/audius-d
+            audius-ctl config create-context ci -f configs/templates/devnet.toml 
+            audius-ctl up
+            audius-ctl register
+
+  test-config-subcommands:
+    docker:
+      - image: cimg/base:2023.01
+    resource_class: small
+    steps:
+      - setup-audius-ctl
+      - run:
+          name: test default context is created
+          command: |
+            audius-ctl config
+      - run:
+          name: test create context
+          command: |
+            audius-ctl config create-context test -f ~/audius-d/configs/templates/ci.toml 
+      - run:
+          name: test modify context
+          command: |
+            audius-ctl config set Network.EthMainnetRpc test-str
+            audius-ctl config | grep 'EthMainnetRpc = "test-str"'
+      - run:
+          name: test invalid modify context
+          command: |
+            if audius-ctl config set Network.Devnet 420; then
+              echo Should not have succeeded due to type error
+              false
+            fi
+            audius-ctl config | grep 'EthMainnetRpc = "test-str"'
+      - run:
+          name: test delete context
+          command: |
+            audius-ctl config delete-context test
+            audius-ctl config  # should resort to default
+            audius-ctl config current-context | grep 'default'
+
+  publish-audius-ctl:
+    docker:
+      - image: cimg/base:2023.01
+    resource_class: small
+    steps:
+      - checkout:
+          path: ~/audius-d
+      - attach_workspace:
+          at: ~/audius-d
+      - gh/setup
+      - run:
+          name: Release 
+          command: |
+            cd ~/audius-d
+            make release-audius-ctl
 
 workflows:
-  setup:
+  audius-ctl-cicd:
     jobs:
-      - generate-config
+      - build:
+          context: github
+      - test-audius-d-devnet:
+          context: github
+          requires:
+            - build
+      - test-devnet-deps:
+          context: github
+          requires:
+            - build
+      - test-config-subcommands:
+          context: github
+          requires:
+            - build
+      - test-eth-registration:
+          context: github
+          requires:
+            - build
+      - publish-audius-ctl:
+          context: github
+          requires:
+            - test-audius-d-devnet
+            - test-devnet-deps
+            - test-config-subcommands
+            - test-eth-registration
+          filters:
+            branches:
+              only:
+                - main
