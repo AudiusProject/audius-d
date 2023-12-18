@@ -1,0 +1,31 @@
+audius-ctl-cicd:
+  jobs:
+    - build:
+        context: github
+    - test-audius-d-devnet:
+        context: github
+        requires:
+          - build
+    - test-devnet-deps:
+        context: github
+        requires:
+          - build
+    - test-config-subcommands:
+        context: github
+        requires:
+          - build
+    - test-eth-registration:
+        context: github
+        requires:
+          - build
+    - publish-audius-ctl:
+        context: github
+        requires:
+          - test-audius-d-devnet
+          - test-devnet-deps
+          - test-config-subcommands
+          - test-eth-registration
+        filters:
+          branches:
+            only:
+              - main

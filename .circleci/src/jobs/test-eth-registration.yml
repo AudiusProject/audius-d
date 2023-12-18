@@ -1,0 +1,14 @@
+test-eth-registration:
+  machine:
+    image: ubuntu-2204:current
+  resource_class: large
+  steps:
+    - setup-audius-ctl
+    - run: audius-ctl devnet
+    - run:
+        name: register delegateOwnerWallet
+        command: |
+          cd ~/audius-d
+          audius-ctl config create-context ci -f configs/templates/devnet.toml 
+          audius-ctl up
+          audius-ctl register

@@ -1,0 +1,36 @@
+setup-audius-ctl:
+  description: Checkout and install audius-ctl built in previous job
+  steps:
+    - checkout:
+        path: ~/audius-d
+    - attach_workspace:
+        at: ~/audius-d
+    - run:
+        name: Uninstall any existing audius-ctl binary
+        command: make uninstall
+    - run:
+        name: Install audius-ctl
+        command: make install
+
+basic-health-check:
+  description: 'Perform a basic health check on an audius node'
+  parameters:
+    port:
+      type: integer
+      default: 80
+    jqkey:
+      type: string
+      default: '.data.healthy'
+  steps:
+    - run:
+        name: 'Basic health check'
+        command: |
+          timeout=0
+          while [[ "$(curl -Lsko /dev/null -w "%{http_code}" http://localhost:<< parameters.port >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 180 ]; do
+            sleep 3
+            ((timeout=timeout+3))
+            echo "Waiting for server to start... $timeout"
+          done
+          cresult="$(curl -Lkv http://localhost:<< parameters.port >>/health_check | jq '<< parameters.jqkey >>')"
+          echo $cresult
+          [ "$cresult" = true ] || [ "$cresult" = false ]

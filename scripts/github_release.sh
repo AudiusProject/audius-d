@@ -6,23 +6,30 @@ if [[ -n $(git status -s) ]]; then
   exit 1
 fi
 
-# first release edge case
-if [[ "$(gh release list --exclude-drafts)" == "" ]]; then
-  start_commit="$(git rev-list --max-parents=0 HEAD)"
-else
-  old_version=$(gh release view --json tagName | jq -r ".tagName")
-  start_commit=$(git show-ref --hash "refs/tags/$old_version")
+if ! [ -f bin/audius-ctl-x86 ] || ! [ -f bin/audius-ctl-arm ]; then
+  echo 'Please run `make audius-ctl-production-build` before attempting to release'
+  exit 1
 fi
 
-changelog="$(mktemp)"
-printf "Full Changelog:\n" >> "$changelog"
-git log --pretty='[%h] - %s' --abbrev-commit "$start_commit..HEAD" -- $directories | tee -a "$changelog"
+ARCH=$(uname -m)
+if [ "$ARCH" = "arm64" ]; then
+  BINARY_NAME="audius-ctl-arm"
+else
+  BINARY_NAME="audius-ctl-x86"
+fi
+release_version="$(bin/$BINARY_NAME --version)"
 
-release_version="$(jq -r .version .version.json)"
-if gh release view "@audius-ctl/$release_version" &> /dev/null; then
-  echo "Release $release_version already exists."
-  echo "Please update the version in '.version.json' and push your changes."
+if ! echo $release_version | grep -E "^\d+\.\d+\.\d+$" >/dev/null; then
+  echo "'$release_version' is in an unsupported format for release version."
+  echo 'Please run `make audius-ctl-production-build` before attempting to release'
+  exit 1
+fi
+
+release_tag="audius-ctl@$release_version"
+
+if gh release view "$release_tag" &> /dev/null; then
+  echo "Release $release_tag already exists."
   exit 1
 fi
  
-gh release create --target "$(git rev-parse HEAD)" -F "$changelog" "@audius-ctl/$release_version" bin/audius-ctl*
+gh release create --generate-notes --target "$(git rev-parse HEAD)" "$release_tag" bin/audius-ctl*
