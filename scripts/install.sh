@@ -9,6 +9,12 @@ else
     BINARY_NAME="audius-ctl-x86"
 fi
 
+if ! [ -f "bin/$BINARY_NAME" ]; then
+    echo "No build artifact '$BINARY_NAME' in bin/"
+    echo "Please run 'make' first"
+    exit 1
+fi
+
 if [ -w /usr/local/bin ]; then
     TARGET_DIR="/usr/local/bin"
 elif echo "$PATH" | grep -q "$HOME/.local/bin"; then
