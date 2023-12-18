@@ -16,10 +16,14 @@ commands:
           at: ~/audius-d
       - run:
           name: Uninstall any existing audius-ctl binary
-          command: make uninstall
+          command: |
+            cd ~/audius-d
+            make uninstall
       - run:
           name: Install audius-ctl
-          command: make install
+          command: |
+            cd ~/audius-d
+            make install
 
   basic-health-check:
     description: 'Perform a basic health check on an audius node'
