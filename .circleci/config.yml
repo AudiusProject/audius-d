@@ -114,7 +114,7 @@ jobs:
     resource_class: large
     steps:
       - setup-audius-ctl
-      - run: audius-ctl devnet
+      - run: cd ~/audius-d && audius-ctl devnet
       - run: docker ps
       - run:
           name: Wait for acdc-ganache to start
@@ -184,7 +184,7 @@ jobs:
     resource_class: large
     steps:
       - setup-audius-ctl
-      - run: audius-ctl devnet
+      - run: cd ~/audius-d && audius-ctl devnet
       - run:
           name: register delegateOwnerWallet
           command: |
