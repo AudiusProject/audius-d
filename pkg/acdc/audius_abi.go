@@ -1,10 +1,10 @@
 package acdc
 
 import (
-	"log"
 	"math/big"
 	"strings"
 
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -496,6 +496,7 @@ func init() {
 	var err error
 	AudiusABI, err = abi.JSON(strings.NewReader(abiJsonString))
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err)
+		return
 	}
 }

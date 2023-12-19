@@ -8,7 +8,7 @@ import (
 var guiCmd = &cobra.Command{
 	Use:   "gui",
 	Short: "Run gui server",
-	Run: func(cmd *cobra.Command, args []string) {
-		gui.StartGuiServer()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return gui.StartGuiServer()
 	},
 }

@@ -3,13 +3,11 @@ package main
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
-	"log"
-	"log/slog"
 	"strings"
 
 	"github.com/AudiusProject/audius-d/pkg/acdc"
 	"github.com/AudiusProject/audius-d/pkg/hashes"
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
@@ -37,26 +35,23 @@ func init() {
 			const ACDC_ENDPOINT = `https://acdc-gateway.staging.audius.co`
 			client, err := ethclient.Dial(ACDC_ENDPOINT)
 			if err != nil {
-				log.Fatal(err)
+				return logger.Error(err)
 			}
 
 			privateKey, err := crypto.LoadECDSA(keyfileLocation)
 			if err != nil {
-				log.Fatal("invalid keyfile: ", err)
+				return logger.Error("invalid keyfile: ", err)
 			}
-			signerAddress := crypto.PubkeyToAddress(privateKey.PublicKey).Hex()
 
 			actorIdInt, err := hashes.MaybeDecode(actorId)
 			if err != nil {
-				log.Fatal("invalid --actor", actorIdInt, err)
+				return logger.Error("invalid --actor", actorIdInt, err)
 			}
 
 			entityIdInt, err := hashes.MaybeDecode(entityId)
 			if err != nil {
-				log.Fatal("invalid --id", actorIdInt, err)
+				return logger.Error("invalid --id", actorIdInt, err)
 			}
-
-			logger := slog.With("Signer", signerAddress, "Actor", actorIdInt, "Action", action, "EntityType", entityType, "EntityID", entityIdInt)
 
 			tx, err := acdc.SendEmTx(client, privateKey, acdc.EmArgs{
 				UserID:     int64(actorIdInt),
@@ -66,11 +61,10 @@ func init() {
 			})
 
 			if err != nil {
-				logger.Error("failed to send tx", "err", err)
+				return logger.Error("failed to send tx", "err", err)
 			} else {
 				logger.Info("sent tx", "txhash", tx.Hash().Hex())
 			}
-
 			return nil
 		},
 	}
@@ -90,20 +84,20 @@ func init() {
 			Use:   "show",
 			Short: "show current developer key",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				fmt.Println("\nreading keyfile", keyfileLocation)
+				logger.Info("\nreading keyfile", keyfileLocation)
 
 				privateKey, err := crypto.LoadECDSA(keyfileLocation)
 				if err != nil {
 					return err
 				}
 
-				fmt.Println("\n== private ==")
-				fmt.Printf("private key \t0x%x\n\n", crypto.FromECDSA(privateKey))
+				logger.Info("\n== private ==")
+				logger.Infof("private key \t0x%x\n\n", crypto.FromECDSA(privateKey))
 
-				fmt.Println("\n== public ==")
-				fmt.Printf("public key \t0x%x\n", crypto.FromECDSAPub(&privateKey.PublicKey))
-				fmt.Printf("public key compressed \t0x%x\n", crypto.CompressPubkey(&privateKey.PublicKey))
-				fmt.Printf("address \t%s\n\n", crypto.PubkeyToAddress(privateKey.PublicKey).Hex())
+				logger.Info("\n== public ==")
+				logger.Infof("public key \t0x%x\n", crypto.FromECDSAPub(&privateKey.PublicKey))
+				logger.Infof("public key compressed \t0x%x\n", crypto.CompressPubkey(&privateKey.PublicKey))
+				logger.Infof("address \t%s\n\n", crypto.PubkeyToAddress(privateKey.PublicKey).Hex())
 
 				return nil
 			},
@@ -119,7 +113,7 @@ func init() {
 				if err != nil {
 					return err
 				}
-				fmt.Println("writing keyfile", keyfileLocation)
+				logger.Info("writing keyfile", keyfileLocation)
 				return crypto.SaveECDSA(keyfileLocation, privateKey)
 			},
 		},
@@ -132,7 +126,7 @@ func init() {
 					return err
 				}
 				asHex := hex.EncodeToString(crypto.FromECDSA(pk))
-				fmt.Println(asHex)
+				logger.Info(asHex)
 				return nil
 			},
 		},

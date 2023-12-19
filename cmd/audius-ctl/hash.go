@@ -1,12 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"strconv"
 
 	"github.com/AudiusProject/audius-d/pkg/hashes"
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -19,49 +18,51 @@ func init() {
 	hashCmd.AddCommand(
 		&cobra.Command{
 			Use: "encode",
-			Run: func(cmd *cobra.Command, args []string) {
+			RunE: func(cmd *cobra.Command, args []string) error {
 				for _, arg := range args {
 					val, err := strconv.Atoi(arg)
 					if err != nil {
-						fmt.Fprintf(os.Stderr, "invalid number: %s \n", arg)
+						logger.ErrorF("invalid number: %s \n", arg)
 						continue
 					}
 					if hashed, err := hashes.Encode(val); err != nil {
-						fmt.Fprintf(os.Stderr, "invalid input: %s \n", arg)
+						logger.ErrorF("invalid input: %s \n", arg)
 					} else {
-						fmt.Println(hashed)
+						logger.Out(hashed)
 					}
 				}
+				return nil
 			},
 		},
 		&cobra.Command{
 			Use: "decode",
-			Run: func(cmd *cobra.Command, args []string) {
+			RunE: func(cmd *cobra.Command, args []string) error {
 				for _, arg := range args {
 					if num, err := hashes.MaybeDecode(arg); err != nil {
-						fmt.Fprintf(os.Stderr, "invalid input: %s \n", arg)
+						logger.ErrorF("invalid input: %s \n", arg)
 					} else {
-						fmt.Println(num)
+						logger.Out(num)
 					}
 				}
+				return nil
 			},
 		},
 		&cobra.Command{
 			Use: "cid",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				if len(args) != 1 {
-					log.Fatal("filename required")
+					return logger.Error("filename required")
 				}
 				file, err := os.Open(args[0])
 				if err != nil {
-					return err
+					return logger.Error(err)
 				}
 				defer file.Close()
 				cid, err := hashes.ComputeFileCID(file)
 				if err != nil {
-					return err
+					return logger.Error(err)
 				}
-				fmt.Println("cid =", cid)
+				logger.Info("cid =", cid)
 				return nil
 			},
 		},

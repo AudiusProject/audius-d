@@ -10,6 +10,7 @@ import (
 var sbCmd = &cobra.Command{
 	Use:   "statusbar",
 	Short: "Run mac status bar",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return nil
 	},
 }

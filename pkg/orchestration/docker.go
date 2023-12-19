@@ -1,7 +1,6 @@
 package orchestration
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/joho/godotenv"
 )
 
@@ -17,12 +17,12 @@ type OverrideEnv = map[string]string
 // deploys a server node generically
 func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, override OverrideEnv, containerName string, nodeType string, internalVolumes []string) error {
 	if isContainerRunning(containerName) {
-		fmt.Printf("container %s already running\n", containerName)
+		logger.Infof("container %s already running\n", containerName)
 		return nil
 	}
 
 	if isContainerNameInUse(containerName) {
-		fmt.Printf("container %s already exists, removing and starting with current config\n", containerName)
+		logger.Infof("container %s already exists, removing and starting with current config\n", containerName)
 		if err := removeContainerByName(containerName); err != nil {
 			return err
 		}
@@ -73,6 +73,7 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 
 	if serverConfig.AutoUpgrade != "" {
 		// "*/15 * * * *""
+		// don't capture error, service can still start if auto-upgrade fails
 		audiusCli(containerName, "auto-upgrade", serverConfig.AutoUpgrade)
 	}
 
@@ -89,7 +90,7 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 }
 
 func Sh(cmd string) error {
-	fmt.Println(cmd)
+	logger.Info(cmd)
 	return runCommand("/bin/sh", "-c", cmd)
 }
 
@@ -97,7 +98,7 @@ func isContainerRunning(containerName string) bool {
 	cmd := exec.Command("docker", "ps", "-q", "-f", "name="+containerName)
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Println(err)
+		logger.Error(err)
 		return false
 	}
 	return len(strings.TrimSpace(string(output))) > 0
@@ -107,7 +108,7 @@ func isContainerNameInUse(containerName string) bool {
 	cmd := exec.Command("docker", "ps", "-a", "--format", "{{.Names}}")
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Println(err)
+		logger.Error(err)
 		return false
 	}
 
@@ -133,7 +134,7 @@ func removeContainerByName(containerName string) error {
 }
 
 func startDevnetDocker() {
-	fmt.Println("Starting local eth, sol, and acdc chains")
+	logger.Info("Starting local eth, sol, and acdc chains")
 	runCommand("docker", "compose", "-f", "./deployments/docker-compose.devnet.yml", "up", "-d")
 	time.Sleep(5 * time.Second)
 }
@@ -142,111 +143,12 @@ func downDevnetDocker() {
 	runCommand("docker", "compose", "-f", "./deployments/docker-compose.devnet.yml", "down")
 }
 
-func audiusCli(container string, args ...string) {
+func audiusCli(container string, args ...string) error {
 	audCli := []string{"exec", container, "audius-cli"}
 	cmds := append(audCli, args...)
 	err := runCommand("docker", cmds...)
 	if err != nil {
-		exitWithError("Error with audius-cli:", err)
+		return logger.Error("Error with audius-cli:", err)
 	}
-}
-
-func dockerExec(arg ...string) string {
-	nodeType := ""
-	baseCmd := []string{"exec", nodeType}
-	cmds := append(baseCmd, arg...)
-	out, err := exec.Command("docker", cmds...).Output()
-	if err != nil {
-		exitWithError("Error with cmd:", err, cmds)
-	}
-	return string(out)
-}
-
-func awaitDockerStart() {
-	nodeType := ""
-	cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, nodeType)
-	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
-		exitWithError("Error awaiting docker start:", err)
-	}
-
-}
-
-func exitWithError(msg ...interface{}) {
-	fmt.Println(msg...)
-	os.Exit(1)
-}
-
-// generates relevant nethermind chain configuration files
-// logic ported over from audius-docker-compose https://github.com/AudiusProject/audius-docker-compose/blob/stage/audius-cli#L848
-func configureChainSpec(nodeType string, network string) {
-	extraVanity := "0x22466c6578692069732061207468696e6722202d204166726900000000000000"
-	extraSeal := "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-
-	// gather env config
-	// discovery-provider/stage.env for example
-	networkEnvPath := fmt.Sprintf("discovery-provider/%s.env", network)
-	networkEnv := dockerExec("cat", networkEnvPath)
-	networkEnvMap, err := godotenv.Unmarshal(networkEnv)
-	if err != nil {
-		exitWithError("Error unmarshalling network env:", err)
-	}
-
-	signers := networkEnvMap["audius_genesis_signers"]
-	extraData := fmt.Sprintf("%s%s%s", extraVanity, signers, extraSeal)
-
-	specTemplatePath := fmt.Sprintf("discovery-provider/chain/%s_spec_template.json", network)
-	specInput := dockerExec("cat", specTemplatePath)
-	var specData map[string]interface{}
-	err = json.Unmarshal([]byte(specInput), &specData)
-	if err != nil {
-		exitWithError("Unmarshall error:", err)
-	}
-
-	networkId := specData["params"].(map[string]interface{})["networkID"].(string)
-	fmt.Printf("Network id: %s\n", networkId)
-
-	specData["genesis"].(map[string]interface{})["extraData"] = extraData
-
-	specOutput, err := json.MarshalIndent(specData, "", "    ")
-	if err != nil {
-		exitWithError("Error marshalling specData:", err)
-	}
-
-	peersStr := networkEnvMap["audius_static_nodes"]
-	peers := strings.Split(peersStr, ",")
-	peersOutput, err := json.MarshalIndent(peers, "", "    ")
-	if err != nil {
-		exitWithError("Error marshalling peers output:", err)
-	}
-
-	err = os.WriteFile("spec.json", specOutput, 0644)
-	if err != nil {
-		exitWithError("Error writing spec", err)
-	}
-
-	err = os.WriteFile("static-nodes.json", peersOutput, 0644)
-	if err != nil {
-		exitWithError("Error writing static nodes", err)
-	}
-
-	// docker cp ./spec.json creator-node:/root/audius-docker-compose/discovery-provider/chain
-	err = exec.Command("docker", "cp", "./spec.json", fmt.Sprintf("%s:/root/audius-docker-compose/discovery-provider/chain", nodeType)).Run()
-	if err != nil {
-		exitWithError("Error with spec docker cp:", err)
-	}
-
-	err = exec.Command("docker", "cp", "./static-nodes.json", fmt.Sprintf("%s:/root/audius-docker-compose/discovery-provider/chain", nodeType)).Run()
-	if err != nil {
-		exitWithError("Error with static nodes docker cp:", err)
-	}
-
-	// cleanup, remove temp files from filesystem
-	err = os.Remove("spec.json")
-	if err != nil {
-		exitWithError(err)
-	}
-	err = os.Remove("static-nodes.json")
-	if err != nil {
-		exitWithError(err)
-	}
+	return nil
 }
