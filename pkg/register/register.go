@@ -27,17 +27,15 @@ var registryABIFile string
 //go:embed ABIs/ServiceProviderFactory.json
 var spfABIFile string
 
-func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderUrl string, tokenAddress string, contractRegistryAddress string, ownerWallet string, privateKey string) {
+func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderUrl string, tokenAddress string, contractRegistryAddress string, ownerWallet string, privateKey string) error {
 	client, err := ethclient.Dial(ethProviderUrl)
 	if err != nil {
-		logger.Error("Failed to dial ethereum client:", err)
-		return
+		return logger.Error("Failed to dial ethereum client:", err)
 	}
 	delegateOwnerWallet := common.HexToAddress(ownerWallet)
 	pKey, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
-		logger.Error("Failed to encode private key:", err)
-		return
+		return logger.Error("Failed to encode private key:", err)
 	}
 	ethRegistryAddress := common.HexToAddress(contractRegistryAddress)
 	tokenABI := getContractABI(erc20ABIFile)
@@ -46,8 +44,7 @@ func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderU
 	var tokenDecimals uint8
 	tokenDecimalsData, err := tokenABI.Pack("decimals")
 	if err != nil {
-		logger.Error("Failed to pack tokenABI for token decimals:", err)
-		return
+		return logger.Error("Failed to pack tokenABI for token decimals:", err)
 	}
 	ethTokenAddress := common.HexToAddress(tokenAddress)
 	tokenDecimalsResult, err := client.CallContract(
@@ -59,13 +56,11 @@ func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderU
 		nil,
 	)
 	if err != nil {
-		logger.Error("Failed to retrieve token decimals:", err)
-		return
+		return logger.Error("Failed to retrieve token decimals:", err)
 	}
 
 	if err = tokenABI.UnpackIntoInterface(&tokenDecimals, "decimals", tokenDecimalsResult); err != nil {
-		logger.Error("Failed to unpack token decimals result:", err)
-		return
+		return logger.Error("Failed to unpack token decimals result:", err)
 	}
 
 	coeff := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(tokenDecimals)), nil)
@@ -73,8 +68,7 @@ func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderU
 
 	stakingProxyAddr, err := getContractAddress(client, ethRegistryAddress, "StakingProxy")
 	if err != nil {
-		logger.Error("Failed to get contract addr for staking proxy", err)
-		return
+		return logger.Error("Failed to get contract addr for staking proxy", err)
 	}
 	tokenApprovalData, err := tokenABI.Pack(
 		"approve",
@@ -82,16 +76,14 @@ func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderU
 		stakedTokensAmount,
 	)
 	if err != nil {
-		logger.Error("Failed to pack abi: ", err)
-		return
+		return logger.Error("Failed to pack abi: ", err)
 	}
 	err = client.SendTransaction(
 		context.Background(),
 		getSignedTx(client, tokenApprovalData, delegateOwnerWallet, ethTokenAddress, pKey),
 	)
 	if err != nil {
-		logger.Error("Failed to approve tokens: ", err)
-		return
+		return logger.Error("Failed to approve tokens: ", err)
 	}
 
 	var bytes32NodeType [32]byte
@@ -99,8 +91,7 @@ func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderU
 
 	spfAddress, err := getContractAddress(client, ethRegistryAddress, "ServiceProviderFactory")
 	if err != nil {
-		logger.Error("Failed to get contract addr for service provider factory", err)
-		return
+		return logger.Error("Failed to get contract addr for service provider factory", err)
 	}
 	spfRegisterData, err := serviceProviderFactoryABI.Pack(
 		"register",
@@ -110,17 +101,16 @@ func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderU
 		delegateOwnerWallet,
 	)
 	if err != nil {
-		logger.Error("Failed to pack serviceProviderFactoryABI:", err)
-		return
+		return logger.Error("Failed to pack serviceProviderFactoryABI:", err)
 	}
 	err = client.SendTransaction(
 		context.Background(),
 		getSignedTx(client, spfRegisterData, delegateOwnerWallet, *spfAddress, pKey),
 	)
 	if err != nil {
-		logger.Error("Failed to register node transaction:", err)
-		return
+		return logger.Error("Failed to register node transaction:", err)
 	}
+	return nil
 }
 
 func getContractABI(abiFile string) *abi.ABI {
