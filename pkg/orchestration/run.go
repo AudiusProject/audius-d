@@ -6,8 +6,6 @@ import (
 	"runtime"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
-	"github.com/AudiusProject/audius-d/pkg/logger"
-	"github.com/AudiusProject/audius-d/pkg/register"
 )
 
 func StartDevnet(_ *conf.ContextConfig) {
@@ -21,8 +19,6 @@ func DownDevnet(_ *conf.ContextConfig) {
 func RunAudiusWithConfig(config *conf.ContextConfig) {
 	if config.Network.Devnet {
 		startDevnetDocker()
-		// gated on devnet for safety right now
-		registerDevnetNodes(config)
 	}
 
 	dashboardVolume := "/dashboard-dist:/dashboard-dist"
@@ -82,37 +78,6 @@ func RunDown(config *conf.ContextConfig) {
 	if config.Network.Devnet {
 		downDevnetDocker()
 	}
-}
-
-func registerDevnetNodes(config *conf.ContextConfig) {
-	for _, cc := range config.CreatorNodes {
-		if cc.Register {
-			register.RegisterNode(
-				"content-node",
-				cc.Host,
-				"http://localhost:8546",
-				config.Network.EthTokenAddress,
-				config.Network.EthContractsRegistryAddress,
-				cc.OperatorWallet,
-				cc.OperatorPrivateKey,
-			)
-		}
-	}
-	logger.Info("content nodes registered")
-	for _, dc := range config.DiscoveryNodes {
-		if dc.Register {
-			register.RegisterNode(
-				"discovery-provider",
-				dc.Host,
-				"http://localhost:8546",
-				config.Network.EthTokenAddress,
-				config.Network.EthContractsRegistryAddress,
-				dc.OperatorWallet,
-				dc.OperatorPrivateKey,
-			)
-		}
-	}
-	logger.Info("discovery providers registered")
 }
 
 func runCommand(name string, args ...string) error {

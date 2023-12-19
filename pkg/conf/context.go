@@ -208,8 +208,10 @@ func WriteConfigToCurrentContext(ctxConfig *ContextConfig) error {
 
 func CreateContextFromTemplate(name string, templateFilePath string) error {
 	var ctxConfig ContextConfig
-	if err := ReadConfigFromFile(templateFilePath, &ctxConfig); err != nil {
-		return err
+	if templateFilePath != "" {
+		if err := ReadConfigFromFile(templateFilePath, &ctxConfig); err != nil {
+			return err
+		}
 	}
 	if err := WriteConfigToContext(name, &ctxConfig); err != nil {
 		return err
@@ -239,9 +241,7 @@ func createDefaultContextIfNotExists() error {
 
 	conf = ContextConfig{
 		ConfigVersion: ConfigVersion,
-		Network: NetworkConfig{
-			Name: "stage",
-		},
+		Network:       NetworkConfig{},
 	}
 
 	if err = WriteConfigToFile(filepath.Join(contextDir, "default"), &conf); err != nil {

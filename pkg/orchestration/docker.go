@@ -28,6 +28,13 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 		}
 	}
 
+	// naive check for now, populate this with existing dotenv during migration step
+	useProvidedOverrideEnv := serverConfig.OverrideEnvPath != ""
+	providedOverrideEnvVolume := fmt.Sprintf("%s:/root/audius-docker-compose/%s/override.env", serverConfig.OverrideEnvPath, nodeType)
+	if useProvidedOverrideEnv {
+		internalVolumes = append(internalVolumes, providedOverrideEnvVolume)
+	}
+
 	imageTag := fmt.Sprintf("audius/audius-docker-compose:%s", nconf.Tag)
 	externalVolume := fmt.Sprintf("audius-d-%s", containerName)
 	httpPorts := fmt.Sprintf("-p %d:%d", serverConfig.ExternalHttpPort, serverConfig.InternalHttpPort)
@@ -41,38 +48,27 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 		return err
 	}
 
-	// initialize override.env file
-	localOverridePath := fmt.Sprintf("./%s-override.env", containerName)
-	if err := godotenv.Write(override, localOverridePath); err != nil {
-		return err
-	}
-
-	envCmd := fmt.Sprintf("docker cp %s %s:/root/audius-docker-compose/%s/override.env", localOverridePath, containerName, nodeType)
-	if err := Sh(envCmd); err != nil {
-		return err
-	}
-
-	// if configured for devnet, remove the .env files and just rely on override as to not cross pollinate
-	if nconf.Devnet {
-		rmstage := fmt.Sprintf(`docker exec %s sh -c "cp %s/stage.env %s/unused.stage.env && echo '' > %s/stage.env"`, containerName, nodeType, nodeType, nodeType)
-		if err := Sh(rmstage); err != nil {
+	// generate override based on toml if not provided an existing one
+	if !useProvidedOverrideEnv {
+		localOverridePath := fmt.Sprintf("./%s-override.env", containerName)
+		if err := godotenv.Write(override, localOverridePath); err != nil {
 			return err
 		}
 
-		rmprod := fmt.Sprintf(`docker exec %s sh -c "cp %s/prod.env %s/unused.prod.env && echo '' > %s/prod.env"`, containerName, nodeType, nodeType, nodeType)
-		if err := Sh(rmprod); err != nil {
+		envCmd := fmt.Sprintf("docker cp %s %s:/root/audius-docker-compose/%s/override.env", localOverridePath, containerName, nodeType)
+		if err := Sh(envCmd); err != nil {
 			return err
 		}
-		logger.Info("set testnet and mainnet configs to be unused, relying purely on override.env")
-	}
 
-	cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, containerName)
-	if err := runCommand("/bin/sh", "-c", cmd); err != nil {
-		return err
-	}
+		cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, containerName)
+		if err := runCommand("/bin/sh", "-c", cmd); err != nil {
+			return err
+		}
 
-	if err := os.Remove(localOverridePath); err != nil {
-		return err
+		if err := os.Remove(localOverridePath); err != nil {
+			return err
+		}
+
 	}
 
 	if serverConfig.AutoUpgrade != "" {
@@ -80,6 +76,9 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 		// don't capture error, service can still start if auto-upgrade fails
 		audiusCli(containerName, "auto-upgrade", serverConfig.AutoUpgrade)
 	}
+
+	// set network
+	audiusCli(containerName, "set-network", nconf.AudiusComposeNetwork)
 
 	// assemble inner command and run
 	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, containerName, nodeType)

@@ -23,6 +23,6 @@ export const formatNumberCommas = (num: string) => {
 };
 
 export const formatWei = (amount: BN | null) => {
-  if (!BN.isBN(amount as any)) return "";
-  return formatNumberCommas(getAud(amount as BN));
+  if (!BN.isBN(amount)) return "";
+  return formatNumberCommas(getAud(amount));
 };
