@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -43,15 +44,25 @@ func Warn(msg string, v ...any) {
 	stderrLogger.Warn(msg, v...)
 }
 
-func Error(msg any, v ...any) {
+func ErrorF(format string, v ...any) error {
+	emsg := fmt.Sprintf(format, v...)
+	return Error(emsg)
+}
+
+// you can return this log as well
+// to get log.Fatal effects
+func Error(msg any, v ...any) error {
 	switch m := msg.(type) {
 	case string:
 		stderrLogger.Error(m, v...)
+		return errors.New(m)
 	case error:
 		stderrLogger.Error(m.Error(), v...)
+		return m
 	default:
 		msgs := []any{m}
 		vs := append(msgs, v...)
 		stderrLogger.Error("", vs...)
+		return errors.New("unexpected error")
 	}
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,8 +17,9 @@ var (
 		Use:   "config [command]",
 		Short: "view/modify audius-d configuration",
 		Args:  cobra.ExactArgs(0),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			dumpCmd.Run(cmd, args)
+			return nil
 		},
 	}
 
@@ -27,26 +27,24 @@ var (
 	dumpCmd     = &cobra.Command{
 		Use:   "dump [-o outfile]",
 		Short: "dump current config to stdout or a file",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx_config, err := conf.ReadOrCreateContextConfig()
 			if err != nil {
-				logger.Error("Failed to retrieve context. ", err)
-				return
+				return logger.Error("Failed to retrieve context. ", err)
 			}
 			if dumpOutfile != "" {
 				err := conf.WriteConfigToFile(dumpOutfile, ctx_config)
 				if err != nil {
-					logger.Error("Failed to write config to file:", err)
-					return
+					return logger.Error("Failed to write config to file:", err)
 				}
 			} else {
 				str, err := conf.StringifyConfig(ctx_config)
 				if err != nil {
-					logger.Error("Failed to dump config:", err)
-					return
+					return logger.Error("Failed to dump config:", err)
 				}
 				logger.Out(str)
 			}
+			return nil
 		},
 	}
 
@@ -54,30 +52,29 @@ var (
 		Use:   "set <property.name> <value>",
 		Short: "modify a configuration value",
 		Args:  cobra.ExactArgs(2),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setConfigWithViper(args[0], args[1]); err != nil {
-				logger.Error("Failed to set config value: ", err)
-				return
+				return logger.Error("Failed to set config value: ", err)
 			}
+			return nil
 		},
 	}
 	editCmd = &cobra.Command{
 		Use:   "edit [context]",
 		Short: "edit the current or specified configuration in an external editor",
 		Args:  cobra.MaximumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctxName, err := conf.GetCurrentContextName()
 			if err != nil {
-				logger.Error(err)
-				return
+				return logger.Error(err)
 			}
 			if len(args) > 0 {
 				ctxName = args[0]
 			}
 			if err := EditConfig(ctxName); err != nil {
-				logger.Error(err)
-				return
+				return logger.Error(err)
 			}
+			return nil
 		},
 	}
 
@@ -86,13 +83,13 @@ var (
 		Use:   "create-context <name> [options]",
 		Short: "create an audius-d configuration context, optionally from a template",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			err := conf.CreateContextFromTemplate(args[0], confFileTemplate)
 			if err != nil {
-				logger.Error("Failed to create context:", err)
-				return
+				return logger.Error("Failed to create context:", err)
 			}
 			useContextCmd.Run(cmd, args)
+			return nil
 		},
 	}
 	migrateContextCmd = &cobra.Command{
@@ -109,65 +106,66 @@ var (
 		"audius-d config migrate-context discovery-provider ../audius-docker-compose"
 		`,
 		Args: cobra.ExactArgs(2),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := conf.MigrateAudiusDockerCompose(args[0], args[1]); err != nil {
-				logger.Error("audius-docker-compose migration failed: ", err)
-				return
+				return logger.Error("audius-docker-compose migration failed: ", err)
 			}
-			log.Println("audius-docker-compose migration successful 🎉")
+			logger.Info("audius-docker-compose migration successful 🎉")
+			return nil
 		},
 	}
 	currentContextCmd = &cobra.Command{
 		Use:   "current-context",
 		Short: "Show the currently enabled context",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, err := conf.GetCurrentContextName()
 			if err != nil {
-				logger.Error("Failed to retrieve current context: ", err)
-				return
+				return logger.Error("Failed to retrieve current context: ", err)
 			}
 			logger.Out(ctx)
+			return nil
 		},
 	}
 	getContextsCmd = &cobra.Command{
 		Use:   "get-contexts",
 		Short: "Show all available contexts",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctxs, err := conf.GetContexts()
 			if err != nil {
-				logger.Error("Failed to retrieve current context: ", err)
-				return
+				return logger.Error("Failed to retrieve current context: ", err)
 			}
 			for _, ctx := range ctxs {
 				logger.Out(ctx)
 			}
+			return nil
 		},
 	}
 	useContextCmd = &cobra.Command{
 		Use:   "use-context <context>",
 		Short: "Switch to a different context",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			err := conf.UseContext(args[0])
 			if err != nil {
-				logger.Error("Failed to set context: ", err)
-				return
+				return logger.Error("Failed to set context: ", err)
+
 			}
 			logger.Out(args[0])
 			logger.Info("Context set to %s\n", args[0])
+			return nil
 		},
 	}
 	deleteContextCmd = &cobra.Command{
 		Use:   "delete-context <context>",
 		Short: "Delete a context",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := conf.DeleteContext(args[0]); err != nil {
-				logger.Error("Failed to delete context: ", err)
-				return
+				return logger.Error("Failed to delete context: ", err)
 			}
 			logger.Out(args[0])
 			logger.Info("Context %s deleted.\n", args[0])
+			return nil
 		},
 	}
 )

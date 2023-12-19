@@ -10,11 +10,10 @@ import (
 var registerCmd = &cobra.Command{
 	Use:   "register",
 	Short: "Register nodes on ethereum (only works for local devnet)",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx_config, err := conf.ReadOrCreateContextConfig()
 		if err != nil {
-			logger.Error("Failed to retrieve context: ", err)
-			return
+			return logger.Error("Failed to retrieve context: ", err)
 		}
 		for _, cc := range ctx_config.CreatorNodes {
 			register.RegisterNode(
@@ -27,5 +26,6 @@ var registerCmd = &cobra.Command{
 				cc.OperatorPrivateKey,
 			)
 		}
+		return nil
 	},
 }

@@ -14,15 +14,14 @@ import (
 //go:embed dist/*
 var embeddedFiles embed.FS
 
-func StartGuiServer() {
+func StartGuiServer() error {
 	e := echo.New()
 
 	// Isolate 'ui/dist' as a separate segment in the embedded file system for efficient access
 	subFS, err := fs.Sub(embeddedFiles, "dist")
 	if err != nil {
 		errmsg := fmt.Sprintf("failed to create sub filesystem: %v", err)
-		logger.Error(errmsg)
-		return
+		return logger.Error(errmsg)
 	}
 
 	// Create a file server for the embedded files
@@ -51,7 +50,11 @@ func StartGuiServer() {
 
 	// Start the server with TLS (HTTPS)
 	// openssl req -x509 -newkey rsa:4096 -keyout /tls/key.pem -out /tls/cert.pem -days 365 -nodes
-	e.Logger.Fatal(e.StartTLS(":2024", "/tls/cert.pem", "/tls/key.pem"))
+	err = e.StartTLS(":2024", "/tls/cert.pem", "/tls/key.pem")
+	if err != nil {
+		return logger.Error(err)
+	}
+	return nil
 }
 
 func main() {

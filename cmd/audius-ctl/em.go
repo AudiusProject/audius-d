@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/hex"
 	"errors"
-	"log/slog"
 	"strings"
 
 	"github.com/AudiusProject/audius-d/pkg/acdc"
@@ -30,36 +29,29 @@ func init() {
 	emCmd = &cobra.Command{
 		Use:   "em",
 		Short: "Send EntityManager transactions",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 
 			// todo: get endpoint from env (stage / prod / other)
 			const ACDC_ENDPOINT = `https://acdc-gateway.staging.audius.co`
 			client, err := ethclient.Dial(ACDC_ENDPOINT)
 			if err != nil {
-				logger.Error(err)
-				return
+				return logger.Error(err)
 			}
 
 			privateKey, err := crypto.LoadECDSA(keyfileLocation)
 			if err != nil {
-				logger.Error("invalid keyfile: ", err)
-				return
+				return logger.Error("invalid keyfile: ", err)
 			}
-			signerAddress := crypto.PubkeyToAddress(privateKey.PublicKey).Hex()
 
 			actorIdInt, err := hashes.MaybeDecode(actorId)
 			if err != nil {
-				logger.Error("invalid --actor", actorIdInt, err)
-				return
+				return logger.Error("invalid --actor", actorIdInt, err)
 			}
 
 			entityIdInt, err := hashes.MaybeDecode(entityId)
 			if err != nil {
-				logger.Error("invalid --id", actorIdInt, err)
-				return
+				return logger.Error("invalid --id", actorIdInt, err)
 			}
-
-			logger := slog.With("Signer", signerAddress, "Actor", actorIdInt, "Action", action, "EntityType", entityType, "EntityID", entityIdInt)
 
 			tx, err := acdc.SendEmTx(client, privateKey, acdc.EmArgs{
 				UserID:     int64(actorIdInt),
@@ -69,11 +61,11 @@ func init() {
 			})
 
 			if err != nil {
-				logger.Error("failed to send tx", "err", err)
-				return
+				return logger.Error("failed to send tx", "err", err)
 			} else {
 				logger.Info("sent tx", "txhash", tx.Hash().Hex())
 			}
+			return nil
 		},
 	}
 

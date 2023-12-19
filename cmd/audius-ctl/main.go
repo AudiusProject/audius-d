@@ -14,12 +14,13 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "audius-ctl [command]",
 		Short: "CLI for provisioning and interacting with audius nodes",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if displayVersion {
 				logger.Info(Version)
 			} else {
 				upCmd.Run(cmd, args)
 			}
+			return nil
 		},
 	}
 	rootCmd.Flags().BoolVar(&displayVersion, "version", false, "--version")
