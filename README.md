@@ -166,7 +166,7 @@ audius-ctl config use-context my-existing-context
 Create new contexts
 
 ```bash
-audius-ctl config create-context my-new-sandbox-context -f config/templates/devnet.toml
+audius-ctl config create-context my-new-sandbox-context -f configs/templates/devnet.toml
 ```
 
 Use contexts to experiment with different setups without clobbering changes.

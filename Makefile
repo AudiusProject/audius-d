@@ -1,5 +1,5 @@
 NETWORK ?= stage
-ADC_TAG ?= latest
+ADC_TAG ?= stage-latest
 # One of patch, minor, or major
 UPGRADE_TYPE ?= patch
 
@@ -32,9 +32,9 @@ bin/audius-ctl-arm-mac: $(SRC) $(UI_ARTIFACT)
 	@echo "Building arm audius-ctl..."
 	GOOS=darwin GOARCH=arm64 go build -tags mac -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm ./cmd/audius-ctl
 
-$(UI_ARTIFACT): $(UI_SRC)
-	@echo "Building GUI..."
-	cd $(UI_DIR) && $(UI_PKG_INSTALL_CMD) && npm run build
+# $(UI_ARTIFACT): $(UI_SRC)
+# 	@echo "Building GUI..."
+# 	# cd $(UI_DIR) && $(UI_PKG_INSTALL_CMD) && npm run build
 
 .PHONY: release-audius-ctl audius-ctl-production-build
 release-audius-ctl:
