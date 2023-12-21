@@ -34,7 +34,10 @@ bin/audius-ctl-arm-mac: $(SRC) $(UI_ARTIFACT)
 
 $(UI_ARTIFACT): $(UI_SRC)
 	@echo "Building GUI..."
-	cd $(UI_DIR) && $(UI_PKG_INSTALL_CMD) && npm run build
+	# Disabled until UI build is fixed.
+	#cd $(UI_DIR) && $(UI_PKG_INSTALL_CMD) && npm run build
+	mkdir pkg/gui/dist
+	touch $(UI_ARTIFACT)
 
 .PHONY: release-audius-ctl audius-ctl-production-build
 release-audius-ctl:
