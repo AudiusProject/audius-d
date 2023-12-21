@@ -86,19 +86,6 @@ const initLibsWithoutAccount = async (
   const audiusSdkModule = await import("@audius/sdk/dist/web-libs.js");
   const AudiusLibs = audiusSdkModule.libs as unknown as typeof AudiusLibsType;
 
-  const web3ProviderEndpoints =
-    envVars.env === "stage"
-      ? ["https://poa-gateway.staging.audius.co"]
-      : ["https://poa-gateway.audius.co"];
-  const web3Config = {
-    registryAddress: envVars.ethRegistryAddress,
-    entityManagerAddress: envVars.entityManagerAddress,
-    useExternalWeb3: false,
-    internalWeb3Config: {
-      web3ProviderEndpoints,
-    },
-  };
-
   const ethWeb3Config = AudiusLibs.configEthWeb3(
     envVars.ethTokenAddress,
     envVars.ethRegistryAddress,
@@ -128,7 +115,6 @@ const initLibsWithoutAccount = async (
   };
 
   const audiusLibsConfig = {
-    web3Config,
     ethWeb3Config,
     solanaWeb3Config,
     identityServiceConfig,

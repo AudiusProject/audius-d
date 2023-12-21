@@ -211,11 +211,11 @@ const getDelegatorAmounts = async (
 
     delegatorAmounts.push({
       wallet: delegatorWallet,
-      amount: amountDelegated,
-      activeAmount: activeAmount,
+      amount: amountDelegated!,
+      activeAmount: activeAmount!,
     });
   }
-  return delegatorAmounts as Delegate[];
+  return delegatorAmounts;
 };
 
 const getUserMetadata = async (
@@ -341,7 +341,7 @@ const getOperatorTotalActiveStake = (user: Operator) => {
 };
 
 // Get the amount locked - pending decrease stake, and the operator's delegator's pending decrease delegation
-const getOperatorTotalLocked = (user: Operator) => {
+export const getOperatorTotalLocked = (user: Operator) => {
   const lockedPendingDecrease =
     user.pendingDecreaseStakeRequest?.amount ?? new BN("0");
   const lockedDelegation = user.delegators.reduce((totalLocked, delegate) => {

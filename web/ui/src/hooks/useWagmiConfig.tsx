@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { http, createConfig, fallback, webSocket } from "wagmi";
 import { mainnet, goerli } from "wagmi/chains";
 import { useEnvVars } from "../providers/EnvVarsProvider.tsx";
-import { ethers } from "ethers";
 // import { metaMask } from 'wagmi/connectors'
 
 export const useWagmiConfig = () => {
@@ -19,11 +18,14 @@ export const useWagmiConfig = () => {
       ? ethProviderUrl.split(",")
       : [ethProviderUrl];
 
-    providerEndpoints.forEach((url: string) => {
+    providerEndpoints.forEach((url) => {
       if (localEndpoints.includes(url)) {
-        const provider = new ethers.providers.JsonRpcProvider(url);
-        // advance local ganache chain
-        provider.send("evm_mine", []);
+        // dynamically import
+        import("ethers").then((ethers) => {
+          const provider = new ethers.JsonRpcProvider(url);
+          // advance local ganache chain
+          provider.send("evm_mine", []);
+        });
       }
     });
 
