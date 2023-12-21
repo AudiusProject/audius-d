@@ -6,6 +6,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"strings"
 )
 
 /**
@@ -15,12 +16,26 @@ Simplistic logger for audius-d.
 var (
 	stdoutLogger *log.Logger
 	stderrLogger *slog.Logger
+
+	cliHandlerOpts = slog.HandlerOptions{
+		AddSource: false,
+		Level:     slog.LevelInfo,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.MessageKey {
+				return a
+			} else { // Remove everything but the message
+				return slog.Attr{}
+			}
+		},
+	}
 )
 
 func init() {
 	// configure loggers
 	stdoutLogger = log.New(os.Stdout, "", 0)
-	stderrLogger = slog.Default()
+	stderrLogger = slog.New(
+		NewCliHandler(slog.NewTextHandler(os.Stderr, &cliHandlerOpts)),
+	)
 }
 
 func Out(v ...any) {
@@ -51,18 +66,18 @@ func ErrorF(format string, v ...any) error {
 
 // you can return this log as well
 // to get log.Fatal effects
-func Error(msg any, v ...any) error {
-	switch m := msg.(type) {
-	case string:
-		stderrLogger.Error(m, v...)
-		return errors.New(m)
-	case error:
-		stderrLogger.Error(m.Error(), v...)
-		return m
-	default:
-		msgs := []any{m}
-		vs := append(msgs, v...)
-		stderrLogger.Error("", vs...)
-		return errors.New("unexpected error")
+func Error(values ...any) error {
+	messages := []string{}
+	for _, v := range values {
+		switch t := v.(type) {
+		case string:
+			messages = append(messages, t)
+		case error:
+			messages = append(messages, t.Error())
+		default:
+		}
 	}
+	message := strings.Join(messages, " ")
+	stderrLogger.Error(message)
+	return errors.New(message)
 }

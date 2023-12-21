@@ -1,4 +1,6 @@
 #!/bin/sh
+set -eo pipefail
+
 ARCH=$(uname -m)
 if [ "$ARCH" = "arm64" ]; then
     BINARY_NAME="audius-ctl-arm"

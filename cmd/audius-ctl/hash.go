@@ -62,7 +62,7 @@ func init() {
 				if err != nil {
 					return logger.Error(err)
 				}
-				logger.Info("cid =", cid)
+				logger.Infof("cid = %s", cid)
 				return nil
 			},
 		},
