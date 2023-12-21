@@ -18,7 +18,7 @@ var (
 		Short: "view/modify audius-d configuration",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			dumpCmd.Run(cmd, args)
+			dumpCmd.RunE(cmd, args)
 			return nil
 		},
 	}
@@ -88,7 +88,7 @@ var (
 			if err != nil {
 				return logger.Error("Failed to create context:", err)
 			}
-			useContextCmd.Run(cmd, args)
+			useContextCmd.RunE(cmd, args)
 			return nil
 		},
 	}

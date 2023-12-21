@@ -20,7 +20,7 @@ func main() {
 			if displayVersion {
 				logger.Out(Version)
 			} else {
-				upCmd.Run(cmd, args)
+				upCmd.RunE(cmd, args)
 			}
 			return nil
 		},
