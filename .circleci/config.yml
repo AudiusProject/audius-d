@@ -221,11 +221,23 @@ jobs:
             fi
             audius-ctl config | grep 'EthMainnetRpc = "test-str"'
       - run:
+          name: test dump context to file
+          command: |
+            tmpfile="$(mktemp)"
+            audius-ctl config dump -o "$tmpfile"
+            grep 'EthMainnetRpc = "test-str"' "$tmpfile"
+      - run:
           name: test delete context
           command: |
             audius-ctl config delete-context test
             audius-ctl config  # should resort to default
             audius-ctl config current-context | grep 'default'
+      - run:
+          name: test fail to switch to nonexistent context
+          command: ! audius-ctl config use-context idontexist
+      - run:
+          name: test version correctly formatted for production build
+          command: audius-ctl --version | grep -E '^\d+\.\d+\.\d+$'
 
   publish-audius-ctl:
     docker:
