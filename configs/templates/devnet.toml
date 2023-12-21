@@ -5,7 +5,7 @@ example and runnable file for running a devnet configuration of audius protocol 
 
 [Network]
 AudiusComposeNetwork = "dev"
-Tag = "alec-test"
+Tag = "phelpsdb-test"
 Devnet = true
 
 [CreatorNodes.creator-1]
