@@ -234,10 +234,15 @@ jobs:
             audius-ctl config current-context | grep 'default'
       - run:
           name: test fail to switch to nonexistent context
-          command: ! audius-ctl config use-context idontexist
+          command: |
+            if audius-ctl config use-context idontexist; then
+              echo Should not have succeeded switching to nonexistent context
+              false
+            fi
       - run:
           name: test version correctly formatted for production build
-          command: audius-ctl --version | grep -E '^\d+\.\d+\.\d+$'
+          command: |
+            audius-ctl --version | grep -E '^\d+\.\d+\.\d+$'
 
   publish-audius-ctl:
     docker:
