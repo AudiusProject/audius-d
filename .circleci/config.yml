@@ -242,7 +242,8 @@ jobs:
       - run:
           name: test version correctly formatted for production build
           command: |
-            audius-ctl --version | grep -E '^\d+\.\d+\.\d+$'
+            echo audius-ctl --version
+            audius-ctl --version | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$'
 
   publish-audius-ctl:
     docker:
