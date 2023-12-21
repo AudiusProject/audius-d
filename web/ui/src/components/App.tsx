@@ -4,7 +4,6 @@ import Layout from "./Layout";
 import Status from "../pages/Status";
 import Network from "../pages/Network";
 import { TxViewer } from "../pages/TX";
-import { Ddex } from "../pages/DDEX";
 
 const App: React.FC = () => {
   return (
@@ -14,7 +13,6 @@ const App: React.FC = () => {
           <Route path="/" element={<Status />} />
           <Route path="/network" element={<Network />} />
           <Route path="/explorer" element={<TxViewer />} />
-          <Route path="/ddex" element={<Ddex />} />
         </Routes>
       </Layout>
     </Router>

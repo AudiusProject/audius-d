@@ -15,9 +15,6 @@ const Sidebar: React.FC = () => {
           <li>
             <Link to="/explorer">/tx-explorer</Link>
           </li>
-          <li>
-            <Link to="/ddex">/ddex</Link>
-          </li>
         </ul>
       </nav>
     </aside>
