@@ -202,3 +202,12 @@ audius-ctl config migrate-context my-new-migrated-context path/to/audius-docker-
 1. Ensure you are authenticated with the github cli (`gh auth status || gh auth login`)
 1. Run `make release-audius-ctl`
 1. Check the [releases page](https://github.com/AudiusProject/audius-d/releases)
+
+
+## Devnet DIND
+
+```
+# WIP - add to extra hosts
+
+sh -c 'echo "172.17.0.1       creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d" >> /etc/hosts'
+```
