@@ -172,6 +172,7 @@ jobs:
             cd ~/audius-d
             audius-ctl config create-context ci -f configs/templates/ci.toml 
             audius-ctl up
+      - run: docker ps -a
       - basic-health-check:
           host: 'https://creator-1.audius-d'
           jqkey: '.data.healthy'
