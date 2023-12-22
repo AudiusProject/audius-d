@@ -34,6 +34,7 @@ type BaseServerConfig struct {
 	InternalHttpsPort uint
 	ExternalHttpsPort uint
 	Host              string
+	CaddyTls          string
 
 	// the tag that will be pulled from dockerhub
 	// "latest", "stage", "prod", etc may have specific behavior

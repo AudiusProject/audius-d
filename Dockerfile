@@ -11,7 +11,6 @@ VOLUME /var/k8s/discovery-provider-db
 VOLUME /var/k8s/discovery-provider-chain
 
 WORKDIR /root
-RUN echo "bust cache"
 RUN git clone --single-branch --branch ${BRANCH} https://github.com/AudiusProject/audius-docker-compose.git ./audius-docker-compose
 
 WORKDIR /root/audius-docker-compose
@@ -22,7 +21,7 @@ RUN echo "NETWORK='$NETWORK'" > ./identity-service/.env
 RUN cp "./discovery-provider/chain/${NETWORK}_spec_template.json" "./discovery-provider/chain/spec.json"
 RUN echo '[]' > ./discovery-provider/chain/static-nodes.json
 
-RUN python3 -m pip install -r requirements.txt
+RUN python3 -m venv .venv && source .venv/bin/activate && python3 -m pip install -r requirements.txt
 RUN ln -sf $PWD/audius-cli /usr/local/bin/audius-cli
 
 COPY daemon.json /etc/docker/daemon.json

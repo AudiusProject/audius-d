@@ -43,7 +43,7 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 
 	// assemble wrapper command and run
 	// todo: handle https port
-	upCmd := fmt.Sprintf("docker run --privileged -d -v %s:/var/lib/docker %s %s --name %s %s %s", externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
+	upCmd := fmt.Sprintf("docker run --privileged --network deployments_devnet -d -v %s:/var/lib/docker %s %s --name %s %s %s", externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
 	if err := Sh(upCmd); err != nil {
 		return err
 	}

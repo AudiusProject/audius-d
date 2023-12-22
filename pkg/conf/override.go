@@ -33,6 +33,7 @@ func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv["delegatePrivateKey"] = config.OperatorPrivateKey
 	overrideEnv["spOwnerWallet"] = config.OperatorRewardsWallet
 	overrideEnv["ethOwnerWallet"] = config.OperatorRewardsWallet
+	overrideEnv["CADDY_TLS"] = config.CaddyTls
 
 	return overrideEnv
 }
