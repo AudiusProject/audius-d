@@ -106,7 +106,7 @@ jobs:
             - bin/audius-ctl-arm
             - bin/audius-ctl-x86
 
-  test-devnet-deps:
+  test-devnet-deps: # TODO add ingress. consolidate with test-audius-d-devnet.
     machine:
       image: ubuntu-2204:current
     resource_class: large
@@ -166,13 +166,14 @@ jobs:
           command: |
             sudo tee -a /etc/hosts \<<<'127.0.0.1 creator-1.audius-d discovery-1.audius-d identity-1.audius-d'
             cat /etc/hosts
-      - run:
-          name: standup isolated ci env
-          command: |
-            cd ~/audius-d
-            audius-ctl config create-context ci -f configs/templates/ci.toml 
-            audius-ctl up
+      - run: |
+          cd ~/audius-d
+          audius-ctl config create-context devnet -f configs/templates/devnet.toml
+          audius-ctl devnet
+          audius-ctl register
+          audius-ctl up
       - run: docker ps -a
+      - run: docker network inspect deployments_devnet
       - basic-health-check:
           host: 'https://creator-1.audius-d'
           jqkey: '.data.healthy'
@@ -183,21 +184,6 @@ jobs:
           host: 'https://identity-1.audius-d'
           jqkey: '.healthy'
       - run: audius-ctl down
-
-  test-eth-registration:
-    machine:
-      image: ubuntu-2204:current
-    resource_class: large
-    steps:
-      - setup-audius-ctl
-      - run: cd ~/audius-d && audius-ctl devnet
-      - run:
-          name: register delegateOwnerWallet
-          command: |
-            cd ~/audius-d
-            audius-ctl config create-context ci -f configs/templates/devnet.toml 
-            audius-ctl devnet up
-            audius-ctl register
 
   test-config-subcommands:
     docker:
@@ -212,7 +198,7 @@ jobs:
       - run:
           name: test create context
           command: |
-            audius-ctl config create-context test -f ~/audius-d/configs/templates/ci.toml 
+            audius-ctl config create-context test -f ~/audius-d/configs/templates/devnet.toml 
       - run:
           name: test modify context
           command: |
@@ -284,17 +270,12 @@ workflows:
           context: github
           requires:
             - build
-      - test-eth-registration:
-          context: github
-          requires:
-            - build
       - publish-audius-ctl:
           context: github
           requires:
             - test-audius-d-devnet
             - test-devnet-deps
             - test-config-subcommands
-            - test-eth-registration
           filters:
             branches:
               only:
