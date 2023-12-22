@@ -18,7 +18,7 @@ var (
 		Short: "view/modify audius-d configuration",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			dumpCmd.Run(cmd, args)
+			dumpCmd.RunE(cmd, args)
 			return nil
 		},
 	}
@@ -88,7 +88,7 @@ var (
 			if err != nil {
 				return logger.Error("Failed to create context:", err)
 			}
-			useContextCmd.Run(cmd, args)
+			useContextCmd.RunE(cmd, args)
 			return nil
 		},
 	}
@@ -151,7 +151,7 @@ var (
 
 			}
 			logger.Out(args[0])
-			logger.Info("Context set to %s\n", args[0])
+			logger.Infof("Context set to %s\n", args[0])
 			return nil
 		},
 	}
@@ -164,7 +164,7 @@ var (
 				return logger.Error("Failed to delete context: ", err)
 			}
 			logger.Out(args[0])
-			logger.Info("Context %s deleted.\n", args[0])
+			logger.Infof("Context %s deleted.\n", args[0])
 			return nil
 		},
 	}

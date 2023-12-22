@@ -4,7 +4,7 @@ example of how to run a creator node as an operator with audius-d
 """
 
 [Network]
-Name = "stage"
+AudiusComposeNetwork = "stage"
 Tag = "latest"
 
 [CreatorNodes.creator-node]
@@ -17,6 +17,8 @@ OperatorPrivateKey = "62ca4962f99a39b4a2c60a8402f60baea5437c275146abd90e0bfdcf04
 # todo: derive this from private key at runtime
 OperatorWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
 OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
+AwaitHealthy = false
+Register = false
 
 [DiscoveryNodes.discovery-node]
 InternalHttpPort = 5000
@@ -28,11 +30,5 @@ OperatorPrivateKey = "c1c36935d3809daacf3aa63243feef5e7a97ba11dc56fe3a9237589373
 # todo: derive this from private key at runtime
 OperatorWallet = "0xfF4329197C7bD52480567CE6c19331BD37555B3c"
 OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
-
-[IdentityService.identity-node]
-SolanaClaimableTokenProgramAddress = "testHKV1B56fbvop4w6f2cTGEub9dRQ2Euta5VmqdX9"
-InternalHttpPort = 7000
-ExternalHttpPort = 7000
-InternalHttpsPort = 7001
-ExternalHttpsPort = 7001
-Host = "http://localhost"
+AwaitHealthy = false
+Register = false

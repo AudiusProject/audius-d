@@ -144,7 +144,7 @@ func downDevnetDocker() {
 }
 
 func audiusCli(container string, args ...string) error {
-	audCli := []string{"exec", container, "audius-cli"}
+	audCli := []string{"exec", container, ".venv/bin/python3", "audius-cli"}
 	cmds := append(audCli, args...)
 	err := runCommand("docker", cmds...)
 	if err != nil {

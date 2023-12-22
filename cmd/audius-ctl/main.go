@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/spf13/cobra"
 )
@@ -16,14 +18,17 @@ func main() {
 		Short: "CLI for provisioning and interacting with audius nodes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if displayVersion {
-				logger.Info(Version)
+				logger.Out(Version)
 			} else {
-				upCmd.Run(cmd, args)
+				upCmd.RunE(cmd, args)
 			}
 			return nil
 		},
 	}
 	rootCmd.Flags().BoolVar(&displayVersion, "version", false, "--version")
 	rootCmd.AddCommand(upCmd, downCmd, devnetCmd, registerCmd, configCmd, guiCmd, sbCmd, emCmd, hashCmd)
-	rootCmd.Execute()
+
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

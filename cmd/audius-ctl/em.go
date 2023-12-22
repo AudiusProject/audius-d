@@ -84,20 +84,20 @@ func init() {
 			Use:   "show",
 			Short: "show current developer key",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				logger.Info("\nreading keyfile", keyfileLocation)
+				logger.Infof("Reading keyfile %s", keyfileLocation)
 
 				privateKey, err := crypto.LoadECDSA(keyfileLocation)
 				if err != nil {
 					return err
 				}
 
-				logger.Info("\n== private ==")
-				logger.Infof("private key \t0x%x\n\n", crypto.FromECDSA(privateKey))
+				logger.Out("\n== private ==")
+				logger.Out("private key \t0x%x\n\n", crypto.FromECDSA(privateKey))
 
-				logger.Info("\n== public ==")
-				logger.Infof("public key \t0x%x\n", crypto.FromECDSAPub(&privateKey.PublicKey))
-				logger.Infof("public key compressed \t0x%x\n", crypto.CompressPubkey(&privateKey.PublicKey))
-				logger.Infof("address \t%s\n\n", crypto.PubkeyToAddress(privateKey.PublicKey).Hex())
+				logger.Out("\n== public ==")
+				logger.Out("public key \t0x%x\n", crypto.FromECDSAPub(&privateKey.PublicKey))
+				logger.Out("public key compressed \t0x%x\n", crypto.CompressPubkey(&privateKey.PublicKey))
+				logger.Out("address \t%s\n\n", crypto.PubkeyToAddress(privateKey.PublicKey).Hex())
 
 				return nil
 			},
@@ -113,7 +113,7 @@ func init() {
 				if err != nil {
 					return err
 				}
-				logger.Info("writing keyfile", keyfileLocation)
+				logger.Infof("Writing keyfile %s", keyfileLocation)
 				return crypto.SaveECDSA(keyfileLocation, privateKey)
 			},
 		},
@@ -126,7 +126,7 @@ func init() {
 					return err
 				}
 				asHex := hex.EncodeToString(crypto.FromECDSA(pk))
-				logger.Info(asHex)
+				logger.Out(asHex)
 				return nil
 			},
 		},
