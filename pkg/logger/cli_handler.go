@@ -29,7 +29,7 @@ func (h *CliHandler) Enabled(ctx context.Context, level slog.Level) bool {
 
 func (h *CliHandler) Handle(ctx context.Context, r slog.Record) error {
 	if r.Level == slog.LevelError {
-		// don't double-write error messages
+		// don't double-write error messages, cobra already handles that
 		return nil
 	}
 	if _, err := os.Stderr.WriteString(r.Message); err != nil {

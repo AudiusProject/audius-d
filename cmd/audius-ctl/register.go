@@ -16,7 +16,7 @@ var registerCmd = &cobra.Command{
 			return logger.Error("Failed to retrieve context: ", err)
 		}
 		for _, cc := range ctx_config.CreatorNodes {
-			register.RegisterNode(
+			err := register.RegisterNode(
 				"content-node",
 				cc.Host,
 				"http://localhost:8546",
@@ -25,6 +25,9 @@ var registerCmd = &cobra.Command{
 				cc.OperatorWallet,
 				cc.OperatorPrivateKey,
 			)
+			if err != nil {
+				return logger.Error("Failed to register node:", err)
+			}
 		}
 		return nil
 	},

@@ -39,7 +39,7 @@ commands:
           name: 'Basic health check'
           command: |
             timeout=0
-            while [[ "$(curl -Lsko /dev/null -w "%{http_code}" http://localhost:<< parameters.port >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 180 ]; do
+            while [[ "$(curl -Lsko /dev/null -w "%{http_code}" http://localhost:<< parameters.port >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
               sleep 3
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
