@@ -160,7 +160,7 @@ jobs:
   test-audius-d-stage:
     machine:
       image: ubuntu-2204:current
-    resource_class: large
+    resource_class: xlarge
     steps:
       - setup-audius-ctl
       - run:
