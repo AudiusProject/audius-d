@@ -19,7 +19,7 @@ else
 fi
 release_version="$(bin/$BINARY_NAME --version)"
 
-if ! echo $release_version | grep -E "^\d+\.\d+\.\d+$" >/dev/null; then
+if ! echo $release_version | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" >/dev/null; then
   echo "'$release_version' is in an unsupported format for release version."
   echo 'Please run `make audius-ctl-production-build` before attempting to release'
   exit 1
