@@ -157,7 +157,7 @@ jobs:
             fi
       - run: audius-ctl devnet down
 
-  test-audius-d-devnet:
+  test-audius-d-stage:
     machine:
       image: ubuntu-2204:current
     resource_class: large
@@ -167,15 +167,12 @@ jobs:
           name: standup isolated ci env
           command: |
             cd ~/audius-d
-            audius-ctl config create-context ci -f configs/templates/devnet.toml 
+            audius-ctl config create-context ci -f configs/templates/ci.toml 
             audius-ctl up
       - basic-health-check # creator node default
       - basic-health-check:
           port: 5000
           jqkey: '.data.discovery_provider_healthy'
-      - basic-health-check:
-          port: 7000
-          jqkey: '.healthy'
       - run: audius-ctl down
 
   test-eth-registration:
@@ -190,7 +187,7 @@ jobs:
           command: |
             cd ~/audius-d
             audius-ctl config create-context ci -f configs/templates/devnet.toml 
-            audius-ctl up
+            audius-ctl devnet up
             audius-ctl register
 
   test-config-subcommands:
@@ -266,7 +263,7 @@ workflows:
     jobs:
       - build:
           context: github
-      - test-audius-d-devnet:
+      - test-audius-d-stage:
           context: github
           requires:
             - build
@@ -285,7 +282,7 @@ workflows:
       - publish-audius-ctl:
           context: github
           requires:
-            - test-audius-d-devnet
+            - test-audius-d-stage
             - test-devnet-deps
             - test-config-subcommands
             - test-eth-registration
