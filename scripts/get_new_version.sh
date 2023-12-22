@@ -1,7 +1,7 @@
 # This script should be run from the Makefile only.
 set -eo pipefail
 
-gh auth status
+gh auth status >&2
 
 upgrade="$1"
 

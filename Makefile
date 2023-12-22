@@ -40,7 +40,7 @@ $(UI_ARTIFACT): $(UI_SRC)
 release-audius-ctl:
 	bash scripts/github_release.sh
 
-audius-ctl-production-build: VERSION_LDFLAG := -X main.Version=0.0.4 #$(shell bash scripts/get_new_version.sh $(UPGRADE_TYPE))  # uncomment after dummy release
+audius-ctl-production-build: VERSION_LDFLAG := -X main.Version=$(shell bash scripts/get_new_version.sh $(UPGRADE_TYPE))
 audius-ctl-production-build: UI_PKG_INSTALL_CMD := npm ci
 audius-ctl-production-build: clean audius-ctl
 
