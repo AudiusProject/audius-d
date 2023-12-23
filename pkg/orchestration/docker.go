@@ -41,9 +41,12 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 	httpsPorts := fmt.Sprintf("-p %d:%d", serverConfig.ExternalHttpsPort, serverConfig.InternalHttpsPort)
 	formattedInternalVolumes := " -v " + strings.Join(internalVolumes, " -v ")
 
+	// sh -c 'echo "172.17.0.1       creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d" >> /etc/hosts'
+	extraHosts := "--add-host creator-1.audius-d:172.17.0.1 --add-host discovery-1.audius-d:172.17.0.1 --add-host identity-1.audius-d:172.17.0.1 --add-host eth-ganache.audius-d:172.17.0.1 --add-host acdc-ganache.audius-d:172.17.0.1 --add-host solana-test-validator.audius-d:172.17.0.1"
+
 	// assemble wrapper command and run
 	// todo: handle https port
-	upCmd := fmt.Sprintf("docker run --privileged --network deployments_devnet -d -v %s:/var/lib/docker %s %s --name %s %s %s", externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
+	upCmd := fmt.Sprintf("docker run --privileged --network deployments_devnet %s -d -v %s:/var/lib/docker %s %s --name %s %s %s", extraHosts, externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
 	if err := Sh(upCmd); err != nil {
 		return err
 	}

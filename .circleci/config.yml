@@ -164,7 +164,7 @@ jobs:
       - run:
           name: add audius-d hosts
           command: |
-            sudo tee -a /etc/hosts \<<<'127.0.0.1 creator-1.audius-d discovery-1.audius-d identity-1.audius-d'
+            sudo tee -a /etc/hosts \<<<'127.0.0.1 creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d'
             cat /etc/hosts
       - run: |
           cd ~/audius-d
