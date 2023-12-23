@@ -30,7 +30,7 @@ services:
 
   ingress:
     container_name: ingress
-    image: openresty/openresty:1.21.4.1-alpine-fat
+    image: nginx:latest
     volumes:
       - ./nginx_ingress.conf:/etc/nginx/conf.d/default.conf
       - ./tls/devnet-cert.pem:/tmp/cert.pem

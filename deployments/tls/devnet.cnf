@@ -1,3 +1,6 @@
+# openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout devnet-key.pem -out devnet-cert.pem -config devnet.cnf
+# 
+
 [req]
 default_bits = 4096
 prompt = no
@@ -6,10 +9,16 @@ req_extensions = req_ext
 distinguished_name = dn
 
 [dn]
-CN = *.audius-d
+CN = audius-d
 
 [req_ext]
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = *.audius-d
+DNS.1 = creator-1.audius-d
+DNS.2 = discovery-1.audius-d
+DNS.3 = identity-1.audius-d
+DNS.4 = eth-ganache.audius-d
+DNS.5 = acdc-ganache.audius-d
+DNS.6 = solana-test-validator.audius-d
+DNS.7 = *.audius-d
