@@ -11,7 +11,7 @@ VOLUME /var/k8s/discovery-provider-db
 VOLUME /var/k8s/discovery-provider-chain
 
 WORKDIR /root
-RUN echo "f"
+RUN echo "sf"
 RUN git clone --single-branch --branch ${BRANCH} https://github.com/AudiusProject/audius-docker-compose.git ./audius-docker-compose
 
 WORKDIR /root/audius-docker-compose

@@ -5,7 +5,7 @@ example and runnable file for running a devnet configuration of audius protocol 
 
 [Network]
 AudiusComposeNetwork = "dev"
-Tag = "endl-latest"
+Tag = "3a00339a7a23b4595b6bdca70a443d7b40f88c76"
 Devnet = true
 
 [CreatorNodes.creator-1]
