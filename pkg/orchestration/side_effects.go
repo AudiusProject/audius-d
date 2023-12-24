@@ -12,7 +12,8 @@ func awaitHealthy(containerName, host string, port uint) {
 	tries := 30
 
 	for tries > 0 {
-		url := fmt.Sprintf("%s:%d/health_check", host, port)
+		// url := fmt.Sprintf("%s:%d/health_check", host, port)
+		url := fmt.Sprintf("%s/health_check", host)
 		resp, err := http.Get(url)
 
 		if err != nil || resp.StatusCode != http.StatusOK {

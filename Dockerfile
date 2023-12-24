@@ -4,6 +4,7 @@ RUN apk add bash git curl libc-dev gcc python3 py3-pip python3-dev linux-headers
 
 ARG NETWORK=dev
 ARG BRANCH=endl/audius-d-test
+ARG TAG="b4580989724351822f7bad8185194b4fb679010e"
 
 VOLUME /var/k8s/creator-node-db
 VOLUME /var/k8s/mediorum
@@ -11,7 +12,6 @@ VOLUME /var/k8s/discovery-provider-db
 VOLUME /var/k8s/discovery-provider-chain
 
 WORKDIR /root
-RUN echo "echo"
 RUN git clone --single-branch --branch ${BRANCH} https://github.com/AudiusProject/audius-docker-compose.git ./audius-docker-compose
 
 WORKDIR /root/audius-docker-compose

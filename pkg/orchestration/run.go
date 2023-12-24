@@ -36,7 +36,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 		override := cc.ToOverrideEnv(config.Network)
 		RunNode(config.Network, cc.BaseServerConfig, override, cname, "creator-node", creatorVolumes)
 		if cc.AwaitHealthy {
-			awaitHealthy(cname, cc.Host, cc.ExternalHttpPort)
+			awaitHealthy(cname, cc.Host, cc.ExternalHttpsPort)
 		}
 	}
 	for cname, dc := range config.DiscoveryNodes {
@@ -48,7 +48,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 			audiusCli(cname, "launch-chain")
 		}
 		if dc.AwaitHealthy {
-			awaitHealthy(cname, dc.Host, dc.ExternalHttpPort)
+			awaitHealthy(cname, dc.Host, dc.ExternalHttpsPort)
 		}
 	}
 	for cname, id := range config.IdentityService {
@@ -56,7 +56,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig) {
 		override := id.ToOverrideEnv(config.Network)
 		RunNode(config.Network, id.BaseServerConfig, override, cname, "identity-service", identityVolumes)
 		if id.AwaitHealthy {
-			awaitHealthy(cname, id.Host, id.ExternalHttpPort)
+			awaitHealthy(cname, id.Host, id.ExternalHttpsPort)
 		}
 	}
 }
