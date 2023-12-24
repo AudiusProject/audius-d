@@ -94,6 +94,8 @@ type NetworkConfig struct {
 
 	// starts up local containers for acdc, eth, and solana rpcs
 	Devnet bool
+
+	HostDockerInternal string
 }
 
 type NodeConfig interface {

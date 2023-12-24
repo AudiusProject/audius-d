@@ -1,7 +1,6 @@
 package orchestration
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -52,32 +51,34 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 	formattedInternalVolumes := " -v " + strings.Join(internalVolumes, " -v ")
 
 	// sh -c 'echo "172.17.0.1       creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d" >> /etc/hosts'
-	extraHosts := "--add-host creator-1.audius-d:172.17.0.1 --add-host discovery-1.audius-d:172.17.0.1 --add-host identity-1.audius-d:172.17.0.1 --add-host eth-ganache.audius-d:172.17.0.1 --add-host acdc-ganache.audius-d:172.17.0.1 --add-host solana-test-validator.audius-d:172.17.0.1"
+	extraHosts := fmt.Sprintf("--add-host creator-1.audius-d:%s --add-host discovery-1.audius-d:%s --add-host identity-1.audius-d:%s --add-host eth-ganache.audius-d:%s --add-host acdc-ganache.audius-d:%s --add-host solana-test-validator.audius-d:%s",
+		nconf.HostDockerInternal, nconf.HostDockerInternal, nconf.HostDockerInternal, nconf.HostDockerInternal, nconf.HostDockerInternal, nconf.HostDockerInternal)
 
 	// TODO: define network instead
 	networkName := "deployments_devnet"
 
-	// obtain docker host bridge
-	networkCmd := exec.Command("docker", "network", "inspect", "bridge")
+	// // obtain docker host bridge
+	// networkCmd := exec.Command("docker", "network", "inspect", "bridge")
 
-	networkOutput, err := networkCmd.Output()
-	if err != nil {
-		panic(err)
-	}
+	// networkOutput, err := networkCmd.Output()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	var networks []Network
-	err = json.Unmarshal(networkOutput, &networks)
-	if err != nil {
-		panic(err)
-	}
+	// var networks []Network
+	// err = json.Unmarshal(networkOutput, &networks)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	if len(networks) == 0 || len(networks[0].IPAM.Config) == 0 {
-		fmt.Println("No bridge network found")
-		return err
-	}
+	// if len(networks) == 0 || len(networks[0].IPAM.Config) == 0 {
+	// 	fmt.Println("No bridge network found")
+	// 	return err
+	// }
 
-	subnetIPEnv := "COMPOSE_SUBNET_IP=" + networks[0].IPAM.Config[0].Gateway
+	// subnetIPEnv := "COMPOSE_SUBNET_IP=" + networks[0].IPAM.Config[0].Gateway
 	// end - obtain subnet IP
+	subnetIPEnv := "COMPOSE_SUBNET_IP=" + nconf.HostDockerInternal
 
 	// assemble wrapper command and run
 	// todo: handle https port

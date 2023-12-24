@@ -169,6 +169,7 @@ jobs:
       - run: |
           cd ~/audius-d
           audius-ctl config create-context devnet -f configs/templates/devnet.toml
+          config set Network.HostDockerInternal 172.18.0.1
           audius-ctl devnet
           audius-ctl register
           audius-ctl up
