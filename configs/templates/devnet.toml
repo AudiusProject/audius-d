@@ -5,7 +5,7 @@ example and runnable file for running a devnet configuration of audius protocol 
 
 [Network]
 AudiusComposeNetwork = "dev"
-Tag = "b4580989724351822f7bad8185194b4fb679010e"
+Tag = "3e840c8fe0fd82e0031adf2aff70e7ee25af967e"
 Devnet = true
 HostDockerInternal = "172.17.0.1"
 
