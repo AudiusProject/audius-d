@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"time"
@@ -12,12 +13,18 @@ func awaitHealthy(containerName, host string, port uint) {
 	tries := 30
 
 	for tries > 0 {
+
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := &http.Client{Transport: tr}
+
 		// url := fmt.Sprintf("%s:%d/health_check", host, port)
 		url := fmt.Sprintf("%s/health_check", host)
-		resp, err := http.Get(url)
+		resp, err := client.Get(url)
 
 		if err != nil || resp.StatusCode != http.StatusOK {
-			logger.Infof("service: %s not ready yet\n", containerName)
+			logger.Infof("service: %s not ready yet\n", url)
 			time.Sleep(3 * time.Second)
 			tries--
 			continue
