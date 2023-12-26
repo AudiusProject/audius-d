@@ -31,14 +31,53 @@ sudo make install  # installs to /usr/local/bin/
 sudo make uninstall
 ```
 
-### (Experimental) Build macos version with statusbar feature
+#### Build macos version with statusbar feature (Experimental)
 
 ```bash
 make audius-ctl-arm-mac
 ```
 
-Install using same steps as above
+## Quickstart
 
+### Run a local devnet
+
+Devnet uses a local nginx container on 80/443 to act as a layer 7 load balancer. Hence we need to add the hosts so we may intelligently route on localhost.
+```
+sh -c 'echo "127.0.0.1       creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d" >> /etc/hosts'
+```
+
+Instruct audius-ctl what services to create and how to configure them. More on this concept below.
+```
+audius-ctl config create-context devnet -f configs/templates/devnet.toml
+```
+
+> For linux only - correct the default internal docker host (so services can talk to local chains)
+> `audius-ctl config set Network.HostDockerInternal 172.18.0.1`
+
+Register our devnet services to local developmnent chain containers.
+```
+audius-ctl devnet
+audius-ctl register
+```
+
+Stand up audius nodes
+```
+audius-ctl up
+```
+
+Visit local health checks to verify it is all working.
+```
+# TODO: audius-ctl config test-context 
+
+curl -sk https://creator-1.audius-d/health_check | jq .data.healthy
+true
+
+curl -sk https://discovery-1.audius-d/health_check | jq .data.discovery_provider_healthy
+true
+
+curl -sk https://identity-1.audius-d/health_check | jq .healthy
+true
+```
 
 ## Run
 
@@ -171,14 +210,6 @@ audius-ctl config create-context my-new-sandbox-context -f configs/templates/dev
 
 Use contexts to experiment with different setups without clobbering changes.
 
-### Development Sandbox
-
-```bash
-audius-ctl config use-context my-new-sandbox-context  # created in previous step
-audius-ctl devnet  # start local eth and solana chains
-audius-ctl up      # start creator, discovery, and identity nodes
-```
-
 ### Run the gui
 
 View transaction info in the browser
@@ -202,12 +233,3 @@ audius-ctl config migrate-context my-new-migrated-context path/to/audius-docker-
 1. Ensure you are authenticated with the github cli (`gh auth status || gh auth login`)
 1. Run `make release-audius-ctl`
 1. Check the [releases page](https://github.com/AudiusProject/audius-d/releases)
-
-
-## Devnet DIND
-
-```
-# WIP - add to extra hosts
-
-sh -c 'echo "172.17.0.1       creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d" >> /etc/hosts'
-```

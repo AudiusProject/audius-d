@@ -162,19 +162,24 @@ jobs:
     steps:
       - setup-audius-ctl
       - run:
-          name: add audius-d hosts
+          name: Add audius-d hosts
           command: |
             sudo tee -a /etc/hosts \<<<'127.0.0.1 creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d'
             cat /etc/hosts
-      - run: |
-          cd ~/audius-d
-          audius-ctl config create-context devnet -f configs/templates/devnet.toml
-          audius-ctl config set Network.HostDockerInternal 172.18.0.1
-          audius-ctl devnet
-          audius-ctl register
-          audius-ctl up
-      - run: docker ps -a
-      - run: docker network inspect deployments_devnet
+      - run:
+          name: Stand up devnet
+          command: |
+            cd ~/audius-d
+            audius-ctl config create-context devnet -f configs/templates/devnet.toml
+            audius-ctl config set Network.HostDockerInternal 172.18.0.1
+            audius-ctl devnet
+            audius-ctl register
+            audius-ctl up
+      - run:
+          name: Inspect docker (for debugging)
+          command: |
+            docker ps -a
+            docker network inspect deployments_devnet
       - basic-health-check:
           host: 'https://creator-1.audius-d'
           jqkey: '.data.healthy'
@@ -184,7 +189,11 @@ jobs:
       - basic-health-check:
           host: 'https://identity-1.audius-d'
           jqkey: '.healthy'
-      - run: audius-ctl down
+      - run:
+          name: Teardown
+          command: |
+            cd ~/audius-d
+            audius-ctl down
 
   test-config-subcommands:
     docker:
