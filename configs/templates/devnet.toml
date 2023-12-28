@@ -15,7 +15,6 @@ ExternalHttpPort = 4000
 InternalHttpsPort = 4001
 ExternalHttpsPort = 4001
 Host = "https://creator-1.audius-d"
-CaddyTls = "tls internal"
 OperatorPrivateKey = "21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7cf58ab"
 OperatorWallet = "0x0D38e653eC28bdea5A2296fD5940aaB2D0B8875c"
 OperatorRewardsWallet = "0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d"
