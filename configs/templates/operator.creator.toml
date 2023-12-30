@@ -3,13 +3,12 @@ description = """
 example of how to run a creator node as an operator with audius-d
 """
 
-Network = "mainnet"
-# implies auto-upgrade on latest stable (audius-docker-compose/main branch) release
-Version = "stable"
+[Network]
+DeployOn = "mainnet"
 
 [CreatorNodes.creator-node]
-InternalHttpPort = 80
-ExternalHttpPort = 80
+HttpPort = 80
+HttpsPort = 443
 Host = "http://localhost"
 OperatorPrivateKey = ""
 OperatorWallet = ""

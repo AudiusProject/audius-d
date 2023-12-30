@@ -91,16 +91,13 @@ func readEnv(path, nodeType string) (map[string]string, error) {
 
 func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConfig) {
 	base := BaseServerConfig{
-		Host:              "http://localhost",
-		Tag:               "latest",
-		OverrideConfig:    make(map[string]string),
-		ExternalHttpPort:  80,
-		InternalHttpPort:  80,
-		ExternalHttpsPort: 443,
-		InternalHttpsPort: 443,
+		Host:           "http://localhost",
+		OverrideConfig: make(map[string]string),
+		HttpPort:       80,
+		HttpsPort:      443,
 	}
 	net := NetworkConfig{
-		Tag: "latest",
+		DeployOn: Devnet,
 	}
 	discoveryConf := DiscoveryConfig{}
 	creatorConf := CreatorConfig{}
@@ -118,10 +115,17 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 			base.OperatorRewardsWallet = v
 		case "creatorNodeEndpoint", "audius_discprov_url":
 			base.Host = v
-		case "autoUpgradeEnabled", "audius_auto_upgrade_enabled":
-			base.AutoUpgrade = "*/15 * * * *"
 		case "NETWORK":
-			net.AudiusComposeNetwork = v
+			switch v {
+			case "dev":
+				net.DeployOn = Devnet
+			case "stage":
+				net.DeployOn = Testnet
+			case "prod":
+				net.DeployOn = Mainnet
+			default:
+				net.DeployOn = Devnet
+			}
 		default:
 			base.OverrideConfig[k] = v
 		}

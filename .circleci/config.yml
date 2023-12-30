@@ -213,22 +213,22 @@ jobs:
       - run:
           name: test modify context
           command: |
-            audius-ctl config set Network.EthMainnetRpc test-str
-            audius-ctl config | grep 'EthMainnetRpc = "test-str"'
+            audius-ctl config set Network.DeployOn testnet
+            audius-ctl config | grep 'DeployOn = "testnet"'
       - run:
           name: test invalid modify context
           command: |
-            if audius-ctl config set Network.Devnet 420; then
+            if audius-ctl config set CreatorNodes.creator-1.HttpPort asdf; then
               echo Should not have succeeded due to type error
               false
             fi
-            audius-ctl config | grep 'EthMainnetRpc = "test-str"'
+            audius-ctl config | grep 'CreatorNodes.creator-1.HttpPort = 4000'
       - run:
           name: test dump context to file
           command: |
             tmpfile="$(mktemp)"
             audius-ctl config dump -o "$tmpfile"
-            grep 'EthMainnetRpc = "test-str"' "$tmpfile"
+            grep 'DeployOn = "testnet"' "$tmpfile"
       - run:
           name: test delete context
           command: |
