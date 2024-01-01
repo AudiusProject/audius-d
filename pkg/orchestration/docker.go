@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strings"
@@ -44,10 +45,14 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 		internalVolumes = append(internalVolumes, providedOverrideEnvVolume)
 	}
 
-	imageTag := fmt.Sprintf("audius/audius-docker-compose:%s", nconf.Tag)
+	version := nconf.ADCTagOverride
+	if version == "" {
+		version = "latest"
+	}
+	imageTag := fmt.Sprintf("audius/audius-docker-compose:%s", version)
 	externalVolume := fmt.Sprintf("audius-d-%s", containerName)
-	httpPorts := fmt.Sprintf("-p %d:%d", serverConfig.ExternalHttpPort, serverConfig.InternalHttpPort)
-	httpsPorts := fmt.Sprintf("-p %d:%d", serverConfig.ExternalHttpsPort, serverConfig.InternalHttpsPort)
+	httpPorts := fmt.Sprintf("-p %d:%d", serverConfig.HttpPort, serverConfig.HttpPort)
+	httpsPorts := fmt.Sprintf("-p %d:%d", serverConfig.HttpsPort, serverConfig.HttpsPort)
 	formattedInternalVolumes := " -v " + strings.Join(internalVolumes, " -v ")
 
 	extraHosts := fmt.Sprintf("--add-host creator-1.audius-d:%s --add-host discovery-1.audius-d:%s --add-host identity-1.audius-d:%s --add-host eth-ganache.audius-d:%s --add-host acdc-ganache.audius-d:%s --add-host solana-test-validator.audius-d:%s",
@@ -88,14 +93,27 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 
 	}
 
-	if serverConfig.AutoUpgrade != "" {
-		// "*/15 * * * *""
-		// don't capture error, service can still start if auto-upgrade fails
-		audiusCli(containerName, "auto-upgrade", serverConfig.AutoUpgrade)
+	if version == "latest" {
+		minute := rand.Intn(60)
+		if err := audiusCli(containerName, "auto-upgrade", fmt.Sprintf("*/%d * * * *", minute)); err != nil {
+			// don't propogate audiusCli error, service can still start if auto-upgrade fails
+			logger.Infof("Auto upgrade failed: %v\nSkipping", err)
+		}
 	}
 
 	// set network
-	audiusCli(containerName, "set-network", nconf.AudiusComposeNetwork)
+	var network string
+	switch nconf.DeployOn {
+	case conf.Devnet:
+		network = "dev"
+	case conf.Testnet:
+		network = "stage"
+	case conf.Mainnet:
+		network = "prod"
+	default:
+		network = "dev"
+	}
+	audiusCli(containerName, "set-network", network)
 
 	// assemble inner command and run
 	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, containerName, nodeType)
