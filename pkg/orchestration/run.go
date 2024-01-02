@@ -68,7 +68,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool) {
 		}
 	}
 	if config.Network.DeployOn == conf.Devnet {
-		cname := "identity-service"
+		cname := "identity-1"
 		identityVolumes := []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
 		RunNode(
 			config.Network,
