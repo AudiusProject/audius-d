@@ -2,11 +2,8 @@ FROM docker:dind
 
 RUN apk add bash git curl libc-dev gcc python3 py3-pip python3-dev linux-headers postgresql-client redis
 
-# revert to NETWORK=prod BRANCH=main after merging https://github.com/AudiusProject/audius-docker-compose/pull/437
-ARG NETWORK=dev
-ARG BRANCH=endl/audius-d-devnet
-# TODO
-ARG TAG="ae0c8c237239597c55cebf51a8056d7f3c0012dd"
+ARG NETWORK=prod
+ARG BRANCH=main
 
 VOLUME /var/k8s/creator-node-db
 VOLUME /var/k8s/mediorum

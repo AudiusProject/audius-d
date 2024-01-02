@@ -15,15 +15,6 @@ import (
 
 type OverrideEnv = map[string]string
 
-type Network struct {
-	IPAM struct {
-		Config []struct {
-			Subnet  string `json:"Subnet"`
-			Gateway string `json:"Gateway"`
-		} `json:"Config"`
-	} `json:"IPAM"`
-}
-
 // deploys a server node generically
 func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, override OverrideEnv, containerName string, nodeType string, internalVolumes []string) error {
 	if isContainerRunning(containerName) {

@@ -49,10 +49,9 @@ sh -c 'echo "127.0.0.1       creator-1.audius-d discovery-1.audius-d identity-1.
 Instruct audius-ctl what services to create and how to configure them. More on this concept below.
 ```
 audius-ctl config create-context devnet -f configs/templates/devnet.toml
+# TODO: make audius-ctl do this
+docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
 ```
-
-> For linux only - correct the default internal docker host (so services can talk to local chains)
-> `audius-ctl config set Network.HostDockerInternal 172.18.0.1`
 
 Register our devnet services to local developmnent chain containers.
 ```
