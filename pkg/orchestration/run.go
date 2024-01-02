@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	devnetIdentityServiceConfig = conf.IdentityConfig{
+	devnetIdentityServiceContainerName = "identity-1"
+	devnetIdentityServiceConfig        = conf.IdentityConfig{
 		BaseServerConfig: conf.BaseServerConfig{
 			HttpPort:  7000,
 			HttpsPort: 7001,
@@ -68,18 +69,17 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool) {
 		}
 	}
 	if config.Network.DeployOn == conf.Devnet {
-		cname := "identity-1"
 		identityVolumes := []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
 		RunNode(
 			config.Network,
 			devnetIdentityServiceConfig.BaseServerConfig,
 			devnetIdentityServiceConfig.ToOverrideEnv(config.Network),
-			cname,
+			devnetIdentityServiceContainerName,
 			"identity-service",
 			identityVolumes,
 		)
 		if await {
-			awaitHealthy(cname, devnetIdentityServiceConfig.Host, devnetIdentityServiceConfig.HttpsPort)
+			awaitHealthy(devnetIdentityServiceContainerName, devnetIdentityServiceConfig.Host, devnetIdentityServiceConfig.HttpsPort)
 		}
 	}
 }
