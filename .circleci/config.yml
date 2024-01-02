@@ -222,7 +222,8 @@ jobs:
               echo Should not have succeeded due to type error
               false
             fi
-            audius-ctl config | grep 'CreatorNodes.creator-1.HttpPort = 4000'
+            audius-ctl config dump
+            audius-ctl config dump | grep 'HttpPort = 4000'
       - run:
           name: test dump context to file
           command: |
