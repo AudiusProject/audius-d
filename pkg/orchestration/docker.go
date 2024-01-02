@@ -176,6 +176,7 @@ func startDevnetDocker() {
 
 func downDevnetDocker() {
 	runCommand("docker", "compose", "-f", "./deployments/docker-compose.devnet.yml", "down")
+	runCommand("docker", "rm", "-f", devnetIdentityServiceContainerName)
 }
 
 func audiusCli(container string, args ...string) error {
