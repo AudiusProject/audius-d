@@ -43,3 +43,5 @@ services:
 
 networks:
   devnet:
+    external: true
+    name: deployments_devnet
