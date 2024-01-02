@@ -6,7 +6,7 @@ RUN apk add bash git curl libc-dev gcc python3 py3-pip python3-dev linux-headers
 ARG NETWORK=dev
 ARG BRANCH=endl/audius-d-devnet
 # TODO
-ARG TAG="bb9b1d7ea5c0e6256684d033c1f1d25447376f9d"
+ARG TAG="ae0c8c237239597c55cebf51a8056d7f3c0012dd"
 
 VOLUME /var/k8s/creator-node-db
 VOLUME /var/k8s/mediorum
