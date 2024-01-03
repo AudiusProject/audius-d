@@ -1,7 +1,13 @@
 # This script should be run from the Makefile only.
 set -eo pipefail
 
-gh auth status >&2
+auth_temp="$(mktemp)"
+if ! gh auth status 2>&1 > "$auth_temp"; then
+    cat "$auth_temp" 1>&2
+    echo "Please authenticate with the github cli for proper versioning." 1>&2
+    exit 1
+fi
+rm "$auth_temp"
 
 upgrade="$1"
 
