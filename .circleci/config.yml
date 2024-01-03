@@ -85,7 +85,7 @@ jobs:
               echo "Docker image $DOCKER_IMAGE not found. Building and pushing..."
               docker buildx create --use
               make build-push-docker ADC_TAG=$COMPOSE_COMMIT_SHA
-              make build-push-docker ADC_TAG=latest
+              # make build-push-docker ADC_TAG=latest
             fi
       - restore_cache:
           keys:
