@@ -4,14 +4,11 @@ example of how to run a creator node as an operator with audius-d
 """
 
 [Network]
-Name = "prod"
-Tag = "latest"
+DeployOn = "mainnet"
 
 [DiscoveryNodes.discovery-node]
-InternalHttpPort = 5000
-ExternalHttpPort = 5000
-InternalHttpsPort = 5001
-ExternalHttpsPort = 5001
+HttpPort = 5000
+HttpsPort = 5001
 Host = "http://localhost"
 OperatorPrivateKey = ""
 OperatorWallet = ""

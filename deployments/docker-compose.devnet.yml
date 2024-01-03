@@ -7,6 +7,8 @@ services:
     image: audius/eth-ganache:latest
     ports:
       - "8546:8545"
+    networks:
+      - devnet
   
   # service that simulates solana mainnet
   sol-validator:
@@ -14,6 +16,8 @@ services:
     image: audius/solana-programs:latest
     ports:
       - "8899:8899"
+    networks:
+      - devnet
 
   # service that simulates acdc network
   acdc-ganache:
@@ -21,4 +25,23 @@ services:
     image: audius/acdc-ganache:latest
     ports:
       - "8545:8545"
-    
+    networks:
+      - devnet
+
+  ingress:
+    container_name: ingress
+    image: nginx:latest
+    volumes:
+      - ./nginx_ingress.conf:/etc/nginx/conf.d/default.conf
+      - ./tls/devnet-cert.pem:/tmp/cert.pem
+      - ./tls/devnet-key.pem:/tmp/key.pem
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - devnet
+
+networks:
+  devnet:
+    external: true
+    name: deployments_devnet

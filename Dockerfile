@@ -1,9 +1,9 @@
 FROM docker:dind
 
+RUN apk add bash git curl libc-dev gcc python3 py3-pip python3-dev linux-headers postgresql-client redis
+
 ARG NETWORK=prod
 ARG BRANCH=main
-
-RUN apk add bash git curl libc-dev gcc python3 py3-pip python3-dev linux-headers postgresql-client redis
 
 VOLUME /var/k8s/creator-node-db
 VOLUME /var/k8s/mediorum

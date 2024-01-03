@@ -31,14 +31,52 @@ sudo make install  # installs to /usr/local/bin/
 sudo make uninstall
 ```
 
-### (Experimental) Build macos version with statusbar feature
+#### Build macos version with statusbar feature (Experimental)
 
 ```bash
 make audius-ctl-arm-mac
 ```
 
-Install using same steps as above
+## Quickstart
 
+### Run a local devnet
+
+Devnet uses a local nginx container on 80/443 to act as a layer 7 load balancer. Hence we need to add the hosts so we may intelligently route on localhost.
+```
+sh -c 'echo "127.0.0.1       creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d" >> /etc/hosts'
+```
+
+Instruct audius-ctl what services to create and how to configure them. More on this concept below.
+```
+audius-ctl config create-context devnet -f configs/templates/devnet.toml
+# TODO: make audius-ctl do this
+docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
+```
+
+Register our devnet services to local developmnent chain containers.
+```
+audius-ctl devnet
+audius-ctl register
+```
+
+Stand up audius nodes
+```
+audius-ctl up
+```
+
+Visit local health checks to verify it is all working.
+```
+# TODO: audius-ctl config test-context 
+
+curl -sk https://creator-1.audius-d/health_check | jq .data.healthy
+true
+
+curl -sk https://discovery-1.audius-d/health_check | jq .data.discovery_provider_healthy
+true
+
+curl -sk https://identity-1.audius-d/health_check | jq .healthy
+true
+```
 
 ## Run
 
@@ -166,18 +204,10 @@ audius-ctl config use-context my-existing-context
 Create new contexts
 
 ```bash
-audius-ctl config create-context my-new-sandbox-context -f config/templates/devnet.toml
+audius-ctl config create-context my-new-sandbox-context -f configs/templates/devnet.toml
 ```
 
 Use contexts to experiment with different setups without clobbering changes.
-
-### Development Sandbox
-
-```bash
-audius-ctl config use-context my-new-sandbox-context  # created in previous step
-audius-ctl devnet  # start local eth and solana chains
-audius-ctl up      # start creator, discovery, and identity nodes
-```
 
 ### Run the gui
 

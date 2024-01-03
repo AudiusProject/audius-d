@@ -10,6 +10,9 @@ func (config *DiscoveryConfig) ToOverrideEnv(nc NetworkConfig) map[string]string
 	overrideEnv["audius_delegate_owner_wallet"] = config.OperatorWallet
 	overrideEnv["audius_delegate_private_key"] = config.OperatorPrivateKey
 	overrideEnv["audius_discprov_url"] = config.Host
+	if nc.DeployOn == Devnet {
+		overrideEnv["comms_sandbox"] = "true"
+	}
 
 	// Everything else we don't yet capture in audius-d models
 	for k, v := range config.OverrideConfig {

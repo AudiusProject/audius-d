@@ -28,23 +28,21 @@ commands:
   basic-health-check:
     description: 'Perform a basic health check on an audius node'
     parameters:
-      port:
-        type: integer
-        default: 80
+      host:
+        type: string
       jqkey:
         type: string
-        default: '.data.healthy'
     steps:
       - run:
           name: 'Basic health check'
           command: |
             timeout=0
-            while [[ "$(curl -Lsko /dev/null -w "%{http_code}" http://localhost:<< parameters.port >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+            while [[ "$(curl -Lsko /dev/null -w "%{http_code}" << parameters.host >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
               sleep 3
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
             done
-            cresult="$(curl -Lkv http://localhost:<< parameters.port >>/health_check | jq '<< parameters.jqkey >>')"
+            cresult="$(curl -Lkv << parameters.host >>/health_check | jq '<< parameters.jqkey >>')"
             echo $cresult
             [ "$cresult" = true ] || [ "$cresult" = false ]
 
@@ -108,12 +106,13 @@ jobs:
             - bin/audius-ctl-arm
             - bin/audius-ctl-x86
 
-  test-devnet-deps:
+  test-devnet-deps: # TODO add ingress. consolidate with test-audius-d-devnet.
     machine:
       image: ubuntu-2204:current
     resource_class: large
     steps:
       - setup-audius-ctl
+      - run: docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
       - run: cd ~/audius-d && audius-ctl devnet
       - run: docker ps
       - run:
@@ -157,38 +156,46 @@ jobs:
             fi
       - run: audius-ctl devnet down
 
-  test-audius-d-stage:
+  test-audius-d-devnet:
     machine:
       image: ubuntu-2204:current
     resource_class: xlarge
     steps:
       - setup-audius-ctl
       - run:
-          name: standup isolated ci env
+          name: Add audius-d hosts
           command: |
-            cd ~/audius-d
-            audius-ctl config create-context ci -f configs/templates/ci.toml 
-            audius-ctl up
-      - basic-health-check # creator node default
-      - basic-health-check:
-          port: 5000
-          jqkey: '.data.discovery_provider_healthy'
-      - run: audius-ctl down
-
-  test-eth-registration:
-    machine:
-      image: ubuntu-2204:current
-    resource_class: large
-    steps:
-      - setup-audius-ctl
-      - run: cd ~/audius-d && audius-ctl devnet
+            audius_hosts='127.0.0.1 creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d'
+            grep -q "$audius_hosts" /etc/hosts || sudo tee -a /etc/hosts \<<<$audius_hosts
       - run:
-          name: register delegateOwnerWallet
+          name: Stand up devnet
           command: |
             cd ~/audius-d
-            audius-ctl config create-context ci -f configs/templates/devnet.toml 
-            audius-ctl devnet up
+            audius-ctl config create-context devnet -f configs/templates/devnet.toml
+            # TODO
+            docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
+            audius-ctl devnet
             audius-ctl register
+            audius-ctl up
+      - run:
+          name: Inspect docker (for debugging)
+          command: |
+            docker ps -a
+            docker network inspect deployments_devnet
+      - basic-health-check:
+          host: 'https://creator-1.audius-d'
+          jqkey: '.data.healthy'
+      - basic-health-check:
+          host: 'https://discovery-1.audius-d'
+          jqkey: '.data.discovery_provider_healthy'
+      - basic-health-check:
+          host: 'https://identity-1.audius-d'
+          jqkey: '.healthy'
+      - run:
+          name: Teardown
+          command: |
+            cd ~/audius-d
+            audius-ctl down
 
   test-config-subcommands:
     docker:
@@ -203,26 +210,27 @@ jobs:
       - run:
           name: test create context
           command: |
-            audius-ctl config create-context test -f ~/audius-d/configs/templates/ci.toml 
+            audius-ctl config create-context test -f ~/audius-d/configs/templates/devnet.toml 
       - run:
           name: test modify context
           command: |
-            audius-ctl config set Network.EthMainnetRpc test-str
-            audius-ctl config | grep 'EthMainnetRpc = "test-str"'
+            audius-ctl config set Network.DeployOn testnet
+            audius-ctl config | grep 'DeployOn = "testnet"'
       - run:
           name: test invalid modify context
           command: |
-            if audius-ctl config set Network.Devnet 420; then
+            if audius-ctl config set CreatorNodes.creator-1.HttpPort asdf; then
               echo Should not have succeeded due to type error
               false
             fi
-            audius-ctl config | grep 'EthMainnetRpc = "test-str"'
+            audius-ctl config dump
+            audius-ctl config dump | grep 'HttpPort = 4000'
       - run:
           name: test dump context to file
           command: |
             tmpfile="$(mktemp)"
             audius-ctl config dump -o "$tmpfile"
-            grep 'EthMainnetRpc = "test-str"' "$tmpfile"
+            grep 'DeployOn = "testnet"' "$tmpfile"
       - run:
           name: test delete context
           command: |
@@ -263,7 +271,7 @@ workflows:
     jobs:
       - build:
           context: github
-      - test-audius-d-stage:
+      - test-audius-d-devnet:
           context: github
           requires:
             - build
@@ -275,17 +283,12 @@ workflows:
           context: github
           requires:
             - build
-      - test-eth-registration:
-          context: github
-          requires:
-            - build
       - publish-audius-ctl:
           context: github
           requires:
-            - test-audius-d-stage
+            - test-audius-d-devnet
             - test-devnet-deps
             - test-config-subcommands
-            - test-eth-registration
           filters:
             branches:
               only:

@@ -6,7 +6,6 @@ type ExecutionConfig struct {
 }
 
 type ContextConfig struct {
-	ContextName     string
 	ConfigVersion   string
 	Network         NetworkConfig
 	CreatorNodes    map[string]CreatorConfig
@@ -28,17 +27,10 @@ func NewContextConfig() *ContextConfig {
 type BaseServerConfig struct {
 	// port that will be exposed via audius-docker-compose
 	// i.e. what you would curl in a http://{host}:{port}/health_check
-	// defaults to port 80
-	InternalHttpPort  uint
-	ExternalHttpPort  uint
-	InternalHttpsPort uint
-	ExternalHttpsPort uint
-	Host              string
+	HttpPort  uint
+	HttpsPort uint
+	Host      string
 
-	// the tag that will be pulled from dockerhub
-	// "latest", "stage", "prod", etc may have specific behavior
-	// git hashes are also eligible
-	Tag string
 	// use an existing override .env file
 	// instead of creating one on the fly
 	// based on toml
@@ -48,11 +40,6 @@ type BaseServerConfig struct {
 	OperatorWallet        string
 	OperatorRewardsWallet string
 	EthOwnerWallet        string
-
-	// operations
-	Register     bool
-	AwaitHealthy bool
-	AutoUpgrade  string
 
 	// Stores any as-yet unstructured configuration
 	// (for compatibility with audius-docker-compose migrations)
@@ -77,22 +64,21 @@ type IdentityConfig struct {
 	RelayerWallets         string
 }
 
+type NetworkType string
+
+const (
+	Devnet  NetworkType = "devnet"
+	Testnet NetworkType = "testnet"
+	Mainnet NetworkType = "mainnet"
+)
+
 type NetworkConfig struct {
-	AudiusComposeNetwork string
-
-	AcdcRpc          string
-	EthMainnetRpc    string
-	SolanaMainnetRpc string
-
-	// network singletons
-	IdentityServiceUrl     string
-	AntiAbuseOracleUrl     string
-	AntiAbuseOracleAddress string
-
-	Tag string
-
-	// starts up local containers for acdc, eth, and solana rpcs
-	Devnet bool
+	// Network that the node should be configured to deploy on.
+	// Choose "devnet", "testnet", or "mainnet"
+	// "devnet" will automatically spin up local chains and identity service
+	DeployOn           NetworkType
+	ADCTagOverride     string
+	HostDockerInternal string
 }
 
 type NodeConfig interface {

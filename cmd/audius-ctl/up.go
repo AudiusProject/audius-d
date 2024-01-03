@@ -8,11 +8,12 @@ import (
 )
 
 var (
-	upCmd = &cobra.Command{
+	awaitHealthy = false
+	upCmd        = &cobra.Command{
 		Use:   "up",
 		Short: "Uses the currently enabled context to spin up audius nodes.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orchestration.RunAudiusWithConfig(readOrCreateContext())
+			orchestration.RunAudiusWithConfig(readOrCreateContext(), awaitHealthy)
 			return nil
 		},
 	}
@@ -47,6 +48,7 @@ var (
 )
 
 func init() {
+	upCmd.Flags().BoolVar(&awaitHealthy, "await-healthy", false, "Wait for services to become healthy before returning.")
 	devnetCmd.AddCommand(devnetDownCmd)
 }
 
