@@ -1,11 +1,13 @@
 package orchestration
 
 import (
-	"os"
+	"bufio"
+	"fmt"
 	"os/exec"
 	"runtime"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/logger"
 )
 
 var (
@@ -105,7 +107,26 @@ func RunDown(config *conf.ContextConfig) {
 
 func runCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+
+	// pipe sh cmds to stderr
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	scanner := bufio.NewScanner(stderr)
+	for scanner.Scan() {
+		out := scanner.Text()
+		logger.Info(fmt.Sprintf("%s\n", out))
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return err
+	}
+
+	return err
 }
