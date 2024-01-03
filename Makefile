@@ -53,11 +53,11 @@ regen-abis:
 .PHONY: build-docker-local build-push-docker
 build-docker-local:
 	@echo "Building Docker image for local platform..."
-	docker buildx build --load --build-arg NETWORK=$(NETWORK) -t audius/audius-docker-compose:$(ADC_TAG) .
+	docker buildx build --load --build-arg NETWORK=$(NETWORK) --build-arg ADC_TAG=$(ADC_TAG) -t audius/audius-docker-compose:$(ADC_TAG) .
 
 build-push-docker:
 	@echo "Building and pushing Docker images for all platforms..."
-	docker buildx build --platform linux/amd64,linux/arm64 --push --build-arg NETWORK=$(NETWORK) -t audius/audius-docker-compose:$(ADC_TAG) .
+	docker buildx build --platform linux/amd64,linux/arm64 --push --build-arg NETWORK=$(NETWORK) --build-arg ADC_TAG=$(ADC_TAG) -t audius/audius-docker-compose:$(ADC_TAG) .
 
 .PHONY: install uninstall
 install:
