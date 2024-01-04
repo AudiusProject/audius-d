@@ -90,7 +90,7 @@ jobs:
               make build-push-docker ADC_TAG=$COMPOSE_COMMIT_SHA
               make build-push-docker ADC_TAG=latest
             fi
-            - save_cache:
+      - save_cache:
           key: docker-{{ .Branch }}
           paths:
             - /var/lib/docker
