@@ -158,9 +158,8 @@ jobs:
       - run: audius-ctl devnet down
 
   test-audius-d-devnet:
-    machine:
-      image: ubuntu-2204:current
-    resource_class: xlarge
+    machine: true
+    resource_class: audiusproject/gcp-n2-standard-4
     steps:
       - setup-audius-ctl
       - run:
