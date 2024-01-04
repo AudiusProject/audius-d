@@ -50,6 +50,7 @@ jobs:
   build:
     machine:
       image: ubuntu-2204:current
+      docker_layer_caching: true
     resource_class: large
     steps:
       - attach_workspace:
@@ -62,9 +63,6 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y golang
-      - restore_cache:
-          keys:
-            - docker-{{ .Branch }}
       - run:
           name: Build audius-docker-compose docker image
           command: |
@@ -90,10 +88,6 @@ jobs:
               make build-push-docker ADC_TAG=$COMPOSE_COMMIT_SHA
               make build-push-docker ADC_TAG=latest
             fi
-      - save_cache:
-          key: docker-{{ .Branch }}
-          paths:
-            - /var/lib/docker
       - restore_cache:
           keys:
             - node-modules-{{ checksum "~/audius-d/web/ui/package-lock.json" }}
