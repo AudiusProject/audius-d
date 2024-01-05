@@ -113,6 +113,7 @@ jobs:
     resource_class: large
     steps:
       - setup-audius-ctl
+      - gh/setup
       - run: docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
       - run: cd ~/audius-d && audius-ctl devnet
       - run: docker ps
