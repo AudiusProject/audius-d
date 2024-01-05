@@ -50,14 +50,12 @@ jobs:
   build:
     machine:
       image: ubuntu-2204:current
-      docker_layer_caching: true
     resource_class: large
     steps:
       - attach_workspace:
           at: ~/workspace
       - checkout:
           path: ~/audius-d
-      - gh/setup
       - run:
           name: install go
           command: |
@@ -168,6 +166,11 @@ jobs:
           command: |
             audius_hosts='127.0.0.1 creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d'
             grep -q "$audius_hosts" /etc/hosts || sudo tee -a /etc/hosts \<<<$audius_hosts
+      - run:
+          name: Install gh cli for make
+          command: |
+            sudo apt-get update
+            sudo apt-get install gh
       - run:
           name: Stand up devnet
           command: |
