@@ -171,6 +171,8 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install gh
+            export PATH=$PATH:$HOME/.local/bin
+            source ~/.bashrc
       - run:
           name: Stand up devnet
           command: |
