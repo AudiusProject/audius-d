@@ -107,7 +107,7 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 	audiusCli(containerName, "set-network", network)
 
 	// assemble inner command and run
-	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, containerName, nodeType)
+	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d >> /cmd.log 2>&1"`, containerName, nodeType)
 	if err := Sh(startCmd); err != nil {
 		return err
 	}
@@ -171,11 +171,7 @@ func downDevnetDocker() {
 }
 
 func audiusCli(container string, args ...string) error {
-	audCli := []string{"exec", container, ".venv/bin/python3", "audius-cli"}
-	cmds := append(audCli, args...)
-	err := runCommand("docker", cmds...)
-	if err != nil {
-		return logger.Error("Error with audius-cli:", err)
-	}
-	return nil
+	audCli := strings.Join(args, " ")
+	cmd := fmt.Sprintf(`docker exec creator-1 sh -c ".venv/bin/python3 audius-cli %s >> /cmd.log 2>&1"`, audCli)
+	return Sh(cmd)
 }
