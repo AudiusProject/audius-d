@@ -1,6 +1,14 @@
 # This script should be run from the Makefile only.
 set -eo pipefail
 
+if ! command -v gh &> /dev/null; then
+    echo "GitHub CLI (gh) is not installed. Installing..."
+    sudo apt update
+    sudo apt install gh -y
+else
+    echo "GitHub CLI (gh) is already installed."
+fi
+
 gh auth status >&2
 
 upgrade="$1"
