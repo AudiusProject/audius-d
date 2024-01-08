@@ -160,6 +160,8 @@ func removeContainerByName(containerName string) error {
 }
 
 func startDevnetDocker() {
+	logger.Info("Creating docker network")
+	runCommand("docker", "network", "create", "--subnet=172.100.0.0/16", "--gateway=172.100.0.1", "deployments_devnet")
 	logger.Info("Starting local eth, sol, and acdc chains")
 	runCommand("docker", "compose", "-f", "./deployments/docker-compose.devnet.yml", "up", "-d")
 	time.Sleep(5 * time.Second)
@@ -167,6 +169,7 @@ func startDevnetDocker() {
 
 func downDevnetDocker() {
 	runCommand("docker", "compose", "-f", "./deployments/docker-compose.devnet.yml", "down")
+	runCommand("docker", "network", "rm", "deployments_devnet")
 }
 
 func audiusCli(container string, args ...string) error {
