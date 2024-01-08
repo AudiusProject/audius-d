@@ -5,7 +5,7 @@ example and runnable file for running a devnet configuration of audius protocol 
 
 [Network]
 DeployOn = "devnet"
-ADCTagOverride = "eccbe312ffc9dc7845dca6ce98162e7f1afb3126"
+ADCTagOverride = "0275c65d0af9b015fb6b98bca42c409f0a7d8bf8"
 HostDockerInternal = "172.100.0.1"
 
 [CreatorNodes.creator-1]
@@ -23,3 +23,8 @@ Host = "https://discovery-1.audius-d"
 OperatorPrivateKey = "d09ba371c359f10f22ccda12fd26c598c7921bda3220c9942174562bc6a36fe8"
 OperatorWallet = "0x73EB6d82CFB20bA669e9c178b718d770C49BB52f"
 OperatorRewardsWallet = "0x73EB6d82CFB20bA669e9c178b718d770C49BB52f"
+
+[IdentityService.identity-1]
+HttpPort = 7000
+HttpsPort = 7001
+Host = "http://identity-1.audius-d"

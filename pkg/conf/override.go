@@ -43,12 +43,5 @@ func (config *CreatorConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 func (config *IdentityConfig) ToOverrideEnv(nc NetworkConfig) map[string]string {
 	overrideEnv := make(map[string]string)
 
-	overrideEnv["userVerifierPrivateKey"] = config.UserVerifierPrivateKey
-	overrideEnv["solanaFeePayerWallets"] = config.SolanaFeePayerWallets
-	overrideEnv["ethRelayerWallets"] = config.EthRelayerWallets
-	overrideEnv["relayerPrivateKey"] = config.RelayerPrivateKey
-	overrideEnv["solanaSignerPrivateKey"] = config.SolanaSignerPrivateKey
-	overrideEnv["relayerWallets"] = config.RelayerWallets
-
 	return overrideEnv
 }
