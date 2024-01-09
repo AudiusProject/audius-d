@@ -45,6 +45,22 @@ commands:
             cresult="$(curl -Lkv << parameters.host >>/health_check | jq '<< parameters.jqkey >>')"
             echo $cresult
             [ "$cresult" = true ] || [ "$cresult" = false ]
+          
+  setup-gh-cli:
+    description: 'Install gh cli for a self-hosted runner'
+    steps:
+      - run:
+          name: Install GitHub CLI
+          command: |
+            sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+            sudo apt-add-repository https://cli.github.com/packages
+            sudo apt update
+            sudo apt install gh
+
+      - run:
+          name: Authenticate GitHub CLI
+          command: |
+            gh auth login --with-token <<< "$GITHUB_TOKEN"
 
 jobs:
   build:
@@ -160,6 +176,7 @@ jobs:
     resource_class: audiusproject/gcp-n2-standard-4
     steps:
       - setup-audius-ctl
+      - setup-gh-cli
       - run:
           name: Add audius-d hosts
           command: |

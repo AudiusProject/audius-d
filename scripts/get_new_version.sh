@@ -1,11 +1,6 @@
 # This script should be run from the Makefile only.
 set -eo pipefail
 
-if ! command -v gh &> /dev/null; then
-    sudo apt update &> /dev/null
-    sudo apt install gh -y &> /dev/null
-fi
-
 auth_temp="$(mktemp)"
 if ! gh auth status &> "$auth_temp"; then
     cat "$auth_temp" 1>&2
