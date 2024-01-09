@@ -46,17 +46,15 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 	httpsPorts := fmt.Sprintf("-p %d:%d", serverConfig.HttpsPort, serverConfig.HttpsPort)
 	formattedInternalVolumes := " -v " + strings.Join(internalVolumes, " -v ")
 
-	extraHosts := fmt.Sprintf("--add-host creator-1.audius-d:%s --add-host discovery-1.audius-d:%s --add-host identity-1.audius-d:%s --add-host eth-ganache.audius-d:%s --add-host acdc-ganache.audius-d:%s --add-host solana-test-validator.audius-d:%s",
-		nconf.HostDockerInternal, nconf.HostDockerInternal, nconf.HostDockerInternal, nconf.HostDockerInternal, nconf.HostDockerInternal, nconf.HostDockerInternal)
-
-	// TODO: define network instead
-	networkName := "deployments_devnet"
-	hostDockerInternal := "HOST_DOCKER_INTERNAL=" + nconf.HostDockerInternal
+	// devnet networking
+	dockerNetwork := "--network deployments_devnet"
+	hostDockerInternal := "-e HOST_DOCKER_INTERNAL=172.100.0.1"
+	extraHosts := "--add-host creator-1.audius-d:172.100.0.1 --add-host discovery-1.audius-d:172.100.0.1 --add-host identity-1.audius-d:172.100.0.1 --add-host eth-ganache.audius-d:172.100.0.1 --add-host acdc-ganache.audius-d:172.100.0.1 --add-host solana-test-validator.audius-d:172.100.0.1"
 
 	// assemble wrapper command and run
 	// todo: handle https port
-	upCmd := fmt.Sprintf("docker run --privileged --network %s -e %s %s -d -v %s:/var/lib/docker %s %s --name %s %s %s",
-		networkName, hostDockerInternal, extraHosts, externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
+	upCmd := fmt.Sprintf("docker run --privileged %s %s %s -d -v %s:/var/lib/docker %s %s --name %s %s %s",
+		dockerNetwork, hostDockerInternal, extraHosts, externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
 	if err := Sh(upCmd); err != nil {
 		return err
 	}

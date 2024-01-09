@@ -6,7 +6,6 @@ example and runnable file for running a devnet configuration of audius protocol 
 [Network]
 DeployOn = "devnet"
 ADCTagOverride = "0275c65d0af9b015fb6b98bca42c409f0a7d8bf8"
-HostDockerInternal = "172.100.0.1"
 
 [CreatorNodes.creator-1]
 HttpPort = 4000
