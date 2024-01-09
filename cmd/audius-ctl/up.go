@@ -9,11 +9,12 @@ import (
 
 var (
 	awaitHealthy = false
+	audiusdTag   = "default"
 	upCmd        = &cobra.Command{
 		Use:   "up",
 		Short: "Uses the currently enabled context to spin up audius nodes.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orchestration.RunAudiusWithConfig(readOrCreateContext(), awaitHealthy)
+			orchestration.RunAudiusWithConfig(readOrCreateContext(), awaitHealthy, audiusdTag)
 			return nil
 		},
 	}
@@ -49,6 +50,7 @@ var (
 
 func init() {
 	upCmd.Flags().BoolVar(&awaitHealthy, "await-healthy", false, "Wait for services to become healthy before returning.")
+	upCmd.Flags().StringVar(&audiusdTag, "audius-d-version", "default", "(Development) override docker image tag to use (audius/audius-d:<version>)")
 	devnetCmd.AddCommand(devnetDownCmd)
 }
 

@@ -67,15 +67,7 @@ jobs:
           command: |
             cd ~/audius-d
 
-            REPO_OWNER="AudiusProject"
-            REPO_NAME="audius-docker-compose"
-            BRANCH_NAME="stage"
-            COMPOSE_COMMIT_SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/branches/$BRANCH_NAME" | \
-              jq -r '.commit.sha')
-            DOCKER_IMAGE="audius/audius-docker-compose:$COMPOSE_COMMIT_SHA"
-
-            echo "export COMPOSE_COMMIT_SHA=$COMPOSE_COMMIT_SHA" >> $BASH_ENV
+            DOCKER_IMAGE="audius/audius-d:$CIRCLE_SHA1"
 
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             
@@ -84,8 +76,7 @@ jobs:
             else
               echo "Docker image $DOCKER_IMAGE not found. Building and pushing..."
               docker buildx create --use
-              make build-push-docker ADC_TAG=$COMPOSE_COMMIT_SHA
-              make build-push-docker ADC_TAG=latest
+              make build-push-docker AD_TAG=$CIRCLE_SHA1
             fi
       - restore_cache:
           keys:
@@ -176,7 +167,7 @@ jobs:
             docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
             audius-ctl devnet
             audius-ctl register
-            audius-ctl up
+            audius-ctl up --audius-d-version $CIRCLE_SHA1
       - run:
           name: Inspect docker (for debugging)
           command: |
