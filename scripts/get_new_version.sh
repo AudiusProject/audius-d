@@ -2,7 +2,7 @@
 set -eo pipefail
 
 auth_temp="$(mktemp)"
-if ! gh auth status 2>&1 > "$auth_temp"; then
+if ! gh auth status &> "$auth_temp"; then
     cat "$auth_temp" 1>&2
     echo "Please authenticate with the github cli for proper versioning." 1>&2
     exit 1
