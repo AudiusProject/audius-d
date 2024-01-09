@@ -111,7 +111,6 @@ jobs:
     resource_class: large
     steps:
       - setup-audius-ctl
-      - gh/setup
       - run: docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
       - run: cd ~/audius-d && audius-ctl devnet
       - run: docker ps
@@ -166,13 +165,6 @@ jobs:
           command: |
             audius_hosts='127.0.0.1 creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d'
             grep -q "$audius_hosts" /etc/hosts || sudo tee -a /etc/hosts \<<<$audius_hosts
-      - run:
-          name: Install gh cli for make
-          command: |
-            sudo apt-get update
-            sudo apt-get install gh
-            export PATH=$PATH:$HOME/.local/bin
-            source ~/.bashrc
       - run:
           name: Stand up devnet
           command: |
