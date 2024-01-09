@@ -2,15 +2,12 @@
 set -eo pipefail
 
 if ! command -v gh &> /dev/null; then
-    echo "GitHub CLI (gh) is not installed. Installing..."
-    sudo apt update
-    sudo apt install gh -y
-else
-    echo "GitHub CLI (gh) is already installed."
+    sudo apt update &> /dev/null
+    sudo apt install gh -y &> /dev/null
 fi
 
 auth_temp="$(mktemp)"
-if ! gh auth status 2>&1 > "$auth_temp"; then
+if ! gh auth status &> "$auth_temp"; then
     cat "$auth_temp" 1>&2
     echo "Please authenticate with the github cli for proper versioning." 1>&2
     exit 1
