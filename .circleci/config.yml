@@ -175,8 +175,8 @@ jobs:
     machine: true
     resource_class: audiusproject/gcp-n2-standard-4
     steps:
-      - setup-audius-ctl
       - setup-gh-cli
+      - setup-audius-ctl
       - run:
           name: Add audius-d hosts
           command: |
