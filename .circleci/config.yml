@@ -245,7 +245,7 @@ jobs:
       - run:
           name: test version correctly formatted for production build
           command: |
-            echo audius-ctl --version
+            audius-ctl --version
             audius-ctl --version | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$'
 
   publish-audius-ctl:
