@@ -9,7 +9,6 @@ VOLUME /var/k8s/discovery-provider-chain
 
 WORKDIR /root
 RUN git clone https://github.com/AudiusProject/audius-docker-compose.git ./audius-docker-compose
-
 WORKDIR /root/audius-docker-compose
 
 RUN python3 -m venv .venv && source .venv/bin/activate && python3 -m pip install -r requirements.txt
