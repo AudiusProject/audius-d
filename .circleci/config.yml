@@ -171,8 +171,6 @@ jobs:
             cd ~/audius-d
             IMAGE_TAG="$(sha1sum ./Dockerfile | awk '{print $1}')"
             audius-ctl config create-context devnet -f configs/templates/devnet.toml
-            # TODO
-            docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
             audius-ctl devnet
             audius-ctl register
             audius-ctl up --await-healthy --audius-d-version $IMAGE_TAG

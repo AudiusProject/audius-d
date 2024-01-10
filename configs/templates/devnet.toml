@@ -9,7 +9,7 @@ DeployOn = "devnet"
 [IdentityService.identity]
 HttpPort = 7000
 HttpsPort = 7001
-Host = "http://identity.audius-d"
+Host = "https://identity.audius-d"
 
 [CreatorNodes.creator-1]
 HttpPort = 4000
