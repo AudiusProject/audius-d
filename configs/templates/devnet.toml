@@ -28,3 +28,4 @@ OperatorRewardsWallet = "0x73EB6d82CFB20bA669e9c178b718d770C49BB52f"
 HttpPort = 7000
 HttpsPort = 7001
 Host = "http://identity-1.audius-d"
+Version = "prerelease"
