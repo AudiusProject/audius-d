@@ -169,7 +169,7 @@ jobs:
             docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
             audius-ctl devnet
             audius-ctl register
-            audius-ctl up --audius-d-version $IMAGE_TAG
+            audius-ctl up --await-healthy --audius-d-version $IMAGE_TAG
       - run:
           name: Inspect docker (for debugging)
           command: |

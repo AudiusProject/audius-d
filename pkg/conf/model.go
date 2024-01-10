@@ -76,8 +76,7 @@ type NetworkConfig struct {
 	// Network that the node should be configured to deploy on.
 	// Choose "devnet", "testnet", or "mainnet"
 	// "devnet" will automatically spin up local chains and identity service
-	DeployOn           NetworkType
-	HostDockerInternal string
+	DeployOn NetworkType
 }
 
 type NodeConfig interface {

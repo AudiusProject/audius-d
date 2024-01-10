@@ -20,8 +20,8 @@ var registerCmd = &cobra.Command{
 				"content-node",
 				cc.Host,
 				"http://localhost:8546",
-				"0xdcB2fC9469808630DD0744b0adf97C0003fC29B2", // hardcoded ganache address
-				"0xABbfF712977dB51f9f212B85e8A4904c818C2b63", // "
+				register.GanacheAudiusTokenAddress,
+				register.GanacheContractRegistryAddress,
 				cc.OperatorWallet,
 				cc.OperatorPrivateKey,
 			)

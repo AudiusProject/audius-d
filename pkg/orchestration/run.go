@@ -6,6 +6,8 @@ import (
 	"runtime"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/logger"
+	"github.com/AudiusProject/audius-d/pkg/register"
 )
 
 func StartDevnet(_ *conf.ContextConfig) {
@@ -19,6 +21,20 @@ func DownDevnet(_ *conf.ContextConfig) {
 func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverride string) {
 	if config.Network.DeployOn == conf.Devnet {
 		startDevnetDocker()
+		for _, cc := range config.CreatorNodes {
+			err := register.RegisterNode(
+				"content-node",
+				cc.Host,
+				"http://localhost:8546",
+				register.GanacheAudiusTokenAddress,
+				register.GanacheContractRegistryAddress,
+				cc.OperatorWallet,
+				cc.OperatorPrivateKey,
+			)
+			if err != nil {
+				logger.Info("Failed to register creator node: %s\n", err)
+			}
+		}
 	}
 
 	dashboardVolume := "/dashboard-dist:/dashboard-dist"
@@ -43,9 +59,6 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverr
 			creatorVolumes,
 			audiusdTagOverride,
 		)
-		if await {
-			awaitHealthy(cname, cc.Host, cc.HttpsPort)
-		}
 	}
 	for cname, dc := range config.DiscoveryNodes {
 		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt", esDataVolume, dashboardVolume}
@@ -63,9 +76,6 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverr
 		if config.Network.DeployOn != conf.Devnet {
 			audiusCli(cname, "launch-chain")
 		}
-		if await {
-			awaitHealthy(cname, dc.Host, dc.HttpsPort)
-		}
 	}
 	for cname, id := range config.IdentityService {
 		identityVolumes := []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
@@ -79,9 +89,10 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverr
 			identityVolumes,
 			audiusdTagOverride,
 		)
-		if await {
-			awaitHealthy(cname, id.Host, id.HttpsPort)
-		}
+	}
+
+	if await {
+		awaitHealthy(config)
 	}
 }
 
