@@ -6,6 +6,11 @@ example and runnable file for running a devnet configuration of audius protocol 
 [Network]
 DeployOn = "devnet"
 
+[IdentityService.identity]
+HttpPort = 7000
+HttpsPort = 7001
+Host = "http://identity.audius-d"
+
 [CreatorNodes.creator-1]
 HttpPort = 4000
 HttpsPort = 4001
