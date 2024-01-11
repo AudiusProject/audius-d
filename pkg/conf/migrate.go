@@ -64,19 +64,9 @@ func determineNodeType(adcpath string) (string, error) {
 }
 
 func readEnv(path, nodeType string) (map[string]string, error) {
-	allEnv := make(map[string]string)
-	hiddenEnv, err := godotenv.Read(fmt.Sprintf("%s/%s/.env", path, nodeType))
+	allEnv, err := godotenv.Read(fmt.Sprintf("%s/%s/.env", path, nodeType))
 	if err != nil {
-		hiddenEnv = make(map[string]string)
-	}
-	if network := hiddenEnv["NETWORK"]; network == "stage" || network == "prod" {
-		networkEnv, err := godotenv.Read(fmt.Sprintf("%s/%s/%s.env", path, nodeType, network))
-		if err != nil {
-			networkEnv = make(map[string]string)
-		}
-		for k, v := range networkEnv {
-			allEnv[k] = v
-		}
+		allEnv = make(map[string]string)
 	}
 
 	orenv, err := godotenv.Read(fmt.Sprintf("%s/%s/override.env", path, nodeType))
@@ -95,6 +85,7 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 		OverrideConfig: make(map[string]string),
 		HttpPort:       80,
 		HttpsPort:      443,
+		Version:        "prerelease",
 	}
 	net := NetworkConfig{
 		DeployOn: Devnet,
@@ -119,12 +110,16 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 			switch v {
 			case "dev":
 				net.DeployOn = Devnet
+				base.Version = "prerelease"
 			case "stage":
 				net.DeployOn = Testnet
+				base.Version = "prerelease"
 			case "prod":
 				net.DeployOn = Mainnet
+				base.Version = "current"
 			default:
 				net.DeployOn = Devnet
+				base.Version = "prerelease"
 			}
 		default:
 			base.OverrideConfig[k] = v

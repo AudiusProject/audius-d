@@ -52,15 +52,18 @@ func RunNode(
 	httpsPorts := fmt.Sprintf("-p %d:%d", serverConfig.HttpsPort, serverConfig.HttpsPort)
 	formattedInternalVolumes := " -v " + strings.Join(internalVolumes, " -v ")
 
-	// devnet networking
-	dockerNetwork := "--network deployments_devnet"
-	hostDockerInternal := "-e HOST_DOCKER_INTERNAL=172.100.0.1"
-	extraHosts := "--add-host creator-1.audius-d:172.100.0.1 --add-host discovery-1.audius-d:172.100.0.1 --add-host identity-1.audius-d:172.100.0.1 --add-host eth-ganache.audius-d:172.100.0.1 --add-host acdc-ganache.audius-d:172.100.0.1 --add-host solana-test-validator.audius-d:172.100.0.1"
+	devnetAddendum := ""
+	if nconf.DeployOn == conf.Devnet {
+		dockerNetwork := "--network deployments_devnet"
+		hostDockerInternal := "-e HOST_DOCKER_INTERNAL=172.100.0.1"
+		extraHosts := "--add-host creator-1.audius-d:172.100.0.1 --add-host discovery-1.audius-d:172.100.0.1 --add-host identity-1.audius-d:172.100.0.1 --add-host eth-ganache.audius-d:172.100.0.1 --add-host acdc-ganache.audius-d:172.100.0.1 --add-host solana-test-validator.audius-d:172.100.0.1"
+		devnetAddendum = fmt.Sprintf("%s %s %s", dockerNetwork, hostDockerInternal, extraHosts)
+	}
 
 	// assemble wrapper command and run
 	// todo: handle https port
-	upCmd := fmt.Sprintf("docker run --privileged %s %s %s -d -v %s:/var/lib/docker %s %s --name %s %s %s",
-		dockerNetwork, hostDockerInternal, extraHosts, externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
+	upCmd := fmt.Sprintf("docker run --privileged %s -d -v %s:/var/lib/docker %s %s --name %s %s %s",
+		devnetAddendum, externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
 	if err := Sh(upCmd); err != nil {
 		return err
 	}
