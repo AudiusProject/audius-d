@@ -30,6 +30,12 @@ type BaseServerConfig struct {
 	HttpPort  uint
 	HttpsPort uint
 	Host      string
+	// One of "current", "prerelease", or an audius-docker-compose git branch
+	// "current" corresponds to main adc branch
+	// "prelease" corresponds to stage
+	// empty string defaults to "current" behavior
+	// anything else is the adc branch (for dev purposes)
+	Version string
 
 	// use an existing override .env file
 	// instead of creating one on the fly
@@ -70,9 +76,7 @@ type NetworkConfig struct {
 	// Network that the node should be configured to deploy on.
 	// Choose "devnet", "testnet", or "mainnet"
 	// "devnet" will automatically spin up local chains and identity service
-	DeployOn           NetworkType
-	ADCTagOverride     string
-	HostDockerInternal string
+	DeployOn NetworkType
 }
 
 type NodeConfig interface {

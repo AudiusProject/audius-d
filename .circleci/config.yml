@@ -63,19 +63,12 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y golang
       - run:
-          name: Build audius-docker-compose docker image
+          name: Build audius-d docker image
           command: |
             cd ~/audius-d
 
-            REPO_OWNER="AudiusProject"
-            REPO_NAME="audius-docker-compose"
-            BRANCH_NAME="stage"
-            COMPOSE_COMMIT_SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/branches/$BRANCH_NAME" | \
-              jq -r '.commit.sha')
-            DOCKER_IMAGE="audius/audius-docker-compose:$COMPOSE_COMMIT_SHA"
-
-            echo "export COMPOSE_COMMIT_SHA=$COMPOSE_COMMIT_SHA" >> $BASH_ENV
+            IMAGE_TAG="$(sha1sum ./Dockerfile | awk '{print $1}')"
+            DOCKER_IMAGE="audius/audius-d:$IMAGE_TAG"
 
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             
@@ -84,8 +77,7 @@ jobs:
             else
               echo "Docker image $DOCKER_IMAGE not found. Building and pushing..."
               docker buildx create --use
-              make build-push-docker ADC_TAG=$COMPOSE_COMMIT_SHA
-              make build-push-docker ADC_TAG=latest
+              make build-push-docker AD_TAG="$IMAGE_TAG"
             fi
       - restore_cache:
           keys:
@@ -171,12 +163,13 @@ jobs:
           name: Stand up devnet
           command: |
             cd ~/audius-d
+            IMAGE_TAG="$(sha1sum ./Dockerfile | awk '{print $1}')"
             audius-ctl config create-context devnet -f configs/templates/devnet.toml
             # TODO
             docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
             audius-ctl devnet
             audius-ctl register
-            audius-ctl up
+            audius-ctl up --await-healthy --audius-d-version $IMAGE_TAG
       - run:
           name: Inspect docker (for debugging)
           command: |
@@ -261,10 +254,33 @@ jobs:
           at: ~/audius-d
       - gh/setup
       - run:
-          name: Release 
+          name: Release audius-ctl
           command: |
             cd ~/audius-d
             make release-audius-ctl
+
+  publish-audius-d:
+    docker:
+      - image: cimg/base:2023.01
+    resource_class: small
+    steps:
+      - checkout:
+          path: ~/audius-d
+      - run:
+          name: Release audius-d
+          command: |
+            # get crane
+            VERSION=v0.17.0
+            OS=Linux
+            ARCH=x86_64
+            curl -sL "https://github.com/google/go-containerregistry/releases/download/${VERSION}/go-containerregistry_${OS}_${ARCH}.tar.gz" > go-containerregistry.tar.gz
+            tar -zxvf go-containerregistry.tar.gz -C $HOME/bin/ crane
+
+            # set the 'default' tag to the newly vetted image
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            cd ~/audius-d
+            IMAGE_TAG="$(sha1sum ./Dockerfile | awk '{print $1}')"
+            crane copy "audius/audius-d:$IMAGE_TAG" "audius/audius-d:default"
 
 workflows:
   audius-ctl-cicd:
@@ -289,6 +305,14 @@ workflows:
             - test-audius-d-devnet
             - test-devnet-deps
             - test-config-subcommands
+          filters:
+            branches:
+              only:
+                - main
+      - publish-audius-d:
+          context: github
+          requires:
+            - publish-audius-ctl
           filters:
             branches:
               only:

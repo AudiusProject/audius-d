@@ -6,6 +6,8 @@ import (
 	"runtime"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/logger"
+	"github.com/AudiusProject/audius-d/pkg/register"
 )
 
 func StartDevnet(_ *conf.ContextConfig) {
@@ -16,9 +18,23 @@ func DownDevnet(_ *conf.ContextConfig) {
 	downDevnetDocker()
 }
 
-func RunAudiusWithConfig(config *conf.ContextConfig, await bool) {
+func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverride string) {
 	if config.Network.DeployOn == conf.Devnet {
 		startDevnetDocker()
+		for _, cc := range config.CreatorNodes {
+			err := register.RegisterNode(
+				"content-node",
+				cc.Host,
+				"http://localhost:8546",
+				register.GanacheAudiusTokenAddress,
+				register.GanacheContractRegistryAddress,
+				cc.OperatorWallet,
+				cc.OperatorPrivateKey,
+			)
+			if err != nil {
+				logger.Info("Failed to register creator node: %s\n", err)
+			}
+		}
 	}
 
 	dashboardVolume := "/dashboard-dist:/dashboard-dist"
@@ -34,30 +50,49 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool) {
 	for cname, cc := range config.CreatorNodes {
 		creatorVolumes := []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db", "/var/k8s/bolt:/var/k8s/bolt", dashboardVolume}
 		override := cc.ToOverrideEnv(config.Network)
-		RunNode(config.Network, cc.BaseServerConfig, override, cname, "creator-node", creatorVolumes)
-		if await {
-			awaitHealthy(cname, cc.Host, cc.HttpsPort)
-		}
+		RunNode(
+			config.Network,
+			cc.BaseServerConfig,
+			override,
+			cname,
+			"creator-node",
+			creatorVolumes,
+			audiusdTagOverride,
+		)
 	}
 	for cname, dc := range config.DiscoveryNodes {
 		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt", esDataVolume, dashboardVolume}
 		override := dc.ToOverrideEnv(config.Network)
-		RunNode(config.Network, dc.BaseServerConfig, override, cname, "discovery-provider", discoveryVolumes)
+		RunNode(
+			config.Network,
+			dc.BaseServerConfig,
+			override,
+			cname,
+			"discovery-provider",
+			discoveryVolumes,
+			audiusdTagOverride,
+		)
 		// discovery requires a few extra things
 		if config.Network.DeployOn != conf.Devnet {
 			audiusCli(cname, "launch-chain")
-		}
-		if await {
-			awaitHealthy(cname, dc.Host, dc.HttpsPort)
 		}
 	}
 	for cname, id := range config.IdentityService {
 		identityVolumes := []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
 		override := id.ToOverrideEnv(config.Network)
-		RunNode(config.Network, id.BaseServerConfig, override, cname, "identity-service", identityVolumes)
-		if await {
-			awaitHealthy(cname, id.Host, id.HttpsPort)
-		}
+		RunNode(
+			config.Network,
+			id.BaseServerConfig,
+			override,
+			cname,
+			"identity-service",
+			identityVolumes,
+			audiusdTagOverride,
+		)
+	}
+
+	if await {
+		awaitHealthy(config)
 	}
 }
 

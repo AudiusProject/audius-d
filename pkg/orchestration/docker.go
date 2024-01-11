@@ -2,7 +2,6 @@ package orchestration
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"os/exec"
 	"strings"
@@ -16,7 +15,15 @@ import (
 type OverrideEnv = map[string]string
 
 // deploys a server node generically
-func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, override OverrideEnv, containerName string, nodeType string, internalVolumes []string) error {
+func RunNode(
+	nconf conf.NetworkConfig,
+	serverConfig conf.BaseServerConfig,
+	override OverrideEnv,
+	containerName string,
+	nodeType string,
+	internalVolumes []string,
+	audiusdTag string,
+) error {
 	if isContainerRunning(containerName) {
 		logger.Infof("container %s already running\n", containerName)
 		return nil
@@ -36,11 +43,10 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 		internalVolumes = append(internalVolumes, providedOverrideEnvVolume)
 	}
 
-	version := nconf.ADCTagOverride
-	if version == "" {
-		version = "latest"
+	if audiusdTag == "" {
+		audiusdTag = "default"
 	}
-	imageTag := fmt.Sprintf("audius/audius-docker-compose:%s", version)
+	imageTag := fmt.Sprintf("audius/audius-d:%s", audiusdTag)
 	externalVolume := fmt.Sprintf("audius-d-%s", containerName)
 	httpPorts := fmt.Sprintf("-p %d:%d", serverConfig.HttpPort, serverConfig.HttpPort)
 	httpsPorts := fmt.Sprintf("-p %d:%d", serverConfig.HttpsPort, serverConfig.HttpsPort)
@@ -82,12 +88,25 @@ func RunNode(nconf conf.NetworkConfig, serverConfig conf.BaseServerConfig, overr
 
 	}
 
-	if version == "latest" {
-		minute := rand.Intn(60)
-		if err := audiusCli(containerName, "auto-upgrade", fmt.Sprintf("*/%d * * * *", minute)); err != nil {
-			// don't propogate audiusCli error, service can still start if auto-upgrade fails
-			logger.Infof("Auto upgrade failed: %v\nSkipping", err)
-		}
+	// Configure branch
+	var branch string
+	switch serverConfig.Version {
+	case "", "current":
+		branch = "main"
+	case "prerelease":
+		branch = "stage"
+	default:
+		branch = serverConfig.Version
+	}
+	if err := audiusCli(containerName, "pull-reset", branch); err != nil {
+		return err
+	}
+
+	// auto update hourly, starting 55 minutes from now (for randomness + prevent updates during CI)
+	currentTime := time.Now()
+	fiveMinutesAgo := currentTime.Add(-5 * time.Minute)
+	if err := audiusCli(containerName, "auto-upgrade", fmt.Sprintf("%d * * * *", fiveMinutesAgo.Minute())); err != nil {
+		return err
 	}
 
 	// set network

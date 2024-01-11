@@ -10,6 +10,7 @@ DeployOn = "mainnet"
 HttpPort = 5000
 HttpsPort = 5001
 Host = "http://localhost"
+Version = "current"
 OperatorPrivateKey = ""
 OperatorWallet = ""
 OperatorRewardsWallet = ""

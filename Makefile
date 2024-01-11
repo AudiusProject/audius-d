@@ -1,5 +1,5 @@
 NETWORK ?= stage
-ADC_TAG ?= latest
+AD_TAG ?= default
 # One of patch, minor, or major
 UPGRADE_TYPE ?= patch
 
@@ -53,11 +53,11 @@ regen-abis:
 .PHONY: build-docker-local build-push-docker
 build-docker-local:
 	@echo "Building Docker image for local platform..."
-	docker buildx build --load --build-arg NETWORK=$(NETWORK) -t audius/audius-docker-compose:$(ADC_TAG) .
+	docker buildx build --load -t audius/audius-d:$(AD_TAG) .
 
 build-push-docker:
 	@echo "Building and pushing Docker images for all platforms..."
-	docker buildx build --platform linux/amd64,linux/arm64 --push --build-arg NETWORK=$(NETWORK) -t audius/audius-docker-compose:$(ADC_TAG) .
+	docker buildx build --platform linux/amd64,linux/arm64 --push -t audius/audius-d:$(AD_TAG) .
 
 .PHONY: install uninstall
 install:

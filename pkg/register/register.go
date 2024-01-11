@@ -27,7 +27,21 @@ var registryABIFile string
 //go:embed ABIs/ServiceProviderFactory.json
 var spfABIFile string
 
-func RegisterNode(registrationNodeType string, nodeEndpoint string, ethProviderUrl string, tokenAddress string, contractRegistryAddress string, ownerWallet string, privateKey string) error {
+const (
+	// For devnet registration
+	GanacheAudiusTokenAddress      = "0xdcB2fC9469808630DD0744b0adf97C0003fC29B2"
+	GanacheContractRegistryAddress = "0xABbfF712977dB51f9f212B85e8A4904c818C2b63"
+)
+
+func RegisterNode(
+	registrationNodeType string,
+	nodeEndpoint string,
+	ethProviderUrl string,
+	tokenAddress string,
+	contractRegistryAddress string,
+	ownerWallet string,
+	privateKey string,
+) error {
 	client, err := ethclient.Dial(ethProviderUrl)
 	if err != nil {
 		return logger.Error("Failed to dial ethereum client:", err)
