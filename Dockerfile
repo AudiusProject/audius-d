@@ -12,6 +12,5 @@ RUN git clone https://github.com/AudiusProject/audius-docker-compose.git ./audiu
 WORKDIR /root/audius-docker-compose
 
 RUN python3 -m venv .venv && source .venv/bin/activate && python3 -m pip install -r requirements.txt
-RUN ln -sf $PWD/audius-cli /usr/local/bin/audius-cli
-
-COPY daemon.json /etc/docker/dahttps://github.com/AudiusProject/auhttps://github.com/AudiusProject/audius-d/blob/main/.circleci/config.yml#L73dius-d/blob/main/.circleci/config.yml#L73emon.json
+COPY scripts/audius_cli_shim.sh /usr/local/bin/audius-cli
+RUN chmod +x /usr/local/bin/audius-cli
