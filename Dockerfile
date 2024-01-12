@@ -14,4 +14,4 @@ WORKDIR /root/audius-docker-compose
 RUN python3 -m venv .venv && source .venv/bin/activate && python3 -m pip install -r requirements.txt
 RUN ln -sf $PWD/audius-cli /usr/local/bin/audius-cli
 
-COPY daemon.json /etc/docker/dahttps://github.com/AudiusProject/auhttps://github.com/AudiusProject/audius-d/blob/main/.circleci/config.yml#L73dius-d/blob/main/.circleci/config.yml#L73emon.json
+COPY daemon.json /etc/docker/daemon.json
