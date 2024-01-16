@@ -111,6 +111,9 @@ func RunNode(
 	if err := audiusCli(containerName, "auto-upgrade", fmt.Sprintf("%d * * * *", fiveMinutesAgo.Minute())); err != nil {
 		return err
 	}
+	if err := runCommand("docker", "exec", containerName, "crond"); err != nil {
+		return err
+	}
 
 	// set network
 	var network string
@@ -193,7 +196,7 @@ func downDevnetDocker() {
 }
 
 func audiusCli(container string, args ...string) error {
-	audCli := []string{"exec", container, ".venv/bin/python3", "audius-cli"}
+	audCli := []string{"exec", container, "audius-cli"}
 	cmds := append(audCli, args...)
 	err := runCommand("docker", cmds...)
 	if err != nil {
