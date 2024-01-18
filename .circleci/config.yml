@@ -24,6 +24,12 @@ commands:
           command: |
             cd ~/audius-d
             make install
+      - run:
+          name: 'Install self-signed ssl certificate for devnet.audius-d'
+          command: |
+            cd ~/audius-d
+            sudo cp deployments/tls/devnet-cert.pem /usr/local/share/ca-certificates/devnet.audius-d.crt
+            sudo update-ca-certificates
 
   basic-health-check:
     description: 'Perform a basic health check on an audius node'
@@ -37,12 +43,12 @@ commands:
           name: 'Basic health check'
           command: |
             timeout=0
-            while [[ "$(curl -Lsko /dev/null -w "%{http_code}" << parameters.host >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
+            while [[ "$(curl -Lso /dev/null -w "%{http_code}" << parameters.host >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
               sleep 3
               ((timeout=timeout+3))
               echo "Waiting for server to start... $timeout"
             done
-            cresult="$(curl -Lkv << parameters.host >>/health_check | jq '<< parameters.jqkey >>')"
+            cresult="$(curl -Lv << parameters.host >>/health_check | jq '<< parameters.jqkey >>')"
             echo $cresult
             [ "$cresult" = true ] || [ "$cresult" = false ]
 
@@ -157,7 +163,7 @@ jobs:
       - run:
           name: Add audius-d hosts
           command: |
-            audius_hosts='127.0.0.1 creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d'
+            audius_hosts='127.0.0.1 creator-1.devnet.audius-d discovery-1.devnet.audius-d identity-1.devnet.audius-d eth-ganache.devnet.audius-d acdc-ganache.devnet.audius-d solana-test-validator.devnet.audius-d'
             grep -q "$audius_hosts" /etc/hosts || sudo tee -a /etc/hosts \<<<$audius_hosts
       - run:
           name: Stand up devnet
@@ -176,13 +182,13 @@ jobs:
             docker ps -a
             docker network inspect deployments_devnet
       - basic-health-check:
-          host: 'https://creator-1.audius-d'
+          host: 'https://creator-1.devnet.audius-d'
           jqkey: '.data.healthy'
       - basic-health-check:
-          host: 'https://discovery-1.audius-d'
+          host: 'https://discovery-1.devnet.audius-d'
           jqkey: '.data.discovery_provider_healthy'
       - basic-health-check:
-          host: 'https://identity-1.audius-d'
+          host: 'https://identity-1.devnet.audius-d'
           jqkey: '.healthy'
       - run:
           name: Teardown
