@@ -32,7 +32,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverr
 				cc.OperatorPrivateKey,
 			)
 			if err != nil {
-				logger.Info("Failed to register creator node: %s\n", err)
+				logger.Warnf("Failed to register creator node: %s", err)
 			}
 		}
 	}
@@ -50,7 +50,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverr
 	for cname, cc := range config.CreatorNodes {
 		creatorVolumes := []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db", "/var/k8s/bolt:/var/k8s/bolt", dashboardVolume}
 		override := cc.ToOverrideEnv(config.Network)
-		RunNode(
+		if err := RunNode(
 			config.Network,
 			cc.BaseServerConfig,
 			override,
@@ -58,12 +58,14 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverr
 			"creator-node",
 			creatorVolumes,
 			audiusdTagOverride,
-		)
+		); err != nil {
+			logger.Warnf("Failure starting node %s: %s\nSkipping", cname, err.Error())
+		}
 	}
 	for cname, dc := range config.DiscoveryNodes {
 		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt", esDataVolume, dashboardVolume}
 		override := dc.ToOverrideEnv(config.Network)
-		RunNode(
+		if err := RunNode(
 			config.Network,
 			dc.BaseServerConfig,
 			override,
@@ -71,7 +73,9 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverr
 			"discovery-provider",
 			discoveryVolumes,
 			audiusdTagOverride,
-		)
+		); err != nil {
+			logger.Warnf("Failure starting node %s: %s\nSkipping", cname, err.Error())
+		}
 		// discovery requires a few extra things
 		if config.Network.DeployOn != conf.Devnet {
 			audiusCli(cname, "launch-chain")
@@ -80,7 +84,7 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverr
 	for cname, id := range config.IdentityService {
 		identityVolumes := []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
 		override := id.ToOverrideEnv(config.Network)
-		RunNode(
+		if err := RunNode(
 			config.Network,
 			id.BaseServerConfig,
 			override,
@@ -88,7 +92,9 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverr
 			"identity-service",
 			identityVolumes,
 			audiusdTagOverride,
-		)
+		); err != nil {
+			logger.Warnf("Failure starting node %s: %s\nSkipping", cname, err.Error())
+		}
 	}
 
 	if await {

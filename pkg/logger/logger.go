@@ -59,6 +59,11 @@ func Warn(msg string, v ...any) {
 	stderrLogger.Warn(msg, v...)
 }
 
+func Warnf(format string, v ...any) {
+	fmsg := fmt.Sprintf(format, v...)
+	stderrLogger.Warn(fmsg)
+}
+
 func ErrorF(format string, v ...any) error {
 	emsg := fmt.Sprintf(format, v...)
 	return Error(emsg)

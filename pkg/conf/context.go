@@ -24,7 +24,7 @@ func ReadOrCreateContextConfig() (*ContextConfig, error) {
 	}
 	contextFilePath := filepath.Join(contextDir, execConf.CurrentContext)
 	if _, err = os.Stat(contextFilePath); os.IsNotExist(err) {
-		logger.Infof("Context '%s' not found, using default.\n", execConf.CurrentContext)
+		logger.Infof("Context '%s' not found, using default.", execConf.CurrentContext)
 		createDefaultContextIfNotExists()
 		err = UseContext("default")
 		if err != nil {
@@ -75,7 +75,7 @@ func readOrCreateExecutionConfig() (ExecutionConfig, error) {
 	}
 
 	if err = ReadConfigFromFile(execConfFilePath, &execConf); err != nil {
-		logger.Infof("Failed to read execution config: %s\nAttempting to recreate...\n", err)
+		logger.Infof("Failed to read execution config: %s\nAttempting to recreate...", err)
 		if err = createExecutionConfig(execConfFilePath); err != nil {
 			return execConf, err
 		}
@@ -167,7 +167,7 @@ func DeleteContext(ctxName string) error {
 	}
 	ctxFilepath := filepath.Join(ctxDir, ctxName)
 	if _, err := os.Stat(ctxFilepath); os.IsNotExist(err) {
-		logger.Infof("No context named %s\n", ctxName)
+		logger.Infof("No context named %s", ctxName)
 		return nil
 	}
 	if err := os.Remove(ctxFilepath); err != nil {

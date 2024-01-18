@@ -151,7 +151,7 @@ var (
 
 			}
 			logger.Out(args[0])
-			logger.Infof("Context set to %s\n", args[0])
+			logger.Infof("Context set to %s", args[0])
 			return nil
 		},
 	}
@@ -164,7 +164,7 @@ var (
 				return logger.Error("Failed to delete context: ", err)
 			}
 			logger.Out(args[0])
-			logger.Infof("Context %s deleted.\n", args[0])
+			logger.Infof("Context %s deleted.", args[0])
 			return nil
 		},
 	}

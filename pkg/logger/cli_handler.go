@@ -32,7 +32,7 @@ func (h *CliHandler) Handle(ctx context.Context, r slog.Record) error {
 		// don't double-write error messages, cobra already handles that
 		return nil
 	}
-	if _, err := os.Stderr.WriteString(r.Message); err != nil {
+	if _, err := os.Stderr.WriteString(r.Message + "\n"); err != nil {
 		return err
 	}
 	return nil

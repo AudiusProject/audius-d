@@ -49,18 +49,18 @@ func awaitService(containerName, host string, awaitChan chan string) {
 		resp, err := client.Get(url)
 
 		if err != nil || resp.StatusCode != http.StatusOK {
-			awaitChan <- fmt.Sprintf("service: %s not ready yet\n", url)
+			awaitChan <- fmt.Sprintf("service: %s not ready yet", url)
 			time.Sleep(3 * time.Second)
 			tries--
 			continue
 		}
 
-		awaitChan <- fmt.Sprintf("service: %s is healthy! 🎸\n", containerName)
+		awaitChan <- fmt.Sprintf("service: %s is healthy! 🎸", containerName)
 		if resp != nil {
 			resp.Body.Close()
 		}
 		return
 	}
 
-	awaitChan <- fmt.Sprintf("%s never got healthy\n", containerName)
+	awaitChan <- fmt.Sprintf("%s never got healthy", containerName)
 }
