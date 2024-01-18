@@ -5,20 +5,20 @@
 default_bits = 4096
 prompt = no
 default_md = sha256
-req_extensions = req_ext
+x509_extensions = req_ext
 distinguished_name = dn
 
 [dn]
-CN = audius-d
+CN = devnet.audius-d
 
 [req_ext]
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = creator-1.audius-d
-DNS.2 = discovery-1.audius-d
-DNS.3 = identity-1.audius-d
-DNS.4 = eth-ganache.audius-d
-DNS.5 = acdc-ganache.audius-d
-DNS.6 = solana-test-validator.audius-d
-DNS.7 = *.audius-d
+DNS.1 = creator-1.devnet.audius-d
+DNS.2 = discovery-1.devnet.audius-d
+DNS.3 = identity-1.devnet.audius-d
+DNS.4 = eth-ganache.devnet.audius-d
+DNS.5 = acdc-ganache.devnet.audius-d
+DNS.6 = solana-test-validator.devnet.audius-d
+DNS.7 = *.devnet.audius-d

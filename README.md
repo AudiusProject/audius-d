@@ -41,9 +41,11 @@ make audius-ctl-arm-mac
 
 ### Run a local devnet
 
+Run Audius nodes and chains in a sandbox on your local machine.
+
 Devnet uses a local nginx container on 80/443 to act as a layer 7 load balancer. Hence we need to add the hosts so we may intelligently route on localhost.
 ```
-sh -c 'echo "127.0.0.1       creator-1.audius-d discovery-1.audius-d identity-1.audius-d eth-ganache.audius-d acdc-ganache.audius-d solana-test-validator.audius-d" >> /etc/hosts'
+sh -c 'echo "127.0.0.1       creator-1.devnet.audius-d discovery-1.devnet.audius-d identity-1.devnet.audius-d eth-ganache.devnet.audius-d acdc-ganache.devnet.audius-d solana-test-validator.devnet.audius-d" >> /etc/hosts'
 ```
 
 Instruct audius-ctl what services to create and how to configure them. More on this concept below.
@@ -51,10 +53,14 @@ Instruct audius-ctl what services to create and how to configure them. More on t
 audius-ctl config create-context devnet -f configs/templates/devnet.toml
 ```
 
-Register our devnet services to local developmnent chain containers.
+Optionally, install the devnet certificate to avoid https warnings when connecting to local nodes
 ```
-audius-ctl devnet
-audius-ctl register
+# MacOS
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain deployments/tls/devnet-cert.pem
+
+# Ubuntu
+sudo cp deployments/tls/devnet-cert.pem /usr/local/share/ca-certificates/devnet.audius-d.crt
+sudo update-ca-certificates
 ```
 
 Stand up audius nodes
@@ -66,15 +72,17 @@ Visit local health checks to verify it is all working.
 ```
 # TODO: audius-ctl config test-context 
 
-curl -sk https://creator-1.audius-d/health_check | jq .data.healthy
+curl -s https://creator-1.devnet.audius-d/health_check | jq .data.healthy
 true
 
-curl -sk https://discovery-1.audius-d/health_check | jq .data.discovery_provider_healthy
+curl -s https://discovery-1.devnet.audius-d/health_check | jq .data.discovery_provider_healthy
 true
 
-curl -sk https://identity-1.audius-d/health_check | jq .healthy
+curl -s https://identity-1.devnet.audius-d/health_check | jq .healthy
 true
 ```
+
+Note: if you choose not to install the devnet.audius-d certificate, use `curl -sk` 
 
 ## Run
 

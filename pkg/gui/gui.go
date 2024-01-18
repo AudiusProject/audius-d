@@ -49,8 +49,7 @@ func StartGuiServer() error {
 	})
 
 	// Start the server with TLS (HTTPS)
-	// openssl req -x509 -newkey rsa:4096 -keyout /tls/key.pem -out /tls/cert.pem -days 365 -nodes
-	err = e.StartTLS(":2024", "/tls/cert.pem", "/tls/key.pem")
+	err = e.StartTLS(":2024", "deployments/tls/devnet-cert.pem", "deployments/tls/devnet-key.pem")
 	if err != nil {
 		return logger.Error(err)
 	}
