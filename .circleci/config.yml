@@ -163,7 +163,7 @@ jobs:
       - run:
           name: Add audius-d hosts
           command: |
-            audius_hosts='127.0.0.1 creator-1.devnet.audius-d discovery-1.devnet.audius-d identity-1.devnet.audius-d eth-ganache.devnet.audius-d acdc-ganache.devnet.audius-d solana-test-validator.devnet.audius-d'
+            audius_hosts='127.0.0.1 creator-1.devnet.audius-d discovery-1.devnet.audius-d identity.devnet.audius-d eth-ganache.devnet.audius-d acdc-ganache.devnet.audius-d solana-test-validator.devnet.audius-d'
             grep -q "$audius_hosts" /etc/hosts || sudo tee -a /etc/hosts \<<<$audius_hosts
       - run:
           name: Stand up devnet
@@ -186,7 +186,7 @@ jobs:
           host: 'https://discovery-1.devnet.audius-d'
           jqkey: '.data.discovery_provider_healthy'
       - basic-health-check:
-          host: 'https://identity-1.devnet.audius-d'
+          host: 'https://identity.devnet.audius-d'
           jqkey: '.healthy'
       - run:
           name: Teardown

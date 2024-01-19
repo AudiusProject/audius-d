@@ -10,6 +10,7 @@ DeployOn = "devnet"
 HttpPort = 7000
 HttpsPort = 7001
 Host = "https://identity.audius-d"
+Version = "prerelease"
 
 [CreatorNodes.creator-1]
 HttpPort = 4000
@@ -28,9 +29,3 @@ Version = "prerelease"
 OperatorPrivateKey = "d09ba371c359f10f22ccda12fd26c598c7921bda3220c9942174562bc6a36fe8"
 OperatorWallet = "0x73EB6d82CFB20bA669e9c178b718d770C49BB52f"
 OperatorRewardsWallet = "0x73EB6d82CFB20bA669e9c178b718d770C49BB52f"
-
-[IdentityService.identity-1]
-HttpPort = 7000
-HttpsPort = 7001
-Host = "https://identity-1.devnet.audius-d"
-Version = "prerelease"

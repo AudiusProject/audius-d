@@ -17,7 +17,7 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = creator-1.devnet.audius-d
 DNS.2 = discovery-1.devnet.audius-d
-DNS.3 = identity-1.devnet.audius-d
+DNS.3 = identity.devnet.audius-d
 DNS.4 = eth-ganache.devnet.audius-d
 DNS.5 = acdc-ganache.devnet.audius-d
 DNS.6 = solana-test-validator.devnet.audius-d
