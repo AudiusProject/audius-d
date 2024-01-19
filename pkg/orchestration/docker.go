@@ -25,14 +25,14 @@ func RunNode(
 	audiusdTag string,
 ) error {
 	if isContainerRunning(containerName) {
-		logger.Infof("container %s already running\n", containerName)
+		logger.Infof("container %s already running", containerName)
 		return nil
 	}
 
 	if isContainerNameInUse(containerName) {
-		logger.Infof("container %s already exists, removing and starting with current config\n", containerName)
+		logger.Infof("container %s already exists, removing and starting with current config", containerName)
 		if err := removeContainerByName(containerName); err != nil {
-			return err
+			return logger.Error(err)
 		}
 	}
 
@@ -65,28 +65,28 @@ func RunNode(
 	upCmd := fmt.Sprintf("docker run --privileged %s -d -v %s:/var/lib/docker %s %s --name %s %s %s",
 		devnetAddendum, externalVolume, httpPorts, httpsPorts, containerName, formattedInternalVolumes, imageTag)
 	if err := Sh(upCmd); err != nil {
-		return err
+		return logger.Error(err)
 	}
 
 	// generate override based on toml if not provided an existing one
 	if !useProvidedOverrideEnv {
 		localOverridePath := fmt.Sprintf("./%s-override.env", containerName)
 		if err := godotenv.Write(override, localOverridePath); err != nil {
-			return err
+			return logger.Error(err)
 		}
 
 		envCmd := fmt.Sprintf("docker cp %s %s:/root/audius-docker-compose/%s/override.env", localOverridePath, containerName, nodeType)
 		if err := Sh(envCmd); err != nil {
-			return err
+			return logger.Error(err)
 		}
 
 		cmd := fmt.Sprintf(`docker exec %s sh -c "while ! docker ps &> /dev/null; do echo 'starting up' && sleep 1; done"`, containerName)
 		if err := runCommand("/bin/sh", "-c", cmd); err != nil {
-			return err
+			return logger.Error(err)
 		}
 
 		if err := os.Remove(localOverridePath); err != nil {
-			return err
+			return logger.Error(err)
 		}
 
 	}
@@ -102,17 +102,17 @@ func RunNode(
 		branch = serverConfig.Version
 	}
 	if err := audiusCli(containerName, "pull-reset", branch); err != nil {
-		return err
+		return logger.Error(err)
 	}
 
 	// auto update hourly, starting 55 minutes from now (for randomness + prevent updates during CI)
 	currentTime := time.Now()
 	fiveMinutesAgo := currentTime.Add(-5 * time.Minute)
 	if err := audiusCli(containerName, "auto-upgrade", fmt.Sprintf("%d * * * *", fiveMinutesAgo.Minute())); err != nil {
-		return err
+		return logger.Error(err)
 	}
 	if err := runCommand("docker", "exec", containerName, "crond"); err != nil {
-		return err
+		return logger.Error(err)
 	}
 
 	// set network
@@ -132,7 +132,7 @@ func RunNode(
 	// assemble inner command and run
 	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, containerName, nodeType)
 	if err := Sh(startCmd); err != nil {
-		return err
+		return logger.Error(err)
 	}
 
 	return nil
@@ -147,7 +147,7 @@ func isContainerRunning(containerName string) bool {
 	cmd := exec.Command("docker", "ps", "-q", "-f", "name="+containerName)
 	output, err := cmd.Output()
 	if err != nil {
-		logger.Error(err)
+		logger.Warn(err.Error())
 		return false
 	}
 	return len(strings.TrimSpace(string(output))) > 0
@@ -157,7 +157,7 @@ func isContainerNameInUse(containerName string) bool {
 	cmd := exec.Command("docker", "ps", "-a", "--format", "{{.Names}}")
 	output, err := cmd.Output()
 	if err != nil {
-		logger.Error(err)
+		logger.Warn(err.Error())
 		return false
 	}
 
@@ -177,7 +177,7 @@ func removeContainerByName(containerName string) error {
 	cmd := exec.Command("docker", "rm", "-f", containerName)
 	err := cmd.Run()
 	if err != nil {
-		return err
+		return logger.Error(err)
 	}
 	return nil
 }
