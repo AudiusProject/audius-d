@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -88,46 +89,11 @@ func RunNode(
 		if err := os.Remove(localOverridePath); err != nil {
 			return logger.Error(err)
 		}
-
 	}
 
-	// Configure branch
-	var branch string
-	switch serverConfig.Version {
-	case "", "current":
-		branch = "main"
-	case "prerelease":
-		branch = "stage"
-	default:
-		branch = serverConfig.Version
+	if err := configureVersion(containerName, serverConfig.Version, nconf.DeployOn); err != nil {
+		return logger.Error("Failed to configure audius-d node: ", err)
 	}
-	if err := audiusCli(containerName, "pull-reset", branch); err != nil {
-		return logger.Error(err)
-	}
-
-	// auto update hourly, starting 55 minutes from now (for randomness + prevent updates during CI)
-	currentTime := time.Now()
-	fiveMinutesAgo := currentTime.Add(-5 * time.Minute)
-	if err := audiusCli(containerName, "auto-upgrade", fmt.Sprintf("%d * * * *", fiveMinutesAgo.Minute())); err != nil {
-		return logger.Error(err)
-	}
-	if err := runCommand("docker", "exec", containerName, "crond"); err != nil {
-		return logger.Error(err)
-	}
-
-	// set network
-	var network string
-	switch nconf.DeployOn {
-	case conf.Devnet:
-		network = "dev"
-	case conf.Testnet:
-		network = "stage"
-	case conf.Mainnet:
-		network = "prod"
-	default:
-		network = "dev"
-	}
-	audiusCli(containerName, "set-network", network)
 
 	// assemble inner command and run
 	startCmd := fmt.Sprintf(`docker exec %s sh -c "cd %s && docker compose up -d"`, containerName, nodeType)
@@ -177,6 +143,75 @@ func removeContainerByName(containerName string) error {
 	cmd := exec.Command("docker", "rm", "-f", containerName)
 	err := cmd.Run()
 	if err != nil {
+		return logger.Error(err)
+	}
+	return nil
+}
+
+func configureVersion(containerName string, version string, deployOn conf.NetworkType) error {
+	var branch string
+	var isGitSHA = false
+	var hourlyUpgrade = true
+	switch version {
+	case "", "current":
+		branch = "main"
+	case "prerelease":
+		branch = "stage"
+		hourlyUpgrade = false // upgrade every minute
+	default:
+		re := regexp.MustCompile("^[0-9a-f]{40}$") // git commit SHA
+		if re.MatchString(version) {
+			branch = "stage"
+			isGitSHA = true
+		} else {
+			branch = version
+		}
+	}
+	if err := audiusCli(containerName, "pull-reset", branch); err != nil {
+		return logger.Errorf("Failed to pull audius-docker-compose branch %s: %s", branch, err)
+	}
+
+	if isGitSHA { // freeze service container versions for development purposes
+		if err := audiusCli(containerName, "set-tag", "--yes", version); err != nil {
+			return logger.Error("Failed to set tag %s on %s: %s", version, containerName, err.Error())
+		}
+	} else {
+		if err := configureAutoUpgrade(containerName, hourlyUpgrade); err != nil {
+			return logger.Error("Failed to configure auto upgrade: ", err)
+		}
+	}
+
+	// set network
+	var network string
+	switch deployOn {
+	case conf.Devnet:
+		network = "dev"
+	case conf.Testnet:
+		network = "stage"
+	case conf.Mainnet:
+		network = "prod"
+	default:
+		network = "dev"
+	}
+	if err := audiusCli(containerName, "set-network", network); err != nil {
+		return logger.Errorf("Failed to set network to %s: %s", network, err.Error())
+	}
+
+	return nil
+}
+
+func configureAutoUpgrade(containerName string, hourly bool) error {
+	cronPattern := "* * * * *"
+	if hourly {
+		// start 55 minutes from now (for randomness)
+		currentTime := time.Now()
+		fiveMinutesAgo := currentTime.Add(-5 * time.Minute)
+		cronPattern = fmt.Sprintf("%d * * * *", fiveMinutesAgo.Minute())
+	}
+	if err := audiusCli(containerName, "auto-upgrade", cronPattern); err != nil {
+		return logger.Error(err)
+	}
+	if err := runCommand("docker", "exec", containerName, "crond"); err != nil {
 		return logger.Error(err)
 	}
 	return nil
