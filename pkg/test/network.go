@@ -1,6 +1,7 @@
 package test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -52,6 +53,24 @@ func CheckNodeHealth(ctxConfig *conf.ContextConfig) ([]HealthCheckResponse, erro
 			}
 		}
 		responses = append(responses, healthResponse)
+	}
+
+	if ctxConfig.Network.DeployOn == "devnet" {
+		extraHosts := map[string][]byte{
+			"acdc-ganache.devnet.audius-d":          []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`),
+			"eth-ganache.devnet.audius-d":           []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`),
+			"solana-test-validator.devnet.audius-d": []byte(`{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}`),
+		}
+		for host, jsonData := range extraHosts {
+			healthResponse, err := checkRPCHealth(host, jsonData)
+			if err != nil {
+				healthResponse = HealthCheckResponse{
+					Host:  host,
+					Error: err,
+				}
+			}
+			responses = append(responses, healthResponse)
+		}
 	}
 
 	return responses, nil
@@ -107,4 +126,28 @@ func checkHealth(host, key string) (HealthCheckResponse, error) {
 		Key:    key,
 		Result: result,
 	}, nil
+}
+
+func checkRPCHealth(host string, jsonData []byte) (HealthCheckResponse, error) {
+	httpClient := &http.Client{
+		Timeout: time.Second * 3,
+	}
+
+	retries := 0
+	for retries < 60 {
+		resp, err := httpClient.Post("http://"+host, "application/json", bytes.NewBuffer(jsonData))
+		if err != nil || resp.StatusCode == 502 {
+			time.Sleep(3 * time.Second)
+			retries += 1
+			continue
+		}
+		resp.Body.Close()
+		break
+	}
+
+	if retries >= 60 {
+		return HealthCheckResponse{Host: host, Error: fmt.Errorf("timed out waiting for server to start")}, nil
+	}
+
+	return HealthCheckResponse{Host: host, Result: true}, nil
 }
