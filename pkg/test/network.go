@@ -27,20 +27,32 @@ func CheckNodeHealth(ctxConfig *conf.ContextConfig) ([]HealthCheckResponse, erro
 	var hosts [][]string
 	var responses []HealthCheckResponse
 
-	if len(ctxConfig.IdentityService) > 0 {
-		for _, cc := range ctxConfig.IdentityService {
-			hosts = append(hosts, []string{cc.Host, ".healthy"})
+	if ctxConfig.Network.DeployOn == "devnet" {
+		devnetDeps := map[string][]byte{
+			"http://acdc-ganache.devnet.audius-d":          []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`),
+			"http://eth-ganache.devnet.audius-d":           []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`),
+			"http://solana-test-validator.devnet.audius-d": []byte(`{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}`),
+		}
+		for host, jsonData := range devnetDeps {
+			healthResponse, err := checkRPCHealth(host, jsonData)
+			if err != nil {
+				healthResponse = HealthCheckResponse{
+					Host:  host,
+					Error: err,
+				}
+			}
+			responses = append(responses, healthResponse)
 		}
 	}
-	if len(ctxConfig.CreatorNodes) > 0 {
-		for _, cc := range ctxConfig.CreatorNodes {
-			hosts = append(hosts, []string{cc.Host, ".data.healthy"})
-		}
+
+	for _, cc := range ctxConfig.IdentityService {
+		hosts = append(hosts, []string{cc.Host, ".healthy"})
 	}
-	if len(ctxConfig.DiscoveryNodes) > 0 {
-		for _, cc := range ctxConfig.DiscoveryNodes {
-			hosts = append(hosts, []string{cc.Host, ".data.discovery_provider_healthy"})
-		}
+	for _, cc := range ctxConfig.CreatorNodes {
+		hosts = append(hosts, []string{cc.Host, ".data.healthy"})
+	}
+	for _, cc := range ctxConfig.DiscoveryNodes {
+		hosts = append(hosts, []string{cc.Host, ".data.discovery_provider_healthy"})
 	}
 
 	for _, host := range hosts {
@@ -53,24 +65,6 @@ func CheckNodeHealth(ctxConfig *conf.ContextConfig) ([]HealthCheckResponse, erro
 			}
 		}
 		responses = append(responses, healthResponse)
-	}
-
-	if ctxConfig.Network.DeployOn == "devnet" {
-		extraHosts := map[string][]byte{
-			"acdc-ganache.devnet.audius-d":          []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`),
-			"eth-ganache.devnet.audius-d":           []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`),
-			"solana-test-validator.devnet.audius-d": []byte(`{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}`),
-		}
-		for host, jsonData := range extraHosts {
-			healthResponse, err := checkRPCHealth(host, jsonData)
-			if err != nil {
-				healthResponse = HealthCheckResponse{
-					Host:  host,
-					Error: err,
-				}
-			}
-			responses = append(responses, healthResponse)
-		}
 	}
 
 	return responses, nil
@@ -95,7 +89,7 @@ func checkHealth(host, key string) (HealthCheckResponse, error) {
 	}
 
 	if retries >= 3 {
-		return HealthCheckResponse{}, fmt.Errorf("timed out waiting for server to start")
+		return HealthCheckResponse{}, fmt.Errorf("timed out after %d retries", retries)
 	}
 
 	defer resp.Body.Close()
@@ -134,8 +128,8 @@ func checkRPCHealth(host string, jsonData []byte) (HealthCheckResponse, error) {
 	}
 
 	retries := 0
-	for retries < 60 {
-		resp, err := httpClient.Post("http://"+host, "application/json", bytes.NewBuffer(jsonData))
+	for retries < 3 {
+		resp, err := httpClient.Post(host, "application/json", bytes.NewBuffer(jsonData))
 		if err != nil || resp.StatusCode == 502 {
 			time.Sleep(3 * time.Second)
 			retries += 1
@@ -145,8 +139,8 @@ func checkRPCHealth(host string, jsonData []byte) (HealthCheckResponse, error) {
 		break
 	}
 
-	if retries >= 60 {
-		return HealthCheckResponse{Host: host, Error: fmt.Errorf("timed out waiting for server to start")}, nil
+	if retries >= 3 {
+		return HealthCheckResponse{Host: host, Error: fmt.Errorf("timed out after %d retries", retries)}, nil
 	}
 
 	return HealthCheckResponse{Host: host, Result: true}, nil
