@@ -56,7 +56,7 @@ func RunNode(
 	if nconf.DeployOn == conf.Devnet {
 		dockerNetwork := "--network deployments_devnet"
 		hostDockerInternal := "-e HOST_DOCKER_INTERNAL=172.100.0.1"
-		extraHosts := "--add-host creator-1.devnet.audius-d:172.100.0.1 --add-host discovery-1.devnet.audius-d:172.100.0.1 --add-host identity-1.devnet.audius-d:172.100.0.1 --add-host eth-ganache.devnet.audius-d:172.100.0.1 --add-host acdc-ganache.devnet.audius-d:172.100.0.1 --add-host solana-test-validator.devnet.audius-d:172.100.0.1"
+		extraHosts := "--add-host creator-1.devnet.audius-d:172.100.0.1 --add-host discovery-1.devnet.audius-d:172.100.0.1 --add-host identity.devnet.audius-d:172.100.0.1 --add-host eth-ganache.devnet.audius-d:172.100.0.1 --add-host acdc-ganache.devnet.audius-d:172.100.0.1 --add-host solana-test-validator.devnet.audius-d:172.100.0.1"
 		devnetAddendum = fmt.Sprintf("%s %s %s", dockerNetwork, hostDockerInternal, extraHosts)
 	}
 

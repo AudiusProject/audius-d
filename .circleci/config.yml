@@ -31,27 +31,6 @@ commands:
             sudo cp deployments/tls/devnet-cert.pem /usr/local/share/ca-certificates/devnet.audius-d.crt
             sudo update-ca-certificates
 
-  basic-health-check:
-    description: 'Perform a basic health check on an audius node'
-    parameters:
-      host:
-        type: string
-      jqkey:
-        type: string
-    steps:
-      - run:
-          name: 'Basic health check'
-          command: |
-            timeout=0
-            while [[ "$(curl -Lso /dev/null -w "%{http_code}" << parameters.host >>/health_check)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
-              sleep 3
-              ((timeout=timeout+3))
-              echo "Waiting for server to start... $timeout"
-            done
-            cresult="$(curl -Lv << parameters.host >>/health_check | jq '<< parameters.jqkey >>')"
-            echo $cresult
-            [ "$cresult" = true ] || [ "$cresult" = false ]
-
 jobs:
   build:
     machine:
@@ -104,56 +83,6 @@ jobs:
             - bin/audius-ctl-arm
             - bin/audius-ctl-x86
 
-  test-devnet-deps: # TODO add ingress. consolidate with test-audius-d-devnet.
-    machine:
-      image: ubuntu-2204:current
-    resource_class: large
-    steps:
-      - setup-audius-ctl
-      - run: docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
-      - run: cd ~/audius-d && audius-ctl devnet
-      - run: docker ps
-      - run:
-          name: Wait for acdc-ganache to start
-          command: |
-            timeout=0
-            while [[ "$(curl -sf -w "%{http_code}" -o /dev/null -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
-              sleep 3
-              ((timeout=timeout+3))
-              echo "Waiting for server to start... $timeout"
-            done
-            if [ "$timeout" -ge 60 ]; then
-              echo "Server didn't respond within 60 seconds. Exiting due to timeout."
-              exit 1
-            fi
-      - run:
-          name: Wait for mainnet-ganache to start
-          command: |
-            timeout=0
-            while [[ "$(curl -sf -w "%{http_code}" -o /dev/null -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8546)" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
-              sleep 3
-              ((timeout=timeout+3))
-              echo "Waiting for server to start... $timeout"
-            done
-            if [ "$timeout" -ge 60 ]; then
-              echo "Server didn't respond within 60 seconds. Exiting due to timeout."
-              exit 1
-            fi
-      - run:
-          name: Wait for mainnet-solana to start
-          command: |
-            timeout=0
-            while [[ "$(curl http://localhost:8899 -o /dev/null -X POST -H "Content-Type: application/json" -w "%{http_code}" -d '{"jsonrpc":"2.0","id":1,"method":"getFirstAvailableBlock"}')" =~ 502|000 ]] && [ "$timeout" -lt 60 ]; do
-              sleep 3
-              ((timeout=timeout+3))
-              echo "Waiting for server to start... $timeout"
-            done
-            if [ "$timeout" -ge 60 ]; then
-              echo "Server didn't respond within 60 seconds. Exiting due to timeout."
-              exit 1
-            fi
-      - run: audius-ctl devnet down
-
   test-audius-d-devnet:
     machine:
       image: ubuntu-2204:current
@@ -163,7 +92,7 @@ jobs:
       - run:
           name: Add audius-d hosts
           command: |
-            audius_hosts='127.0.0.1 creator-1.devnet.audius-d discovery-1.devnet.audius-d identity-1.devnet.audius-d eth-ganache.devnet.audius-d acdc-ganache.devnet.audius-d solana-test-validator.devnet.audius-d'
+            audius_hosts='127.0.0.1 creator-1.devnet.audius-d discovery-1.devnet.audius-d identity.devnet.audius-d eth-ganache.devnet.audius-d acdc-ganache.devnet.audius-d solana-test-validator.devnet.audius-d'
             grep -q "$audius_hosts" /etc/hosts || sudo tee -a /etc/hosts \<<<$audius_hosts
       - run:
           name: Stand up devnet
@@ -171,25 +100,14 @@ jobs:
             cd ~/audius-d
             IMAGE_TAG="$(sha1sum ./Dockerfile | awk '{print $1}')"
             audius-ctl config create-context devnet -f configs/templates/devnet.toml
-            # TODO
-            docker network create --subnet=172.100.0.0/16 --gateway=172.100.0.1 deployments_devnet
             audius-ctl devnet
             audius-ctl register
             audius-ctl up --await-healthy --audius-d-version $IMAGE_TAG
       - run:
-          name: Inspect docker (for debugging)
+          name: Test context
           command: |
-            docker ps -a
-            docker network inspect deployments_devnet
-      - basic-health-check:
-          host: 'https://creator-1.devnet.audius-d'
-          jqkey: '.data.healthy'
-      - basic-health-check:
-          host: 'https://discovery-1.devnet.audius-d'
-          jqkey: '.data.discovery_provider_healthy'
-      - basic-health-check:
-          host: 'https://identity-1.devnet.audius-d'
-          jqkey: '.healthy'
+            cd ~/audius-d
+            audius-ctl test context
       - run:
           name: Teardown
           command: |
@@ -297,10 +215,6 @@ workflows:
           context: github
           requires:
             - build
-      - test-devnet-deps:
-          context: github
-          requires:
-            - build
       - test-config-subcommands:
           context: github
           requires:
@@ -309,7 +223,6 @@ workflows:
           context: github
           requires:
             - test-audius-d-devnet
-            - test-devnet-deps
             - test-config-subcommands
           filters:
             branches:
