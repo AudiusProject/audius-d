@@ -15,14 +15,6 @@ var (
 		},
 	}
 
-	infraUpdateCmd = &cobra.Command{
-		Use:   "update",
-		Short: "Update (deploy) the current context",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return infra.Update()
-		},
-	}
-
 	infraDestroyCmd = &cobra.Command{
 		Use:   "destroy",
 		Short: "Destroy the current context",
@@ -30,8 +22,24 @@ var (
 			return infra.Destroy()
 		},
 	}
+
+	infraPreviewCmd = &cobra.Command{
+		Use:   "preview",
+		Short: "Perform a dry-run update for the current context",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infra.Update(true)
+		},
+	}
+
+	infraUpdateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "Update (deploy) the current context",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infra.Update(false)
+		},
+	}
 )
 
 func init() {
-	infraCmd.AddCommand(infraUpdateCmd, infraDestroyCmd)
+	infraCmd.AddCommand(infraDestroyCmd, infraPreviewCmd, infraUpdateCmd)
 }
