@@ -1,6 +1,9 @@
 package main
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/AudiusProject/audius-d/pkg/infra"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +22,24 @@ var (
 		Use:   "destroy",
 		Short: "Destroy the current context",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return infra.Destroy()
+			ctx := context.Background()
+			return infra.Destroy(ctx)
+		},
+	}
+
+	infraGetOutputCmd = &cobra.Command{
+		Use:   "output <outputName>",
+		Short: "Get a specific output from the stack",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := context.Background()
+			outputName := args[0]
+			outputValue, err := infra.GetStackOutput(ctx, outputName)
+			if err != nil {
+				return err
+			}
+			fmt.Println(outputValue)
+			return nil
 		},
 	}
 
@@ -27,7 +47,8 @@ var (
 		Use:   "preview",
 		Short: "Perform a dry-run update for the current context",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return infra.Update(true)
+			ctx := context.Background()
+			return infra.Update(ctx, true)
 		},
 	}
 
@@ -35,11 +56,12 @@ var (
 		Use:   "update",
 		Short: "Update (deploy) the current context",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return infra.Update(false)
+			ctx := context.Background()
+			return infra.Update(ctx, false)
 		},
 	}
 )
 
 func init() {
-	infraCmd.AddCommand(infraDestroyCmd, infraPreviewCmd, infraUpdateCmd)
+	infraCmd.AddCommand(infraDestroyCmd, infraGetOutputCmd, infraPreviewCmd, infraUpdateCmd)
 }

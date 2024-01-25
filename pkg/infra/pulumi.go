@@ -27,8 +27,7 @@ func getOrInitStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack
 	return &s, nil
 }
 
-func Update(preview bool) error {
-	ctx := context.Background()
+func Update(ctx context.Context, preview bool) error {
 	s, err := getOrInitStack(ctx, func(pCtx *pulumi.Context) error {
 		instance, privateKeyFilePath, err := CreateEC2Instance(pCtx, "audius-d-devnet-test")
 		if err != nil {
@@ -57,9 +56,7 @@ func Update(preview bool) error {
 	return nil
 }
 
-func Destroy() error {
-	ctx := context.Background()
-
+func Destroy(ctx context.Context) error {
 	s, err := getOrInitStack(ctx, func(pCtx *pulumi.Context) error {
 		return nil
 	})
@@ -73,4 +70,27 @@ func Destroy() error {
 	}
 
 	return nil
+}
+
+func GetStackOutput(ctx context.Context, outputName string) (string, error) {
+	s, err := getOrInitStack(ctx, func(pCtx *pulumi.Context) error {
+		return nil
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to get or init stack: %w", err)
+	}
+	outputs, err := s.Outputs(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get outputs: %w", err)
+	}
+	output, ok := outputs[outputName]
+	if !ok {
+		return "", fmt.Errorf("output %s not found", outputName)
+	}
+	value, ok := output.Value.(string)
+	if !ok {
+		return "", fmt.Errorf("output %s is not a string", outputName)
+	}
+
+	return value, nil
 }
