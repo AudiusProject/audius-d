@@ -27,18 +27,29 @@ func CreateEC2Instance(ctx *pulumi.Context, instanceName string) (*ec2.Instance,
 	}
 
 	userData := `#!/bin/bash
-    # Install Docker
-    sudo apt update
-    sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-    sudo apt update
-    sudo apt install -y docker-ce
+# install system level deps
+sudo apt update
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo apt update
+sudo apt install -y docker-ce
+sudo usermod -aG docker $USER && newgrp docker
 
-    # Clone Audius Protocol repository
-    sudo apt install -y git
-    git clone https://github.com/AudiusProject/audius-protocol.git ~/audius-protocol
-    `
+# install github cli (can be removed when audius-d repo no longer private)
+# https://github.com/cli/cli/blob/trunk/docs/install_linux.md#debian-ubuntu-linux-raspberry-pi-os-apt
+type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+&& sudo apt update \
+&& sudo apt install gh -y
+
+# download latest audius-d release
+# todo mount secret
+# echo <github_pat_xxxx> | gh auth login --with-token
+# gh release download -R https://github.com/AudiusProject/audius-d --clobber --output ./audius-ctl --pattern audius-ctl-x86 && sudo mv ./audius-ctl /usr/local/bin/audius-ctl && sudo chmod +x /usr/local/bin/audius-ctl
+`
 
 	instance, err := ec2.NewInstance(ctx, fmt.Sprintf("%s-ec2-instance", instanceName), &ec2.InstanceArgs{
 		Ami:          pulumi.String(ami),
