@@ -11,6 +11,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.18.2
+	github.com/pulumi/pulumi-cloudflare/sdk/v3 v3.6.0
 	github.com/pulumi/pulumi/sdk/v3 v3.102.0
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/cobra v1.7.0
@@ -147,7 +148,7 @@ require (
 	github.com/supranational/blst v0.3.11 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
+	golang.org/x/crypto v0.17.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.19.0 // indirect

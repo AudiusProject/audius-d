@@ -3,6 +3,7 @@ package infra
 import (
 	"fmt"
 
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ec2"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -13,7 +14,29 @@ var (
 	volumeSize   = 100
 )
 
+func authProvider(pCtx *pulumi.Context) (provider *aws.Provider, err error) {
+	if confCtxConfig == nil {
+		return nil, fmt.Errorf("confCtxConfig is nil")
+	}
+	if confCtxConfig.Network.AWSAccessKeyID != "" && confCtxConfig.Network.AWSSecretAccessKey != "" && confCtxConfig.Network.AWSRegion != "" {
+		provider, err = aws.NewProvider(pCtx, "aws", &aws.ProviderArgs{
+			AccessKey: pulumi.String(confCtxConfig.Network.AWSAccessKeyID),
+			SecretKey: pulumi.String(confCtxConfig.Network.AWSSecretAccessKey),
+			Region:    pulumi.String(confCtxConfig.Network.AWSRegion),
+		})
+		return provider, err
+	} else {
+		return nil, fmt.Errorf("Invalid AWS creds")
+	}
+}
+
 func CreateEC2Instance(ctx *pulumi.Context, instanceName string) (*ec2.Instance, string, error) {
+
+	awsProvider, err := authProvider(ctx)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to authenticate aws provider: %w", err)
+	}
+
 	privateKeyFilePath, publicKeyPem, err := EnsureRSAKeyPair(instanceName)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to ensure RSA key pair: %w", err)
@@ -21,12 +44,14 @@ func CreateEC2Instance(ctx *pulumi.Context, instanceName string) (*ec2.Instance,
 
 	keyPair, err := ec2.NewKeyPair(ctx, fmt.Sprintf("%s-keypair", instanceName), &ec2.KeyPairArgs{
 		PublicKey: pulumi.String(publicKeyPem),
-	})
+	}, pulumi.Provider(awsProvider))
 	if err != nil {
 		return nil, privateKeyFilePath, fmt.Errorf("unable to create key pair: %w", err)
 	}
 
-	userData := `#!/bin/bash
+	userData := fmt.Sprintf(`#!/bin/bash
+set -x
+
 # install system level deps
 sudo apt update
 sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
@@ -34,7 +59,7 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 sudo apt update
 sudo apt install -y docker-ce
-sudo usermod -aG docker $USER && newgrp docker
+sudo usermod -aG docker ubuntu
 
 # install github cli (can be removed when audius-d repo no longer private)
 # https://github.com/cli/cli/blob/trunk/docs/install_linux.md#debian-ubuntu-linux-raspberry-pi-os-apt
@@ -46,10 +71,10 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 && sudo apt install gh -y
 
 # download latest audius-d release
-# todo mount secret
-# echo <github_pat_xxxx> | gh auth login --with-token
-# gh release download -R https://github.com/AudiusProject/audius-d --clobber --output ./audius-ctl --pattern audius-ctl-x86 && sudo mv ./audius-ctl /usr/local/bin/audius-ctl && sudo chmod +x /usr/local/bin/audius-ctl
-`
+# TODO: remove PAT when audius-d repo public
+echo "%s" | gh auth login --with-token
+gh release download -R https://github.com/AudiusProject/audius-d --clobber --output ./audius-ctl --pattern audius-ctl-x86 && sudo mv ./audius-ctl /usr/local/bin/audius-ctl && sudo chmod +x /usr/local/bin/audius-ctl
+`, confCtxConfig.Network.GHPat)
 
 	instance, err := ec2.NewInstance(ctx, fmt.Sprintf("%s-ec2-instance", instanceName), &ec2.InstanceArgs{
 		Ami:          pulumi.String(ami),
@@ -64,7 +89,7 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 			VolumeSize:          pulumi.Int(volumeSize),
 			DeleteOnTermination: pulumi.Bool(true),
 		},
-	})
+	}, pulumi.Provider(awsProvider))
 	if err != nil {
 		return nil, privateKeyFilePath, fmt.Errorf("unable to create EC2 instance: %w", err)
 	}

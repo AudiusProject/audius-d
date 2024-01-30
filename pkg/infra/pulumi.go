@@ -3,8 +3,12 @@ package infra
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
+	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/AudiusProject/audius-d/pkg/logger"
+	"github.com/pulumi/pulumi-cloudflare/sdk/v3/go/cloudflare"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optdestroy"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optpreview"
@@ -13,14 +17,24 @@ import (
 )
 
 var (
-	pulumiUserName = "endline"
-	projectName    = "audius-d"
-	stackName      = "devnet-tiki"
-	fqStackName    = fmt.Sprintf("%s/%s/%s", pulumiUserName, projectName, stackName)
+	fqStackName   string
+	confCtxConfig *conf.ContextConfig
 )
 
-func getOrInitStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack, error) {
-	s, err := auto.UpsertStackInlineSource(ctx, fqStackName, projectName, pulumiFunc)
+func init() {
+	var err error
+	confCtxConfig, err = conf.ReadOrCreateContextConfig()
+	if err != nil {
+		logger.Error("Failed to retrieve context. ", err)
+		return
+	}
+
+	fqStackName = fmt.Sprintf("%s/%s/%s", confCtxConfig.Network.PulumiUserName, confCtxConfig.Network.PulumiProjectName, confCtxConfig.Network.PulumiStackName)
+	log.Println("pkg/infra init :: fqStackName: ", fqStackName)
+}
+
+func getStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack, error) {
+	s, err := auto.UpsertStackInlineSource(ctx, fqStackName, confCtxConfig.Network.PulumiProjectName, pulumiFunc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create or select stack: %w", err)
 	}
@@ -28,13 +42,39 @@ func getOrInitStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack
 }
 
 func Update(ctx context.Context, preview bool) error {
-	s, err := getOrInitStack(ctx, func(pCtx *pulumi.Context) error {
-		instance, privateKeyFilePath, err := CreateEC2Instance(pCtx, "audius-d-devnet-test")
+
+	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
+
+		instanceName := "audius-d-devnet-test.sandbox"
+		instance, privateKeyFilePath, err := CreateEC2Instance(pCtx, instanceName)
 		if err != nil {
 			return err
 		}
 		pCtx.Export("instancePublicIp", instance.PublicIp)
-		pCtx.Export("privateKeyFilePath", pulumi.String(privateKeyFilePath))
+		pCtx.Export("instancePrivateKeyFilePath", pulumi.String(privateKeyFilePath))
+
+		if confCtxConfig.Network.CloudflareAPIKey != "" && confCtxConfig.Network.CloudflareZoneId != "" {
+			provider, err := cloudflare.NewProvider(pCtx, "cloudflareProvider", &cloudflare.ProviderArgs{
+				ApiToken: pulumi.StringPtr(confCtxConfig.Network.CloudflareAPIKey),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create cloudflare provider: %w", err)
+			}
+
+			record, err := cloudflare.NewRecord(pCtx, fmt.Sprintf("cf-record-%s", instanceName), &cloudflare.RecordArgs{
+				Name:    pulumi.String(instanceName),
+				Proxied: pulumi.Bool(true),
+				Ttl:     pulumi.Int(1), // Set TTL to automatic (required for proxied)
+				Type:    pulumi.String("A"),
+				Value:   instance.PublicIp,
+				ZoneId:  pulumi.String(confCtxConfig.Network.CloudflareZoneId),
+			}, pulumi.Provider(provider))
+			if err != nil {
+				return fmt.Errorf("failed to create cloudflare record: %w", err)
+			}
+			pCtx.Export("cloudflareRecordHostname", record.Hostname)
+			pCtx.Export("cloudflareRecordValue", record.Value)
+		}
 		return nil
 	})
 	if err != nil {
@@ -57,7 +97,7 @@ func Update(ctx context.Context, preview bool) error {
 }
 
 func Destroy(ctx context.Context) error {
-	s, err := getOrInitStack(ctx, func(pCtx *pulumi.Context) error {
+	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
 		return nil
 	})
 	if err != nil {
@@ -72,8 +112,24 @@ func Destroy(ctx context.Context) error {
 	return nil
 }
 
+func Cancel(ctx context.Context) error {
+	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.Cancel(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to cancel stack update: %w", err)
+	}
+
+	return nil
+}
+
 func GetStackOutput(ctx context.Context, outputName string) (string, error) {
-	s, err := getOrInitStack(ctx, func(pCtx *pulumi.Context) error {
+	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
 		return nil
 	})
 	if err != nil {

@@ -78,4 +78,23 @@ type NetworkConfig struct {
 	// Choose "devnet", "testnet", or "mainnet"
 	// "devnet" will automatically spin up local chains and identity service
 	DeployOn NetworkType `yaml:"deployOn"`
+
+	// TODO: What is the right place for these infra api creds
+	CloudflareAPIKey string `yaml:"cloudflareAPIKey"`
+	CloudflareZoneId string `yaml:"cloudflareZoneId"`
+
+	AWSAccessKeyID     string `yaml:"awsAccessKeyID"`
+	AWSSecretAccessKey string `yaml:"awsSecretAccessKey"`
+	AWSRegion          string `yaml:"awsRegion"`
+
+	PulumiUserName    string `yaml:"pulumiUserName"`
+	PulumiProjectName string `yaml:"pulumiProjectName"`
+	PulumiStackName   string `yaml:"pulumiStackName"`
+
+	// TODO: Remove me when audius-d repo public
+	GHPat string `yaml:"ghPat"`
+}
+
+type NodeConfig interface {
+	ToOverrideEnv(nc NetworkConfig) []byte
 }

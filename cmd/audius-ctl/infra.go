@@ -18,6 +18,15 @@ var (
 		},
 	}
 
+	infraCancelCmd = &cobra.Command{
+		Use:   "cancel",
+		Short: "Cancel the current in progress update",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := context.Background()
+			return infra.Cancel(ctx)
+		},
+	}
+
 	infraDestroyCmd = &cobra.Command{
 		Use:   "destroy",
 		Short: "Destroy the current context",
@@ -63,5 +72,5 @@ var (
 )
 
 func init() {
-	infraCmd.AddCommand(infraDestroyCmd, infraGetOutputCmd, infraPreviewCmd, infraUpdateCmd)
+	infraCmd.AddCommand(infraCancelCmd, infraDestroyCmd, infraGetOutputCmd, infraPreviewCmd, infraUpdateCmd)
 }
