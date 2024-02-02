@@ -3,14 +3,14 @@ package conf
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/joho/godotenv"
 )
 
 func MigrateAudiusDockerCompose(ctxname, path string) error {
-	log.Printf("migrating audius-docker-compose to context %s", ctxname)
+	logger.Infof("migrating audius-docker-compose to context %s", ctxname)
 
 	if err := assertRepoPath(path); err != nil {
 		return err
@@ -37,7 +37,7 @@ func MigrateAudiusDockerCompose(ctxname, path string) error {
 // checks that the audius-docker-compose repo is at the path
 // provided to the cmd
 func assertRepoPath(path string) error {
-	log.Printf("validating repo at `%s`\n", path)
+	logger.Infof("validating repo at `%s`\n", path)
 	if _, err := os.Stat(path); err != nil {
 		return err
 	}
@@ -51,12 +51,12 @@ func determineNodeType(adcpath string) (string, error) {
 	discoveryOverride := fmt.Sprintf("%s/discovery-provider/override.env", adcpath)
 
 	if _, err := os.Stat(creatorOverride); err == nil {
-		log.Println("creator node detected, migrating")
+		logger.Info("creator node detected, migrating")
 		return "creator-node", nil
 	}
 
 	if _, err := os.Stat(discoveryOverride); err == nil {
-		log.Println("discovery provider detected, migrating")
+		logger.Info("discovery provider detected, migrating")
 		return "discovery-provider", nil
 	}
 
@@ -106,6 +106,8 @@ func envToContextConfig(nodeType string, env map[string]string, ctx *ContextConf
 			base.OperatorRewardsWallet = v
 		case "creatorNodeEndpoint", "audius_discprov_url":
 			base.Host = v
+		case "AUDIUS_DOCKER_COMPOSE_GIT_SHA", "HOST_NAME", "NOTIFICATIONS_TAG", "audius_auto_upgrade_enabled", "autoUpgradeEnabled", "AUDIUS_NATS_ENABLE_JETSTREAM", "IS_V2_ONLY", "MEDIORUM_TAG", "MEDIORUM_PORT", "BACKEND_PORT":
+			// dumping ground for unmigrated configs
 		case "NETWORK":
 			switch v {
 			case "dev":
