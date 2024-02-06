@@ -102,8 +102,8 @@ var (
 		A path to an existing audius-docker-compose installation.
 
 		Examples:
-		"audius-d migrate-context creator-node ~/audius-docker-compose"
-		"audius-d config migrate-context discovery-provider ../audius-docker-compose"
+		"audius-ctl config migrate-context my-creator-node ~/audius-docker-compose"
+		"audius-ctl config migrate-context my-discprov-7 ../audius-docker-compose"
 		`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -111,6 +111,7 @@ var (
 				return logger.Error("audius-docker-compose migration failed: ", err)
 			}
 			logger.Info("audius-docker-compose migration successful 🎉")
+			useContextCmd.RunE(cmd, args)
 			return nil
 		},
 	}
