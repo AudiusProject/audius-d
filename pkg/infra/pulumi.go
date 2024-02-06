@@ -3,12 +3,10 @@ package infra
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/logger"
-	"github.com/pulumi/pulumi-cloudflare/sdk/v3/go/cloudflare"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optdestroy"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optpreview"
@@ -30,7 +28,7 @@ func init() {
 	}
 
 	fqStackName = fmt.Sprintf("%s/%s/%s", confCtxConfig.Network.PulumiUserName, confCtxConfig.Network.PulumiProjectName, confCtxConfig.Network.PulumiStackName)
-	log.Println("pkg/infra init :: fqStackName: ", fqStackName)
+	logger.Debug("pkg/infra init :: fqStackName: ", fqStackName)
 }
 
 func getStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack, error) {
@@ -46,34 +44,17 @@ func Update(ctx context.Context, preview bool) error {
 	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
 
 		instanceName := "audius-d-devnet-test.sandbox"
-		instance, privateKeyFilePath, err := CreateEC2Instance(pCtx, instanceName)
+		instance, err := CreateEC2Instance(pCtx, instanceName)
 		if err != nil {
 			return err
 		}
-		pCtx.Export("instancePublicIp", instance.PublicIp)
-		pCtx.Export("instancePrivateKeyFilePath", pulumi.String(privateKeyFilePath))
 
+		// TODO: refactor guards
 		if confCtxConfig.Network.CloudflareAPIKey != "" && confCtxConfig.Network.CloudflareZoneId != "" {
-			provider, err := cloudflare.NewProvider(pCtx, "cloudflareProvider", &cloudflare.ProviderArgs{
-				ApiToken: pulumi.StringPtr(confCtxConfig.Network.CloudflareAPIKey),
-			})
+			err := ConfigureCloudflare(pCtx, instanceName, instance.PublicIp, confCtxConfig.Network.CloudflareAPIKey, confCtxConfig.Network.CloudflareZoneId)
 			if err != nil {
-				return fmt.Errorf("failed to create cloudflare provider: %w", err)
+				return err
 			}
-
-			record, err := cloudflare.NewRecord(pCtx, fmt.Sprintf("cf-record-%s", instanceName), &cloudflare.RecordArgs{
-				Name:    pulumi.String(instanceName),
-				Proxied: pulumi.Bool(true),
-				Ttl:     pulumi.Int(1), // Set TTL to automatic (required for proxied)
-				Type:    pulumi.String("A"),
-				Value:   instance.PublicIp,
-				ZoneId:  pulumi.String(confCtxConfig.Network.CloudflareZoneId),
-			}, pulumi.Provider(provider))
-			if err != nil {
-				return fmt.Errorf("failed to create cloudflare record: %w", err)
-			}
-			pCtx.Export("cloudflareRecordHostname", record.Hostname)
-			pCtx.Export("cloudflareRecordValue", record.Value)
 		}
 		return nil
 	})

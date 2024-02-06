@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/AudiusProject/audius-d/pkg/infra"
 	"github.com/spf13/cobra"
@@ -61,6 +62,28 @@ var (
 		},
 	}
 
+	infraSshCmd = &cobra.Command{
+		Use:   "ssh -- <command>",
+		Short: "SSH into the EC2 instance and execute commands",
+		Long:  `Use this command to SSH into the EC2 instance and execute commands.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := context.Background()
+			publicIP, err := infra.GetStackOutput(ctx, "instancePublicIp")
+			if err != nil {
+				return err
+			}
+			privateKeyFilePath, err := infra.GetStackOutput(ctx, "instancePrivateKeyFilePath")
+			if err != nil {
+				return err
+			}
+			command := "echo 'Please specify a command to run on the remote server.'"
+			if len(args) > 0 {
+				command = strings.Join(args, " ")
+			}
+			return infra.ExecuteSSHCommand(privateKeyFilePath, publicIP, command)
+		},
+	}
+
 	infraUpdateCmd = &cobra.Command{
 		Use:   "update",
 		Short: "Update (deploy) the current context",
@@ -72,5 +95,5 @@ var (
 )
 
 func init() {
-	infraCmd.AddCommand(infraCancelCmd, infraDestroyCmd, infraGetOutputCmd, infraPreviewCmd, infraUpdateCmd)
+	infraCmd.AddCommand(infraCancelCmd, infraDestroyCmd, infraGetOutputCmd, infraPreviewCmd, infraSshCmd, infraUpdateCmd)
 }

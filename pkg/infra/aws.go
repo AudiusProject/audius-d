@@ -30,23 +30,23 @@ func authProvider(pCtx *pulumi.Context) (provider *aws.Provider, err error) {
 	}
 }
 
-func CreateEC2Instance(ctx *pulumi.Context, instanceName string) (*ec2.Instance, string, error) {
+func CreateEC2Instance(pCtx *pulumi.Context, instanceName string) (*ec2.Instance, error) {
 
-	awsProvider, err := authProvider(ctx)
+	awsProvider, err := authProvider(pCtx)
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to authenticate aws provider: %w", err)
+		return nil, fmt.Errorf("unable to authenticate aws provider: %w", err)
 	}
 
 	privateKeyFilePath, publicKeyPem, err := EnsureRSAKeyPair(instanceName)
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to ensure RSA key pair: %w", err)
+		return nil, fmt.Errorf("unable to ensure RSA key pair: %w", err)
 	}
 
-	keyPair, err := ec2.NewKeyPair(ctx, fmt.Sprintf("%s-keypair", instanceName), &ec2.KeyPairArgs{
+	keyPair, err := ec2.NewKeyPair(pCtx, fmt.Sprintf("%s-keypair", instanceName), &ec2.KeyPairArgs{
 		PublicKey: pulumi.String(publicKeyPem),
 	}, pulumi.Provider(awsProvider))
 	if err != nil {
-		return nil, privateKeyFilePath, fmt.Errorf("unable to create key pair: %w", err)
+		return nil, fmt.Errorf("unable to create key pair: %w", err)
 	}
 
 	userData := fmt.Sprintf(`#!/bin/bash
@@ -76,7 +76,7 @@ echo "%s" | gh auth login --with-token
 gh release download -R https://github.com/AudiusProject/audius-d --clobber --output ./audius-ctl --pattern audius-ctl-x86 && sudo mv ./audius-ctl /usr/local/bin/audius-ctl && sudo chmod +x /usr/local/bin/audius-ctl
 `, confCtxConfig.Network.GHPat)
 
-	instance, err := ec2.NewInstance(ctx, fmt.Sprintf("%s-ec2-instance", instanceName), &ec2.InstanceArgs{
+	instance, err := ec2.NewInstance(pCtx, fmt.Sprintf("%s-ec2-instance", instanceName), &ec2.InstanceArgs{
 		Ami:          pulumi.String(ami),
 		InstanceType: pulumi.String(instanceType),
 		UserData:     pulumi.String(userData),
@@ -91,8 +91,11 @@ gh release download -R https://github.com/AudiusProject/audius-d --clobber --out
 		},
 	}, pulumi.Provider(awsProvider))
 	if err != nil {
-		return nil, privateKeyFilePath, fmt.Errorf("unable to create EC2 instance: %w", err)
+		return nil, fmt.Errorf("unable to create EC2 instance: %w", err)
 	}
 
-	return instance, privateKeyFilePath, nil
+	pCtx.Export("instancePublicIp", instance.PublicIp)
+	pCtx.Export("instancePrivateKeyFilePath", pulumi.String(privateKeyFilePath))
+
+	return instance, nil
 }
