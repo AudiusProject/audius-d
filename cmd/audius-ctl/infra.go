@@ -80,7 +80,15 @@ var (
 			if len(args) > 0 {
 				command = strings.Join(args, " ")
 			}
-			return infra.ExecuteSSHCommand(privateKeyFilePath, publicIP, command)
+
+			output, err := infra.ExecuteSSHCommand(privateKeyFilePath, publicIP, command)
+			if err != nil {
+				fmt.Printf("Error executing SSH command: %v\n", err)
+				return err
+			}
+
+			fmt.Println(output)
+			return nil
 		},
 	}
 

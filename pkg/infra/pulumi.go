@@ -21,13 +21,24 @@ var (
 
 func init() {
 	var err error
+
+	// TODO: local pulumi stacks require this passphrase env var
+	// we are not using pulumi encrypted configs (as yet) so ideally we could remove this
+	err = os.Setenv("PULUMI_CONFIG_PASSPHRASE", "")
+	if err != nil {
+		fmt.Println("Error setting environment variable:", err)
+	}
+
 	confCtxConfig, err = conf.ReadOrCreateContextConfig()
 	if err != nil {
 		logger.Error("Failed to retrieve context. ", err)
 		return
 	}
 
-	fqStackName = fmt.Sprintf("%s/%s/%s", confCtxConfig.Network.PulumiUserName, confCtxConfig.Network.PulumiProjectName, confCtxConfig.Network.PulumiStackName)
+	// pulumi.io managed stacks
+	// fqStackName = fmt.Sprintf("%s/%s/%s", confCtxConfig.Network.PulumiUserName, confCtxConfig.Network.PulumiProjectName, confCtxConfig.Network.PulumiStackName)
+	// localhost stacks ~/.pulumi
+	fqStackName = fmt.Sprintf("%s-%s-%s", confCtxConfig.Network.PulumiUserName, confCtxConfig.Network.PulumiProjectName, confCtxConfig.Network.PulumiStackName)
 	logger.Debug("pkg/infra init :: fqStackName: ", fqStackName)
 }
 
@@ -42,20 +53,35 @@ func getStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack, erro
 func Update(ctx context.Context, preview bool) error {
 
 	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
-
-		instanceName := "audius-d-devnet-test.sandbox"
-		instance, err := CreateEC2Instance(pCtx, instanceName)
+		// TODO: dns hostname is tied to audius sandbox
+		instanceName := fmt.Sprintf("%s-%s.sandbox", confCtxConfig.Network.PulumiProjectName, confCtxConfig.Network.PulumiStackName)
+		instance, privateKeyFilePath, err := CreateEC2Instance(pCtx, instanceName)
 		if err != nil {
 			return err
 		}
 
-		// TODO: refactor guards
+		// TODO: refactor config checks
 		if confCtxConfig.Network.CloudflareAPIKey != "" && confCtxConfig.Network.CloudflareZoneId != "" {
 			err := ConfigureCloudflare(pCtx, instanceName, instance.PublicIp, confCtxConfig.Network.CloudflareAPIKey, confCtxConfig.Network.CloudflareZoneId)
 			if err != nil {
 				return err
 			}
 		}
+
+		// TODO: handle async errors
+		pulumi.All(instance.PublicIp).ApplyT(func(all []interface{}) error {
+			publicIp := all[0].(string)
+			err = WaitForUserDataCompletion(privateKeyFilePath, publicIp)
+			if err != nil {
+				return fmt.Errorf("%w", err)
+			}
+			err = RunAudiusD(privateKeyFilePath, publicIp)
+			if err != nil {
+				return fmt.Errorf("%w", err)
+			}
+			return nil
+		})
+
 		return nil
 	})
 	if err != nil {
