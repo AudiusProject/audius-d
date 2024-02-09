@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 
 	"github.com/AudiusProject/audius-d/pkg/logger"
@@ -193,7 +194,6 @@ func WriteConfigToContext(ctxName string, ctxConfig *ContextConfig) error {
 	if err != nil {
 		return err
 	}
-	ctxConfig.ConfigVersion = ConfigVersion
 	err = WriteConfigToFile(filepath.Join(ctxBaseDir, ctxName), ctxConfig)
 	return err
 }
@@ -234,19 +234,32 @@ func createDefaultContextIfNotExists() error {
 		return err
 	}
 
-	var conf ContextConfig
-	if err = ReadConfigFromContext("default", &conf); err == nil {
+	var conf *ContextConfig
+	if err = ReadConfigFromContext("default", conf); err == nil {
 		return nil
 	}
 
-	conf = ContextConfig{
-		ConfigVersion: ConfigVersion,
-		Network:       NetworkConfig{},
-	}
+	conf = NewContextConfig()
 
-	if err = WriteConfigToFile(filepath.Join(contextDir, "default"), &conf); err != nil {
+	if err = WriteConfigToFile(filepath.Join(contextDir, "default"), conf); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func getConfigBaseDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	confDir := filepath.Join(usr.HomeDir, ".audius")
+
+	// MkdirAll is idempotent
+	// Ensure directory exists before handing it off
+	err = os.MkdirAll(confDir, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+	return confDir, nil
 }

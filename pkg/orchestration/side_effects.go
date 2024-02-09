@@ -1,7 +1,6 @@
 package orchestration
 
 import (
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,42 +9,27 @@ import (
 	"github.com/AudiusProject/audius-d/pkg/logger"
 )
 
-func awaitHealthy(config *conf.ContextConfig) {
-	for cname, cc := range config.CreatorNodes {
+func awaitHealthy(nodes map[string]conf.NodeConfig) {
+	for host := range nodes {
 		awaitChan := make(chan string)
-		go awaitService(cname, cc.Host, awaitChan)
-		for log := range awaitChan {
-			logger.Info(log)
-		}
-	}
-	for cname, dc := range config.DiscoveryNodes {
-		awaitChan := make(chan string)
-		go awaitService(cname, dc.Host, awaitChan)
-		for log := range awaitChan {
-			logger.Info(log)
-		}
-	}
-	for cname, id := range config.IdentityService {
-		awaitChan := make(chan string)
-		go awaitService(cname, id.Host, awaitChan)
+		go awaitService(host, awaitChan)
 		for log := range awaitChan {
 			logger.Info(log)
 		}
 	}
 }
 
-func awaitService(containerName, host string, awaitChan chan string) {
+func awaitService(host string, awaitChan chan string) {
 	defer close(awaitChan)
 	tries := 30
 
 	for tries > 0 {
 
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		client := &http.Client{
+			Timeout: time.Second * 3,
 		}
-		client := &http.Client{Transport: tr}
 
-		url := fmt.Sprintf("%s/health_check", host)
+		url := fmt.Sprintf("https://%s/health_check", host)
 		resp, err := client.Get(url)
 
 		if err != nil || resp.StatusCode != http.StatusOK {
@@ -55,12 +39,12 @@ func awaitService(containerName, host string, awaitChan chan string) {
 			continue
 		}
 
-		awaitChan <- fmt.Sprintf("service: %s is healthy! 🎸", containerName)
+		awaitChan <- fmt.Sprintf("%s is healthy! 🎸", host)
 		if resp != nil {
 			resp.Body.Close()
 		}
 		return
 	}
 
-	awaitChan <- fmt.Sprintf("%s never got healthy", containerName)
+	awaitChan <- fmt.Sprintf("%s never got healthy", host)
 }
