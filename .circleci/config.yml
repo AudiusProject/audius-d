@@ -102,7 +102,8 @@ jobs:
             audius-ctl config create-context devnet -f configs/templates/devnet.yaml
             audius-ctl devnet
             audius-ctl register
-            sudo mkdir -p /var/k8s/{creator-node-db,creator-node-backend,mediorum,bolt,dashboard-dist,esdata,discovery-provider-chain,discovery-provider-db,identity-service-db,
+            sudo mkdir -p /{dashboard-dist,esdata}
+            sudo mkdir -p /var/k8s/{creator-node-db,creator-node-backend,mediorum,bolt,discovery-provider-chain,discovery-provider-db,identity-service-db}
             audius-ctl up --await-healthy --audius-d-version $IMAGE_TAG
       - run:
           name: Test network status
@@ -130,15 +131,29 @@ jobs:
           command: |
             audius-ctl config create-context test -f ~/audius-d/configs/templates/devnet.yaml
       - run:
+          name: test modify context
+          command: |
+            audius-ctl config | sed 's/devnet/testnet/g' | audius-ctl config create-context test-modified -f -
+            audius-ctl config | grep 'deployOn: testnet'
+      - run:
+          name: test invalid modify context
+          command: |
+            if audius-ctl config | sed 's/httpPort: 7000/httpPort: asdf/g' | audius-ctl config create-context test-modified-2 -f -; then
+              echo Should not have succeeded due to type error
+              false
+            fi
+            audius-ctl config dump
+            audius-ctl config dump | grep 'httpPort: 7000'
+      - run:
           name: test dump context to file
           command: |
             tmpfile="$(mktemp)"
             audius-ctl config dump -o "$tmpfile"
-            grep 'deployOn: devnet' "$tmpfile"
+            grep 'deployOn: testnet' "$tmpfile"
       - run:
           name: test delete context
           command: |
-            audius-ctl config delete-context test
+            audius-ctl config delete-context test-modified
             audius-ctl config  # should resort to default
             audius-ctl config current-context | grep 'default'
       - run:

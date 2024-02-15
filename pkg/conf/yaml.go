@@ -17,11 +17,13 @@ func ReadConfigFromFile(confFilePath string, configTarget interface{}) error {
 		return err
 	}
 
-	err = yaml.Unmarshal(yamlFile, configTarget)
-	if err != nil {
+	return ReadConfigFromBytes(yamlFile, configTarget)
+}
+
+func ReadConfigFromBytes(buf []byte, configTarget interface{}) error {
+	if err := yaml.Unmarshal(buf, configTarget); err != nil {
 		return err
 	}
-
 	return nil
 }
 
