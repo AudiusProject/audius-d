@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"net"
@@ -188,7 +189,7 @@ func runNode(
 	// auto update hourly, starting 55 minutes from now (for randomness + prevent updates during CI)
 	currentTime := time.Now()
 	fiveMinutesAgo := currentTime.Add(-5 * time.Minute)
-	if err := audiusCli(dockerClient, host, "auto-upgrade", fmt.Sprintf("'%d * * * *'", fiveMinutesAgo.Minute())); err != nil {
+	if err := audiusCli(dockerClient, host, "auto-upgrade", fmt.Sprintf("%d * * * *", fiveMinutesAgo.Minute())); err != nil {
 		return logger.Error(err)
 	}
 	if err := dockerExec(dockerClient, host, "crond"); err != nil {
@@ -209,7 +210,7 @@ func runNode(
 	}
 	audiusCli(dockerClient, host, "set-network", network)
 
-	if err := audiusCli(dockerClient, host, "launch", adcDir); err != nil {
+	if err := audiusCli(dockerClient, host, "launch", "-y", adcDir); err != nil {
 		return logger.Error(err)
 	}
 
@@ -261,7 +262,7 @@ func removeContainerByName(dockerClient *client.Client, containerName string) er
 			}
 		}
 	}
-	logger.Warnf("Container %s not found, skipping removal.", containerName)
+	logger.Warnf("Container %s does not exist.", containerName)
 	return nil
 }
 
@@ -282,6 +283,9 @@ func downDockerNode(host string) error {
 	}
 	defer dockerClient.Close()
 
+	if err := audiusCli(dockerClient, host, "down"); err != nil {
+		logger.Warnf("Failed to spin down internal services on host %s: %s", host, err.Error())
+	}
 	if err := removeContainerByName(dockerClient, host); err != nil {
 		return logger.Error(err)
 	}
@@ -311,9 +315,17 @@ func dockerExec(dockerClient *client.Client, host string, cmds ...string) error 
 	if err != nil {
 		return err
 	}
-	err = dockerClient.ContainerExecStart(context.Background(), resp.ID, types.ExecStartCheck{})
+	execResp, err := dockerClient.ContainerExecAttach(context.Background(), resp.ID, types.ExecStartCheck{})
 	if err != nil {
 		return err
+	}
+	defer execResp.Close()
+	scanner := bufio.NewScanner(execResp.Reader)
+	for scanner.Scan() {
+		logger.Info(scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return logger.Error("Error reading command output: ", err)
 	}
 
 	return nil
