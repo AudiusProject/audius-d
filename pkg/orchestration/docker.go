@@ -66,16 +66,6 @@ func runNode(
 	}
 	for _, vol := range internalVolumes {
 		splitVols := strings.Split(vol, ":")
-		// create directories if they don't exist
-		_, err := os.Stat(splitVols[0])
-		if os.IsNotExist(err) {
-			err := os.MkdirAll(splitVols[0], 0755)
-			if err != nil {
-				return err
-			}
-		} else if err != nil {
-			return err
-		}
 		hostConfig.Mounts = append(hostConfig.Mounts, mount.Mount{
 			Type:   mount.TypeBind,
 			Source: splitVols[0],

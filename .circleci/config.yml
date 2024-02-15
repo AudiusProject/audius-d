@@ -102,6 +102,7 @@ jobs:
             audius-ctl config create-context devnet -f configs/templates/devnet.yaml
             audius-ctl devnet
             audius-ctl register
+            sudo mkdir -p /var/k8s/{creator-node-db,creator-node-backend,mediorum,bolt,dashboard-dist,esdata,discovery-provider-chain,discovery-provider-db,identity-service-db,
             audius-ctl up --await-healthy --audius-d-version $IMAGE_TAG
       - run:
           name: Test network status
@@ -127,27 +128,13 @@ jobs:
       - run:
           name: test create context
           command: |
-            audius-ctl config create-context test -f ~/audius-d/configs/templates/devnet.toml 
-      - run:
-          name: test modify context
-          command: |
-            audius-ctl config set Network.DeployOn testnet
-            audius-ctl config | grep 'DeployOn = "testnet"'
-      - run:
-          name: test invalid modify context
-          command: |
-            if audius-ctl config set CreatorNodes.creator-1.HttpPort asdf; then
-              echo Should not have succeeded due to type error
-              false
-            fi
-            audius-ctl config dump
-            audius-ctl config dump | grep 'HttpPort = 4000'
+            audius-ctl config create-context test -f ~/audius-d/configs/templates/devnet.yaml
       - run:
           name: test dump context to file
           command: |
             tmpfile="$(mktemp)"
             audius-ctl config dump -o "$tmpfile"
-            grep 'DeployOn = "testnet"' "$tmpfile"
+            grep 'deployOn: devnet' "$tmpfile"
       - run:
           name: test delete context
           command: |

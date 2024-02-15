@@ -188,7 +188,7 @@ func setConfigWithViper(key string, value string) error {
 		return err
 	}
 	v.SetConfigFile(filepath.Join(basedir, cname))
-	v.SetConfigType("toml")
+	v.SetConfigType("yaml")
 	if err = v.ReadInConfig(); err != nil {
 		return err
 	}
