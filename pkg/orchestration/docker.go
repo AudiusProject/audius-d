@@ -103,6 +103,20 @@ func runNode(
 		containerConfig.Env = []string{"HOST_DOCKER_INTERNAL=172.100.0.1"}
 	}
 
+	// pull audius-d
+	pullResp, err := dockerClient.ImagePull(context.Background(), containerConfig.Image, types.ImagePullOptions{})
+	if err != nil {
+		return logger.Error("Failed to pull image:", err)
+	}
+	defer pullResp.Close()
+	scanner := bufio.NewScanner(pullResp)
+	for scanner.Scan() {
+		logger.Info(scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return logger.Error("Error ImagePull output:", err)
+	}
+
 	// create wrapper container
 	createResponse, err := dockerClient.ContainerCreate(
 		context.Background(),
@@ -113,14 +127,14 @@ func runNode(
 		host,
 	)
 	if err != nil {
-		return logger.Error("Failed to create container: ", err)
+		return logger.Error("Failed to create container:", err)
 	}
 	if err := dockerClient.ContainerStart(
 		context.Background(),
 		createResponse.ID,
 		container.StartOptions{},
 	); err != nil {
-		return logger.Error("Failed to start container: ", err)
+		return logger.Error("Failed to start container:", err)
 	}
 
 	// generate the override.env file locally
@@ -315,7 +329,7 @@ func dockerExec(dockerClient *client.Client, host string, cmds ...string) error 
 		logger.Info(scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		return logger.Error("Error reading command output: ", err)
+		return logger.Error("Error reading command output:", err)
 	}
 
 	return nil
