@@ -114,7 +114,7 @@ jobs:
           name: Teardown
           command: |
             cd ~/audius-d
-            audius-ctl down
+            audius-ctl down -af
 
   test-config-subcommands:
     docker:

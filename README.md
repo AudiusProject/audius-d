@@ -50,7 +50,7 @@ sudo sh -c 'echo "127.0.0.1       creator-1.devnet.audius-d discovery-1.devnet.a
 
 Instruct audius-ctl what services to create and how to configure them. More on this concept below.
 ```
-audius-ctl config create-context devnet -f configs/templates/devnet.toml
+audius-ctl config create-context devnet -f configs/templates/devnet.yaml
 ```
 
 Install the devnet certificate to avoid https warnings when connecting to local nodes
@@ -70,7 +70,7 @@ audius-ctl up
 
 Test context to verify it is all working.
 ```
-audius-ctl test context
+audius-ctl status
 ...
 https://creator-1.audius-d   [ /health_check .data.healthy                    ] true
 https://discovery-1.audius-d [ /health_check .data.discovery_provider_healthy ] true
@@ -104,34 +104,26 @@ bin/audius-ctl-arm help  # mac
 
 ### Create a content node 
 
-> **Note:**
-> Use of templates assumes you are in the git project directory
-
-Using a template
-
-```bash
-audius-ctl config create-context my-creator-node -f configs/templates/operator.creator.toml
-```
-
-Or manually
+On your local computer
 
 ```bash
 audius-ctl config edit
 ```
 
-Append the following config:
+Write the following:
 
-```toml
-[CreatorNodes.creator-node]
-InternalHttpPort = 80
-ExternalHttpPort = 80
-InternalHttpsPort = 443
-ExternalHttpsPort = 443
-Host = "http://localhost"
-OperatorPrivateKey = ""      # <--- YOUR PRIVATE KEY HERE
-OperatorWallet = ""          # <--- YOUR WALLET HERE
-OperatorRewardsWallet = ""   # <--- YOUR WALLET HERE
+```yaml
+network:
+  deployOn: mainnet
+nodes:
+  my.domain.example.com:
+    type: creator
+    privateKey: abc123          # <--- YOUR PRIVATE KEY HERE
+    wallet: 0xABC123            # <--- YOUR WALLET HERE
+    rewardsWallet: 0xABC123     # <--- YOUR WALLET HERE
 ```
+
+This assumes you own a server at my.domain.example.com which has your ssh key and docker installed.
 
 Stand up the node
 
@@ -142,48 +134,7 @@ audius-ctl up
 Tear down the node
 
 ```bash
-audius-ctl down 
-```
-
-### Create a discovery node 
-
-Using a brand new context
-
-```bash
-audius-ctl config create-context my-discovery-node -f configs/templates/operator.discovery.toml
-audius-ctl up
-```
-
-OR Using an existing context
-
-```bash
-audius-ctl config edit
-```
-
-Add the following to the config:
-
-```toml
-[DiscoveryNodes.discovery-node]
-InternalHttpPort = 5000
-ExternalHttpPort = 5000
-InternalHttpsPort = 5001
-ExternalHttpsPort = 5001
-Host = "http://localhost"
-OperatorPrivateKey = ""     # <--- YOUR PRIVATE KEY HERE 
-OperatorWallet = ""         # <--- YOUR WALLET HERE
-OperatorRewardsWallet = ""  # <--- YOUR WALLET HERE
-```
-
-Stand up the node(s)
-
-```bash
-audius-ctl up
-```
-
-Tear down the node(s)
-
-```bash
-audius-ctl down 
+audius-ctl down my.domain.example.com
 ```
 
 ### Switch between contexts
