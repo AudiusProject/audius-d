@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/AudiusProject/audius-d/pkg/register"
@@ -15,15 +17,18 @@ var registerCmd = &cobra.Command{
 		if err != nil {
 			return logger.Error("Failed to retrieve context: ", err)
 		}
-		for _, cc := range ctx_config.CreatorNodes {
+		for host, nodeConfig := range ctx_config.Nodes {
+			if nodeConfig.Type != conf.Creator {
+				continue
+			}
 			err := register.RegisterNode(
 				"content-node",
-				cc.Host,
+				fmt.Sprintf("https://%s", host),
 				"http://localhost:8546",
 				register.GanacheAudiusTokenAddress,
 				register.GanacheContractRegistryAddress,
-				cc.OperatorWallet,
-				cc.OperatorPrivateKey,
+				nodeConfig.Wallet,
+				nodeConfig.PrivateKey,
 			)
 			if err != nil {
 				return logger.Error("Failed to register node:", err)

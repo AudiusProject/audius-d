@@ -45,14 +45,15 @@ func CheckNodeHealth(ctxConfig *conf.ContextConfig) ([]HealthCheckResponse, erro
 		}
 	}
 
-	for _, cc := range ctxConfig.IdentityService {
-		hosts = append(hosts, []string{cc.Host, ".healthy"})
-	}
-	for _, cc := range ctxConfig.CreatorNodes {
-		hosts = append(hosts, []string{cc.Host, ".data.healthy"})
-	}
-	for _, cc := range ctxConfig.DiscoveryNodes {
-		hosts = append(hosts, []string{cc.Host, ".data.discovery_provider_healthy"})
+	for host, config := range ctxConfig.Nodes {
+		switch config.Type {
+		case conf.Identity:
+			hosts = append(hosts, []string{host, ".healthy"})
+		case conf.Creator:
+			hosts = append(hosts, []string{host, ".data.healthy"})
+		case conf.Discovery:
+			hosts = append(hosts, []string{host, ".data.discovery_provider_healthy"})
+		}
 	}
 
 	for _, host := range hosts {
@@ -79,7 +80,7 @@ func checkHealth(host, key string) (HealthCheckResponse, error) {
 	var resp *http.Response
 	var err error
 	for retries < 3 {
-		resp, err = httpClient.Get(host + "/health_check")
+		resp, err = httpClient.Get(fmt.Sprintf("https://%s/health_check", host))
 		if err != nil || resp.StatusCode == 502 {
 			time.Sleep(3 * time.Second)
 			retries += 1

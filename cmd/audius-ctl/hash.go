@@ -22,11 +22,11 @@ func init() {
 				for _, arg := range args {
 					val, err := strconv.Atoi(arg)
 					if err != nil {
-						logger.ErrorF("invalid number: %s \n", arg)
+						logger.Errorf("invalid number: %s \n", arg)
 						continue
 					}
 					if hashed, err := hashes.Encode(val); err != nil {
-						logger.ErrorF("invalid input: %s \n", arg)
+						logger.Errorf("invalid input: %s \n", arg)
 					} else {
 						logger.Out(hashed)
 					}
@@ -39,7 +39,7 @@ func init() {
 			RunE: func(cmd *cobra.Command, args []string) error {
 				for _, arg := range args {
 					if num, err := hashes.MaybeDecode(arg); err != nil {
-						logger.ErrorF("invalid input: %s \n", arg)
+						logger.Errorf("invalid input: %s \n", arg)
 					} else {
 						logger.Out(num)
 					}

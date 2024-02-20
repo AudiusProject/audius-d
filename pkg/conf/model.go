@@ -6,62 +6,55 @@ type ExecutionConfig struct {
 }
 
 type ContextConfig struct {
-	ConfigVersion   string
-	Network         NetworkConfig
-	CreatorNodes    map[string]CreatorConfig
-	DiscoveryNodes  map[string]DiscoveryConfig
-	IdentityService map[string]IdentityConfig
+	Network NetworkConfig         `yaml:"network"`
+	Nodes   map[string]NodeConfig `yaml:"nodes"`
 }
 
 func NewContextConfig() *ContextConfig {
 	return &ContextConfig{
-		ConfigVersion:   ConfigVersion,
-		Network:         NetworkConfig{},
-		CreatorNodes:    map[string]CreatorConfig{},
-		DiscoveryNodes:  map[string]DiscoveryConfig{},
-		IdentityService: map[string]IdentityConfig{},
+		Network: NetworkConfig{
+			DeployOn: Devnet,
+		},
+		Nodes: make(map[string]NodeConfig),
 	}
 }
 
 // base structure that all server types need
-type BaseServerConfig struct {
+type NodeConfig struct {
 	// port that will be exposed via audius-docker-compose
 	// i.e. what you would curl in a http://{host}:{port}/health_check
-	HttpPort  uint
-	HttpsPort uint
-	Host      string
+	Type      NodeType `yaml:"type"`
+	HttpPort  uint     `yaml:"httpPort,omitempty"`
+	HttpsPort uint     `yaml:"httpsPort,omitempty"`
+
 	// One of "current", "prerelease", or an audius-docker-compose git branch
 	// "current" corresponds to main adc branch
 	// "prelease" corresponds to stage
 	// empty string defaults to "current" behavior
 	// anything else is the adc branch (for dev purposes)
-	Version string
+	Version string `yaml:"version,omitempty"`
 
-	// use an existing override .env file
-	// instead of creating one on the fly
-	// based on toml
-	OverrideEnvPath string
+	PrivateKey    string `yaml:"privateKey"`
+	Wallet        string `yaml:"wallet"`
+	RewardsWallet string `yaml:"rewardsWallet"`
+	EthWallet     string `yaml:"ethWallet,omitempty"`
 
-	OperatorPrivateKey    string
-	OperatorWallet        string
-	OperatorRewardsWallet string
-	EthOwnerWallet        string
+	// content storage
+	StorageUrl         string `yaml:"storageUrl,omitempty"`
+	StorageCredentials string `yaml:"storageCredentials,omitempty"`
 
 	// Stores any as-yet unstructured configuration
 	// (for compatibility with audius-docker-compose migrations)
-	OverrideConfig map[string]string
+	OverrideConfig map[string]string `yaml:"overrideConfig,omitempty"`
 }
 
-type CreatorConfig struct {
-	BaseServerConfig `mapstructure:",squash"`
-}
-
-type DiscoveryConfig struct {
-	BaseServerConfig `mapstructure:",squash"`
-}
-
-type IdentityConfig struct {
-	BaseServerConfig `mapstructure:",squash"`
+func NewNodeConfig(nodeType NodeType) NodeConfig {
+	return NodeConfig{
+		Type:      nodeType,
+		HttpPort:  80,
+		HttpsPort: 443,
+		Version:   "current",
+	}
 }
 
 type NetworkType string
@@ -72,13 +65,17 @@ const (
 	Mainnet NetworkType = "mainnet"
 )
 
+type NodeType string
+
+const (
+	Creator   NodeType = "creator"
+	Discovery NodeType = "discovery"
+	Identity  NodeType = "identity"
+)
+
 type NetworkConfig struct {
 	// Network that the node should be configured to deploy on.
 	// Choose "devnet", "testnet", or "mainnet"
 	// "devnet" will automatically spin up local chains and identity service
-	DeployOn NetworkType
-}
-
-type NodeConfig interface {
-	ToOverrideEnv(nc NetworkConfig) []byte
+	DeployOn NetworkType `yaml:"deployOn"`
 }

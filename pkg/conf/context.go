@@ -2,8 +2,8 @@ package conf
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 
 	"github.com/AudiusProject/audius-d/pkg/logger"
@@ -99,13 +99,13 @@ func GetContexts() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	files, err := ioutil.ReadDir(ctxDir)
+	entries, err := os.ReadDir(ctxDir)
 	if err != nil {
 		return nil, err
 	}
 
 	var ret []string
-	for _, file := range files {
+	for _, file := range entries {
 		if !file.IsDir() {
 			ret = append(ret, file.Name())
 		}
@@ -113,12 +113,12 @@ func GetContexts() ([]string, error) {
 	return ret, nil
 }
 
-func ReadContext(ctxName string) (*ContextConfig, error) {
+func GetContextConfig(ctxName string) (*ContextConfig, error) {
 	ctxDir, err := GetContextBaseDir()
 	if err != nil {
 		return nil, err
 	}
-	_, err = ioutil.ReadDir(ctxDir)
+	_, err = os.ReadDir(ctxDir)
 	if err != nil {
 		return nil, err
 	}
@@ -176,24 +176,11 @@ func DeleteContext(ctxName string) error {
 	return nil
 }
 
-func ReadConfigFromContext(contextName string, configTarget *ContextConfig) error {
-	contextBaseDir, err := GetContextBaseDir()
-	if err != nil {
-		return err
-	}
-	err = ReadConfigFromFile(filepath.Join(contextBaseDir, contextName), configTarget)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func WriteConfigToContext(ctxName string, ctxConfig *ContextConfig) error {
 	ctxBaseDir, err := GetContextBaseDir()
 	if err != nil {
 		return err
 	}
-	ctxConfig.ConfigVersion = ConfigVersion
 	err = WriteConfigToFile(filepath.Join(ctxBaseDir, ctxName), ctxConfig)
 	return err
 }
@@ -207,13 +194,13 @@ func WriteConfigToCurrentContext(ctxConfig *ContextConfig) error {
 }
 
 func CreateContextFromTemplate(name string, templateFilePath string) error {
-	var ctxConfig ContextConfig
+	ctxConfig := NewContextConfig()
 	if templateFilePath != "" {
-		if err := ReadConfigFromFile(templateFilePath, &ctxConfig); err != nil {
+		if err := ReadConfigFromFile(templateFilePath, ctxConfig); err != nil {
 			return err
 		}
 	}
-	if err := WriteConfigToContext(name, &ctxConfig); err != nil {
+	if err := WriteConfigToContext(name, ctxConfig); err != nil {
 		return err
 	}
 	return nil
@@ -233,20 +220,29 @@ func createDefaultContextIfNotExists() error {
 	if err != nil {
 		return err
 	}
-
-	var conf ContextConfig
-	if err = ReadConfigFromContext("default", &conf); err == nil {
-		return nil
+	contextFilePath := filepath.Join(contextDir, "default")
+	if _, err = os.Stat(contextFilePath); os.IsNotExist(err) {
+		logger.Info("Default context not found, recreating.")
+		config := NewContextConfig()
+		if err = WriteConfigToFile(contextFilePath, config); err != nil {
+			return err
+		}
 	}
-
-	conf = ContextConfig{
-		ConfigVersion: ConfigVersion,
-		Network:       NetworkConfig{},
-	}
-
-	if err = WriteConfigToFile(filepath.Join(contextDir, "default"), &conf); err != nil {
-		return err
-	}
-
 	return nil
+}
+
+func getConfigBaseDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	confDir := filepath.Join(usr.HomeDir, ".audius")
+
+	// MkdirAll is idempotent
+	// Ensure directory exists before handing it off
+	err = os.MkdirAll(confDir, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+	return confDir, nil
 }

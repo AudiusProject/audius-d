@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -10,26 +11,43 @@ import (
 	"github.com/AudiusProject/audius-d/pkg/register"
 )
 
-func StartDevnet(_ *conf.ContextConfig) {
-	startDevnetDocker()
+func StartDevnet(_ *conf.ContextConfig) error {
+	return startDevnetDocker()
 }
 
-func DownDevnet(_ *conf.ContextConfig) {
-	downDevnetDocker()
+func DownDevnet(_ *conf.ContextConfig) error {
+	return downDevnetDocker()
 }
 
-func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverride string) {
-	if config.Network.DeployOn == conf.Devnet {
-		startDevnetDocker()
-		for _, cc := range config.CreatorNodes {
+func RunAudiusNodes(nodes map[string]conf.NodeConfig, network conf.NetworkConfig, await bool, audiusdTagOverride string) {
+	dashboardVolume := "/dashboard-dist:/dashboard-dist"
+	esDataVolume := "/esdata:/esdata"
+
+	// Handle devnet-specific setup
+	if network.DeployOn == conf.Devnet {
+		// Macos volumes edge case
+		if runtime.GOOS == "darwin" {
+			esDataVolume = "/var/k8s/esdata:/esdata"
+			dashboardVolume = "/var/k8s/dashboard-dist:/dashboard-dist"
+		}
+
+		if err := startDevnetDocker(); err != nil {
+			logger.Warnf("Failed to start devnet: %s", err.Error())
+		}
+
+		// register all content nodes
+		for host, nodeConfig := range nodes {
+			if nodeConfig.Type != conf.Creator {
+				continue
+			}
 			err := register.RegisterNode(
 				"content-node",
-				cc.Host,
+				fmt.Sprintf("https://%s", host),
 				"http://localhost:8546",
 				register.GanacheAudiusTokenAddress,
 				register.GanacheContractRegistryAddress,
-				cc.OperatorWallet,
-				cc.OperatorPrivateKey,
+				nodeConfig.Wallet,
+				nodeConfig.PrivateKey,
 			)
 			if err != nil {
 				logger.Warnf("Failed to register creator node: %s", err)
@@ -37,92 +55,54 @@ func RunAudiusWithConfig(config *conf.ContextConfig, await bool, audiusdTagOverr
 		}
 	}
 
-	dashboardVolume := "/dashboard-dist:/dashboard-dist"
-	esDataVolume := "/esdata:/esdata"
+	for host, nodeConfig := range nodes {
+		var volumes []string
+		switch nodeConfig.Type {
+		case conf.Creator:
+			volumes = []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db", "/var/k8s/bolt:/var/k8s/bolt", dashboardVolume}
+		case conf.Discovery:
+			volumes = []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt", esDataVolume, dashboardVolume}
+		case conf.Identity:
+			volumes = []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
+		}
 
-	// mac local volumes need some extra stuff
-	// stick into /var/k8s as if these existed then
-	if runtime.GOOS == "darwin" {
-		esDataVolume = "/var/k8s/esdata:/esdata"
-		dashboardVolume = "/var/k8s/dashboard-dist:/dashboard-dist"
-	}
-
-	for cname, cc := range config.CreatorNodes {
-		creatorVolumes := []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db", "/var/k8s/bolt:/var/k8s/bolt", dashboardVolume}
-		override := cc.ToOverrideEnv(config.Network)
-		if err := RunNode(
-			config.Network,
-			cc.BaseServerConfig,
+		override := nodeConfig.ToOverrideEnv(host, network)
+		if err := runNode(
+			host,
+			nodeConfig,
+			network,
 			override,
-			cname,
-			"creator-node",
-			creatorVolumes,
+			volumes,
 			audiusdTagOverride,
 		); err != nil {
-			logger.Warnf("Failure starting node %s: %s\nSkipping", cname, err.Error())
-		}
-	}
-	for cname, dc := range config.DiscoveryNodes {
-		discoveryVolumes := []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt", esDataVolume, dashboardVolume}
-		override := dc.ToOverrideEnv(config.Network)
-		if err := RunNode(
-			config.Network,
-			dc.BaseServerConfig,
-			override,
-			cname,
-			"discovery-provider",
-			discoveryVolumes,
-			audiusdTagOverride,
-		); err != nil {
-			logger.Warnf("Failure starting node %s: %s\nSkipping", cname, err.Error())
-		}
-		// discovery requires a few extra things
-		if config.Network.DeployOn != conf.Devnet {
-			audiusCli(cname, "launch-chain")
-		}
-	}
-	for cname, id := range config.IdentityService {
-		identityVolumes := []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
-		override := id.ToOverrideEnv(config.Network)
-		if err := RunNode(
-			config.Network,
-			id.BaseServerConfig,
-			override,
-			cname,
-			"identity-service",
-			identityVolumes,
-			audiusdTagOverride,
-		); err != nil {
-			logger.Warnf("Failure starting node %s: %s\nSkipping", cname, err.Error())
+			logger.Warnf("Error encountered starting node %s: %s", host, err.Error())
 		}
 	}
 
 	if await {
-		awaitHealthy(config)
+		awaitHealthy(nodes)
 	}
 }
 
-func RunDown(config *conf.ContextConfig) {
-	// easiest way
-	cnames := []string{"rm", "-f"}
-
-	for cname := range config.CreatorNodes {
-		cnames = append(cnames, cname)
-	}
-	for cname := range config.DiscoveryNodes {
-		cnames = append(cnames, cname)
-	}
-	for cname := range config.IdentityService {
-		cnames = append(cnames, cname)
-	}
-	runCommand("docker", cnames...)
-	if config.Network.DeployOn == conf.Devnet {
-		downDevnetDocker()
+func RunDownNodes(nodes map[string]conf.NodeConfig) {
+	for host := range nodes {
+		if err := downDockerNode(host); err != nil {
+			logger.Warnf("Error encountered spinning down %s: %s", host, err.Error())
+		} else {
+			logger.Infof("Node %s spun down.", host)
+		}
 	}
 }
 
-func runCommand(name string, args ...string) error {
-	cmd := exec.Command(name, args...)
+func execLocal(command string, args ...string) error {
+	cmd := exec.Command(command, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func execRemote(host string, command string, args ...string) error {
+	cmd := exec.Command("ssh", append([]string{host, command}, args...)...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()

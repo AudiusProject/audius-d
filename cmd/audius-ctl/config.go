@@ -1,15 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -48,17 +46,6 @@ var (
 		},
 	}
 
-	setCmd = &cobra.Command{
-		Use:   "set <property.name> <value>",
-		Short: "modify a configuration value",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := setConfigWithViper(args[0], args[1]); err != nil {
-				return logger.Error("Failed to set config value: ", err)
-			}
-			return nil
-		},
-	}
 	editCmd = &cobra.Command{
 		Use:   "edit [context]",
 		Short: "edit the current or specified configuration in an external editor",
@@ -80,13 +67,33 @@ var (
 
 	confFileTemplate string
 	createContextCmd = &cobra.Command{
-		Use:   "create-context <name> [options]",
+		Use:   "create-context <name>",
 		Short: "create an audius-d configuration context, optionally from a template",
-		Args:  cobra.ExactArgs(1),
+		Long: `
+		Create an audius-d configuration context.
+		Without any flags, creates a bare-bones context with the given name.
+		Use '-f [filename]' to specify a template to copy.
+		Use '-f -' to read from stdin. Useful for scripts or pipes.
+		`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := conf.CreateContextFromTemplate(args[0], confFileTemplate)
-			if err != nil {
-				return logger.Error("Failed to create context:", err)
+			if confFileTemplate == "-" {
+				input, err := io.ReadAll(os.Stdin)
+				if err != nil {
+					return logger.Error("Error reading from stdin:", err)
+				}
+				ctx := conf.NewContextConfig()
+				if err := conf.ReadConfigFromBytes(input, ctx); err != nil {
+					return logger.Error("Could not parse config:", err)
+				}
+				if err := conf.WriteConfigToContext(args[0], ctx); err != nil {
+					return logger.Error("Failed to save config:", err)
+				}
+			} else {
+				err := conf.CreateContextFromTemplate(args[0], confFileTemplate)
+				if err != nil {
+					return logger.Error("Failed to create context:", err)
+				}
 			}
 			useContextCmd.RunE(cmd, args)
 			return nil
@@ -108,7 +115,7 @@ var (
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := conf.MigrateAudiusDockerCompose(args[0], args[1]); err != nil {
-				return logger.Error("audius-docker-compose migration failed: ", err)
+				return logger.Error("audius-docker-compose migration failed:", err)
 			}
 			logger.Info("audius-docker-compose migration successful 🎉")
 			useContextCmd.RunE(cmd, args)
@@ -121,7 +128,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, err := conf.GetCurrentContextName()
 			if err != nil {
-				return logger.Error("Failed to retrieve current context: ", err)
+				return logger.Error("Failed to retrieve current context:", err)
 			}
 			logger.Out(ctx)
 			return nil
@@ -133,7 +140,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctxs, err := conf.GetContexts()
 			if err != nil {
-				return logger.Error("Failed to retrieve current context: ", err)
+				return logger.Error("Failed to retrieve current context:", err)
 			}
 			for _, ctx := range ctxs {
 				logger.Out(ctx)
@@ -148,7 +155,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := conf.UseContext(args[0])
 			if err != nil {
-				return logger.Error("Failed to set context: ", err)
+				return logger.Error("Failed to set context:", err)
 
 			}
 			logger.Out(args[0])
@@ -162,7 +169,7 @@ var (
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := conf.DeleteContext(args[0]); err != nil {
-				return logger.Error("Failed to delete context: ", err)
+				return logger.Error("Failed to delete context:", err)
 			}
 			logger.Out(args[0])
 			logger.Infof("Context %s deleted.", args[0])
@@ -174,36 +181,7 @@ var (
 func init() {
 	createContextCmd.Flags().StringVarP(&confFileTemplate, "templatefile", "f", "", "-f <config file to build context from>")
 	dumpCmd.Flags().StringVarP(&dumpOutfile, "outfile", "o", "", "-o <outfile")
-	configCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, setCmd, editCmd, migrateContextCmd)
-}
-
-func setConfigWithViper(key string, value string) error {
-	v := viper.New()
-	cname, err := conf.GetCurrentContextName()
-	if err != nil {
-		return err
-	}
-	basedir, err := conf.GetContextBaseDir()
-	if err != nil {
-		return err
-	}
-	v.SetConfigFile(filepath.Join(basedir, cname))
-	v.SetConfigType("toml")
-	if err = v.ReadInConfig(); err != nil {
-		return err
-	}
-	if !v.IsSet(key) {
-		return fmt.Errorf("key '%s' not found in config", key)
-	}
-	v.Set(key, value)
-	var config conf.ContextConfig
-	if err = v.Unmarshal(&config); err != nil {
-		return err
-	}
-	if err = conf.WriteConfigToCurrentContext(&config); err != nil {
-		return err
-	}
-	return nil
+	configCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, editCmd, migrateContextCmd)
 }
 
 func EditConfig(contextName string) error {
@@ -214,12 +192,12 @@ func EditConfig(contextName string) error {
 	tempFile.Close()
 	defer os.Remove(tempFile.Name())
 
-	var existingConfig conf.ContextConfig
-	if err = conf.ReadConfigFromContext(contextName, &existingConfig); err != nil {
+	existingConfig, err := conf.GetContextConfig(contextName)
+	if err != nil {
 		return err
 	}
 
-	if err = conf.WriteConfigToFile(tempFile.Name(), &existingConfig); err != nil {
+	if err = conf.WriteConfigToFile(tempFile.Name(), existingConfig); err != nil {
 		return err
 	}
 

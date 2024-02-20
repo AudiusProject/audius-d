@@ -11,18 +11,10 @@ import (
 
 var (
 	testCmd = &cobra.Command{
-		Use:   "test [command]",
-		Short: "test audius-d connectivity",
-		Args:  cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return nil
-		},
-	}
-
-	testContextCmd = &cobra.Command{
-		Use:          "context",
-		Short:        "Test the health of the current context",
+		Use:          "status",
+		Short:        "test audius-d connectivity",
 		SilenceUsage: true, // do not print --help text on failed node health
+		Args:         cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctxConfig, err := conf.ReadOrCreateContextConfig()
 			if err != nil {
@@ -52,7 +44,3 @@ var (
 		},
 	}
 )
-
-func init() {
-	testCmd.AddCommand(testContextCmd)
-}
