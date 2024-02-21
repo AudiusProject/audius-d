@@ -159,14 +159,6 @@ audius-ctl config create-context my-new-sandbox-context -f configs/templates/dev
 
 Use contexts to experiment with different setups without clobbering changes.
 
-### Run the gui
-
-View transaction info in the browser
-
-```bash
-audius-ctl gui
-```
-
 ### Migrate from audius-docker-compose to audius-d
 
 Already running audius via [audius-docker-compose](https://github.com/AudiusProject/audius-docker-compose)?

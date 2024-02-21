@@ -3,14 +3,8 @@ AD_TAG ?= default
 # One of patch, minor, or major
 UPGRADE_TYPE ?= patch
 
-UI_DIR := web/ui
-UI_ARTIFACT_DIR := pkg/gui/dist
-UI_ARTIFACT := $(UI_ARTIFACT_DIR)/index.html
-UI_SRC := $(shell find $(UI_DIR) -type f -not -path '$(UI_DIR)/node_modules/*')
-UI_PKG_INSTALL_CMD := npm install
-
 ABI_DIR := pkg/register/ABIs
-SRC := $(shell find . -type f -name '*.go') go.mod go.sum $(UI_ARTIFACT)
+SRC := $(shell find . -type f -name '*.go') go.mod go.sum
 
 VERSION_FILE := .version.json
 VERSION_LDFLAG := -X main.Version=$(shell git rev-parse HEAD)
@@ -20,28 +14,23 @@ VERSION_LDFLAG := -X main.Version=$(shell git rev-parse HEAD)
 
 audius-ctl: bin/audius-ctl-arm bin/audius-ctl-x86
 
-bin/audius-ctl-arm: $(SRC) $(UI_ARTIFACT)
+bin/audius-ctl-arm: $(SRC)
 	@echo "Building arm audius-ctl..."
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm ./cmd/audius-ctl
 
-bin/audius-ctl-x86: $(SRC) $(UI_ARTIFACT)
+bin/audius-ctl-x86: $(SRC)
 	@echo "Building x86 audius-ctl..."
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-x86 ./cmd/audius-ctl
 
-bin/audius-ctl-arm-mac: $(SRC) $(UI_ARTIFACT)
+bin/audius-ctl-arm-mac: $(SRC)
 	@echo "Building arm audius-ctl..."
 	GOOS=darwin GOARCH=arm64 go build -tags mac -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm ./cmd/audius-ctl
-
-$(UI_ARTIFACT): $(UI_SRC)
-	@echo "Building GUI..."
-	cd $(UI_DIR) && $(UI_PKG_INSTALL_CMD) && npm run build
 
 .PHONY: release-audius-ctl audius-ctl-production-build
 release-audius-ctl:
 	bash scripts/github_release.sh
 
 audius-ctl-production-build: VERSION_LDFLAG := -X main.Version=$(shell bash scripts/get_new_version.sh $(UPGRADE_TYPE))
-audius-ctl-production-build: UI_PKG_INSTALL_CMD := npm ci
 audius-ctl-production-build: clean audius-ctl
 
 .PHONY: regen-abis
@@ -69,4 +58,3 @@ uninstall:
 .PHONY: clean
 clean:
 	rm -f bin/*
-	rm -rf $(UI_ARTIFACT_DIR)
