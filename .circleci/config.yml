@@ -64,19 +64,11 @@ jobs:
               docker buildx create --use
               make build-push-docker AD_TAG="$IMAGE_TAG"
             fi
-      - restore_cache:
-          keys:
-            - node-modules-{{ checksum "~/audius-d/web/ui/package-lock.json" }}
-            - node-modules-
       - run:
           name: Build audius-ctl for production
           command: |
             cd ~/audius-d
             make audius-ctl-production-build
-      - save_cache:
-          key: node-modules-{{ checksum "~/audius-d/web/ui/package-lock.json" }}
-          paths:
-            - ~/audius-d/web/ui/node_modules
       - persist_to_workspace:
           root: ~/audius-d
           paths:

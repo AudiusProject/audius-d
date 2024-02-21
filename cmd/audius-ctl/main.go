@@ -26,7 +26,7 @@ func main() {
 		},
 	}
 	rootCmd.Flags().BoolVar(&displayVersion, "version", false, "Display version info")
-	rootCmd.AddCommand(configCmd, devnetCmd, downCmd, emCmd, guiCmd, hashCmd, registerCmd, sbCmd, testCmd, upCmd)
+	rootCmd.AddCommand(configCmd, devnetCmd, downCmd, registerCmd, sbCmd, testCmd, upCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
