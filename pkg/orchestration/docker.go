@@ -22,13 +22,31 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var (
+	internalVolumes = map[conf.NodeType][]string{
+		conf.Creator: []string{
+			"/var/k8s/mediorum",
+			"/var/k8s/creator-node-backend",
+			"/var/k8s/creator-node-db-15",
+			"/var/k8s/bolt",
+		},
+		conf.Discovery: []string{
+			"/var/k8s/discovery-provider-db",
+			"/var/k8s/discovery-provider-chain",
+			"/var/k8s/bolt",
+		},
+		conf.Identity: []string{
+			"/var/k8s/identity-service-db",
+		},
+	}
+)
+
 // deploys a server node generically
 func runNode(
 	host string,
 	config conf.NodeConfig,
 	nconf conf.NetworkConfig,
 	override map[string]string,
-	internalVolumes []string,
 	audiusdTag string,
 ) error {
 	dockerClient, err := getDockerClient(host)
@@ -64,13 +82,24 @@ func runNode(
 			},
 		},
 	}
-	for _, vol := range internalVolumes {
-		splitVols := strings.Split(vol, ":")
-		hostConfig.Mounts = append(hostConfig.Mounts, mount.Mount{
-			Type:   mount.TypeBind,
-			Source: splitVols[0],
-			Target: splitVols[1],
-		})
+	for _, vol := range internalVolumes[config.Type] {
+		if exists, err := dirExistsOnHost(host, vol); err != nil {
+			return logger.Error(err)
+		} else if exists { // data is leftover from a migrated host
+			hostConfig.Mounts = append(hostConfig.Mounts, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: vol,
+				Target: vol,
+			})
+		} else { // new host, just use named volumes instead of binds
+			splitPath := strings.Split(vol, "/")
+			volName := splitPath[len(splitPath)-1]
+			hostConfig.Mounts = append(hostConfig.Mounts, mount.Mount{
+				Type:   mount.TypeVolume,
+				Source: volName,
+				Target: vol,
+			})
+		}
 	}
 
 	var port uint = 80
@@ -374,4 +403,27 @@ func resolvesToLocalhost(host string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func dirExistsOnHost(host, dir string) (bool, error) {
+	isLocalhost, err := resolvesToLocalhost(host)
+	if err != nil {
+		return false, err
+	} else if isLocalhost {
+		_, err := os.Stat(dir)
+		if err == nil {
+			return true, nil
+		} else if os.IsNotExist(err) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	} else {
+		if err = execRemote(host, fmt.Sprintf("[ -d %s ]", dir)); err != nil {
+			logger.Infof("Error is %s", err.Error())
+			return false, nil
+		} else {
+			return true, nil
+		}
+	}
 }

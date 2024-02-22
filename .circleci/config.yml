@@ -102,8 +102,6 @@ jobs:
             audius-ctl config create-context devnet -f configs/templates/devnet.yaml
             audius-ctl devnet
             audius-ctl register
-            sudo mkdir -p /{dashboard-dist,esdata} /var/k8s/{creator-node-db,creator-node-backend,mediorum,bolt,discovery-provider-chain,discovery-provider-db,identity-service-db}
-            sudo chown -R circleci /{dashboard-dist,esdata} /var/k8s/{creator-node-db,creator-node-backend,mediorum,bolt,discovery-provider-chain,discovery-provider-db,identity-service-db}
             audius-ctl up --await-healthy --audius-d-version $IMAGE_TAG
       - run:
           name: Test network status

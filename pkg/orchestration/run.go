@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/logger"
@@ -20,17 +19,8 @@ func DownDevnet(_ *conf.ContextConfig) error {
 }
 
 func RunAudiusNodes(nodes map[string]conf.NodeConfig, network conf.NetworkConfig, await bool, audiusdTagOverride string) {
-	dashboardVolume := "/dashboard-dist:/dashboard-dist"
-	esDataVolume := "/esdata:/esdata"
-
 	// Handle devnet-specific setup
 	if network.DeployOn == conf.Devnet {
-		// Macos volumes edge case
-		if runtime.GOOS == "darwin" {
-			esDataVolume = "/var/k8s/esdata:/esdata"
-			dashboardVolume = "/var/k8s/dashboard-dist:/dashboard-dist"
-		}
-
 		if err := startDevnetDocker(); err != nil {
 			logger.Warnf("Failed to start devnet: %s", err.Error())
 		}
@@ -56,23 +46,12 @@ func RunAudiusNodes(nodes map[string]conf.NodeConfig, network conf.NetworkConfig
 	}
 
 	for host, nodeConfig := range nodes {
-		var volumes []string
-		switch nodeConfig.Type {
-		case conf.Creator:
-			volumes = []string{"/var/k8s/mediorum:/var/k8s/mediorum", "/var/k8s/creator-node-backend:/var/k8s/creator-node-backend", "/var/k8s/creator-node-db:/var/k8s/creator-node-db", "/var/k8s/bolt:/var/k8s/bolt", dashboardVolume}
-		case conf.Discovery:
-			volumes = []string{"/var/k8s/discovery-provider-db:/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain:/var/k8s/discovery-provider-chain", "/var/k8s/bolt:/var/k8s/bolt", esDataVolume, dashboardVolume}
-		case conf.Identity:
-			volumes = []string{"/var/k8s/identity-service-db:/var/lib/postgresql/data"}
-		}
-
 		override := nodeConfig.ToOverrideEnv(host, network)
 		if err := runNode(
 			host,
 			nodeConfig,
 			network,
 			override,
-			volumes,
 			audiusdTagOverride,
 		); err != nil {
 			logger.Warnf("Error encountered starting node %s: %s", host, err.Error())

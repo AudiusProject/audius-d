@@ -179,7 +179,7 @@ var (
 )
 
 func init() {
-	createContextCmd.Flags().StringVarP(&confFileTemplate, "templatefile", "f", "", "-f <config file to build context from>")
+	createContextCmd.Flags().StringVarP(&confFileTemplate, "templatefile", "f", "", "'-f <filename>' to copy context from a template file or use '-f -' to read from stdin")
 	dumpCmd.Flags().StringVarP(&dumpOutfile, "outfile", "o", "", "-o <outfile")
 	configCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, editCmd, migrateContextCmd)
 }
