@@ -16,7 +16,7 @@ var (
 	awaitHealthy = false
 	audiusdTag   = "default"
 	upCmd        = &cobra.Command{
-		Use:   "up [hosts] [--await-healthy/-w]",
+		Use:   "up [hosts]",
 		Short: "Spin up the audius nodes specified in your config, optionally specifying which hosts.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var nodesToRunUp map[string]conf.NodeConfig
