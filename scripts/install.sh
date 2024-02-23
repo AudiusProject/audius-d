@@ -3,11 +3,7 @@
 set -eo pipefail
 
 ARCH=$(uname -m)
-if [ "$ARCH" = "arm64" ]; then
-    BINARY_NAME="audius-ctl-arm"
-else
-    BINARY_NAME="audius-ctl-x86"
-fi
+BINARY_NAME="audius-ctl-${ARCH}"
 
 if ! [ -f "bin/$BINARY_NAME" ]; then
     echo "No build artifact '$BINARY_NAME' in bin/"

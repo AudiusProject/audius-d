@@ -72,8 +72,8 @@ jobs:
       - persist_to_workspace:
           root: ~/audius-d
           paths:
-            - bin/audius-ctl-arm
-            - bin/audius-ctl-x86
+            - bin/audius-ctl-arm64
+            - bin/audius-ctl-x86_64
 
   test-audius-d-devnet:
     machine:

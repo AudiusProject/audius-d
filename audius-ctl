@@ -2,12 +2,8 @@
 set -eo pipefail
 
 ARCH=$(uname -m)
-if [ "$ARCH" = "arm64" ]; then
-    BINARY_NAME="audius-ctl-arm"
-    make bin/audius-ctl-arm | { grep -vE '^make\: .* is up to date\.$' || true; }
-else
-    BINARY_NAME="audius-ctl-x86"
-    make bin/audius-ctl-x86 | { grep -vE '^make\: .* is up to date\.$' || true; }
-fi
+BINARY_NAME="audius-ctl-${ARCH}"
+
+make "bin/${BINARY_NAME}" | { grep -vE '^make\: .* is up to date\.$' || true; }
 
 ./bin/$BINARY_NAME "$@"

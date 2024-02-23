@@ -12,11 +12,7 @@ if ! [ -f bin/audius-ctl-x86 ] || ! [ -f bin/audius-ctl-arm ]; then
 fi
 
 ARCH=$(uname -m)
-if [ "$ARCH" = "arm64" ]; then
-  BINARY_NAME="audius-ctl-arm"
-else
-  BINARY_NAME="audius-ctl-x86"
-fi
+BINARY_NAME="audius-ctl-${ARCH}"
 release_version="$(bin/$BINARY_NAME --version)"
 
 if ! echo $release_version | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" >/dev/null; then

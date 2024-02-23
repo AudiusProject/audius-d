@@ -8,9 +8,7 @@ Run your own node.
 Download from the [releases page](https://github.com/AudiusProject/audius-d/releases), **OR** run the following:
 
 ```bash
-ARCH=x86 # Linux x86_64
-ARCH=arm # MacOS
-gh release download -R https://github.com/AudiusProject/audius-d --clobber --output ~/.local/bin/audius-ctl --pattern audius-ctl-$ARCH
+curl -L "https://github.com/AudiusProject/audius-d/releases/latest/download/audius-ctl-$(uname -m)" -o ~/.local/bin/audius-ctl && chmod +x ~/.local/bin/audius-ctl
 ```
 
 ### From build
@@ -96,8 +94,8 @@ From git project directory:
 ## OR ##
 
 # Manually select binary after running `make`
-bin/audius-ctl-x86 help  # linux
-bin/audius-ctl-arm help  # mac
+bin/audius-ctl-x86_64 help  # linux
+bin/audius-ctl-arm64 help  # mac
 ```
 
 ## Usage
