@@ -10,7 +10,7 @@ Download from the [releases page](https://github.com/AudiusProject/audius-d/rele
 ```bash
 ARCH=x86 # Linux x86_64
 ARCH=arm # MacOS
-gh release download -R https://github.com/AudiusProject/audius-d --clobber --output ~/.local/bin/audius-ctl --pattern audius-ctl-$ARCH
+curl -L "https://github.com/AudiusProject/audius-d/releases/latest/download/audius-ctl-$ARCH" -o ~/.local/bin/audius-ctl && chmod +x ~/.local/bin/audius-ctl
 ```
 
 ### From build
