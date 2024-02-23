@@ -8,9 +8,7 @@ Run your own node.
 Download from the [releases page](https://github.com/AudiusProject/audius-d/releases), **OR** run the following:
 
 ```bash
-ARCH=x86 # Linux x86_64
-ARCH=arm # MacOS
-curl -L "https://github.com/AudiusProject/audius-d/releases/latest/download/audius-ctl-$ARCH" -o ~/.local/bin/audius-ctl && chmod +x ~/.local/bin/audius-ctl
+curl -L "https://github.com/AudiusProject/audius-d/releases/latest/download/audius-ctl-$(uname -m)" -o ~/.local/bin/audius-ctl && chmod +x ~/.local/bin/audius-ctl
 ```
 
 ### From build

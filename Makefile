@@ -12,19 +12,19 @@ VERSION_LDFLAG := -X main.Version=$(shell git rev-parse HEAD)
 #LDFLAGS := ""
 
 
-audius-ctl: bin/audius-ctl-arm bin/audius-ctl-x86
+audius-ctl: bin/audius-ctl-arm64 bin/audius-ctl-x86_64
 
-bin/audius-ctl-arm: $(SRC)
+bin/audius-ctl-arm64: $(SRC)
 	@echo "Building arm audius-ctl..."
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm ./cmd/audius-ctl
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm64 ./cmd/audius-ctl
 
-bin/audius-ctl-x86: $(SRC)
+bin/audius-ctl-x86_64: $(SRC)
 	@echo "Building x86 audius-ctl..."
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-x86 ./cmd/audius-ctl
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-x86_64 ./cmd/audius-ctl
 
-bin/audius-ctl-arm-mac: $(SRC)
+bin/audius-ctl-arm64-mac: $(SRC)
 	@echo "Building arm audius-ctl..."
-	GOOS=darwin GOARCH=arm64 go build -tags mac -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm ./cmd/audius-ctl
+	GOOS=darwin GOARCH=arm64 go build -tags mac -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm64 ./cmd/audius-ctl
 
 .PHONY: release-audius-ctl audius-ctl-production-build
 release-audius-ctl:
