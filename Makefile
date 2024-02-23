@@ -6,7 +6,6 @@ UPGRADE_TYPE ?= patch
 ABI_DIR := pkg/register/ABIs
 SRC := $(shell find . -type f -name '*.go') go.mod go.sum
 
-VERSION_FILE := .version.json
 VERSION_LDFLAG := -X main.Version=$(shell git rev-parse HEAD)
 # Intentionally kept separate to allow dynamic versioning
 #LDFLAGS := ""

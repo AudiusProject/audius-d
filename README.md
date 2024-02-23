@@ -167,7 +167,6 @@ audius-ctl config migrate-context my-new-migrated-context path/to/audius-docker-
 
 ## Releases
 
-1. Increment version in audius-d/.version.json
 1. Commit (and ideally push, review, land) changes
 1. Ensure you are authenticated with the github cli (`gh auth status || gh auth login`)
 1. Run `make release-audius-ctl`

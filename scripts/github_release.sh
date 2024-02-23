@@ -6,7 +6,7 @@ if [[ -n $(git status -s) ]]; then
   exit 1
 fi
 
-if ! [ -f bin/audius-ctl-x86 ] || ! [ -f bin/audius-ctl-arm ]; then
+if ! [ -f bin/audius-ctl-x86_64 ] || ! [ -f bin/audius-ctl-arm64 ]; then
   echo 'Please run `make audius-ctl-production-build` before attempting to release'
   exit 1
 fi
@@ -27,5 +27,5 @@ if gh release view "$release_tag" &> /dev/null; then
   echo "Release $release_tag already exists."
   exit 1
 fi
- 
+
 gh release create --generate-notes --target "$(git rev-parse HEAD)" "$release_tag" bin/audius-ctl*
