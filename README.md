@@ -94,8 +94,8 @@ From git project directory:
 ## OR ##
 
 # Manually select binary after running `make`
-bin/audius-ctl-x86 help  # linux
-bin/audius-ctl-arm help  # mac
+bin/audius-ctl-x86_64 help  # linux
+bin/audius-ctl-arm64 help  # mac
 ```
 
 ## Usage
