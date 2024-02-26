@@ -13,19 +13,19 @@ var (
 )
 
 func main() {
-	rootCmd := &cobra.Command{
+	var rootCmd = &cobra.Command{
 		Use:   "audius-ctl [command]",
 		Short: "CLI for provisioning and interacting with audius nodes",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			if displayVersion {
 				logger.Out(Version)
-			} else {
-				upCmd.RunE(cmd, args)
+				return
 			}
-			return nil
+			cmd.Help()
 		},
 	}
-	rootCmd.Flags().BoolVar(&displayVersion, "version", false, "Display version info")
+
+	rootCmd.Flags().BoolVarP(&displayVersion, "version", "v", false, "Display version info")
 	rootCmd.AddCommand(configCmd, devnetCmd, downCmd, registerCmd, sbCmd, testCmd, upCmd)
 
 	if err := rootCmd.Execute(); err != nil {
