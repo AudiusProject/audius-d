@@ -21,7 +21,7 @@ audius-ctl config use-context my-existing-context
 Create new contexts
 
 ```bash
-audius-ctl config create-context my-new-sandbox-context -f configs/templates/devnet.toml
+audius-ctl config create-context devnet -f ./configs/templates/devnet.yaml
 ```
 
 ### Devnet
