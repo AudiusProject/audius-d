@@ -35,9 +35,6 @@ func init() {
 		return
 	}
 
-	// pulumi.io managed stacks
-	// fqStackName = fmt.Sprintf("%s/%s/%s", confCtxConfig.Network.PulumiUserName, confCtxConfig.Network.PulumiProjectName, confCtxConfig.Network.PulumiStackName)
-	// localhost stacks ~/.pulumi
 	fqStackName = fmt.Sprintf("%s-%s-%s", confCtxConfig.Network.PulumiUserName, confCtxConfig.Network.PulumiProjectName, confCtxConfig.Network.PulumiStackName)
 	logger.Debug("pkg/infra init :: fqStackName: ", fqStackName)
 }

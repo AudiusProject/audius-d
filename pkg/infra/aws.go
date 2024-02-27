@@ -26,7 +26,7 @@ func authProvider(pCtx *pulumi.Context) (provider *aws.Provider, err error) {
 		})
 		return provider, err
 	} else {
-		return nil, fmt.Errorf("Invalid AWS creds")
+		return nil, fmt.Errorf("invalid AWS creds")
 	}
 }
 
@@ -49,7 +49,7 @@ func CreateEC2Instance(pCtx *pulumi.Context, instanceName string) (*ec2.Instance
 		return nil, privateKeyFilePath, fmt.Errorf("unable to create key pair: %w", err)
 	}
 
-	userData := fmt.Sprintf(`#!/bin/bash
+	userData := `#!/bin/bash
 set -x
 set -e
 
@@ -72,15 +72,13 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 && sudo apt install gh -y
 
 # download latest audius-d release
-# TODO: remove PAT when audius-d repo public
-echo "%s" | gh auth login --with-token
 gh release download -R https://github.com/AudiusProject/audius-d --clobber --output ./audius-ctl --pattern audius-ctl-x86 && sudo mv ./audius-ctl /usr/local/bin/audius-ctl && sudo chmod +x /usr/local/bin/audius-ctl
 # TODO: for now repo is required for devnet docker-compose. we should perhaps embed the compose file in the binary.
 gh repo clone AudiusProject/audius-d /home/ubuntu/audius-d
 
 # signal for successful completion
 touch /home/ubuntu/user-data-done
-`, confCtxConfig.Network.GHPat)
+`
 
 	instance, err := ec2.NewInstance(pCtx, fmt.Sprintf("%s-ec2-instance", instanceName), &ec2.InstanceArgs{
 		Ami:          pulumi.String(ami),

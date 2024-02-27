@@ -12,7 +12,7 @@ func RunAudiusD(privateKeyFilePath, publicIp string) error {
 	_, err := ExecuteSSHCommand(
 		privateKeyFilePath,
 		publicIp,
-		fmt.Sprintf("audius-ctl"),
+		"audius-ctl",
 	)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func RunAudiusD(privateKeyFilePath, publicIp string) error {
 	_, err = ExecuteSSHCommand(
 		privateKeyFilePath,
 		publicIp,
-		fmt.Sprintf("audius-ctl up"),
+		"audius-ctl up",
 	)
 	if err != nil {
 		return err

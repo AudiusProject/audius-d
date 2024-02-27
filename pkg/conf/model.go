@@ -90,11 +90,4 @@ type NetworkConfig struct {
 	PulumiUserName    string `yaml:"pulumiUserName"`
 	PulumiProjectName string `yaml:"pulumiProjectName"`
 	PulumiStackName   string `yaml:"pulumiStackName"`
-
-	// TODO: Remove me when audius-d repo public
-	GHPat string `yaml:"ghPat"`
-}
-
-type NodeConfig interface {
-	ToOverrideEnv(nc NetworkConfig) []byte
 }
