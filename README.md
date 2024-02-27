@@ -11,7 +11,7 @@ curl -sSL https://install.audius.org | sh
 #### Uninstall
 
 ```bash
-sudo make uninstall
+rm -f $(which audius-ctl)
 ```
 
 ## Run a Node
