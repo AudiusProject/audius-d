@@ -57,13 +57,7 @@ Already running audius via [audius-docker-compose](https://github.com/AudiusProj
 Use the below to create an audius-ctl [context](./docs/development.md#contexts) based on your audius-docker-compose environment configuration.
 
 ```bash
-audius-ctl config migrate-context my-new-migrated-context path/to/audius-docker-compose
-```
-
-For more information, see
-
-```bash
-audius-ctl config migrate-context --help
+audius-ctl config migrate-context default path/to/audius-docker-compose
 ```
 
 ## Contributing

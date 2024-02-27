@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 
 # This script is intended to be invoked via
 # curl -sSL https://install.audius.org | sh
 
-set -eo pipefail
+set -e
 
 # Determine architecture
 ARCH=$(uname -m)
@@ -38,7 +38,7 @@ echo "${BINARY_NAME} has been installed to ${TARGET_DIR}/audius-ctl"
 echo "You can run it using: audius-ctl"
 
 # Inform user about PATH addition if necessary
-if [[ ":$PATH:" != *":$TARGET_DIR:"* ]]; then
+if ! echo ":$PATH:" | grep -q ":$TARGET_DIR:" ; then
     echo "To use audius-ctl from any location, add ${TARGET_DIR} to your PATH."
     echo "For bash users, add this line to your ~/.bash_profile or ~/.bashrc:"
     echo "export PATH=\"\$PATH:${TARGET_DIR}\""
