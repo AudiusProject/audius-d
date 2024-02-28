@@ -33,7 +33,7 @@ func awaitService(host string, awaitChan chan string) {
 		resp, err := client.Get(url)
 
 		if err != nil || resp.StatusCode != http.StatusOK {
-			awaitChan <- fmt.Sprintf("service: %s not ready yet", url)
+			awaitChan <- fmt.Sprintf("service: %s not ready yet...", url)
 			time.Sleep(3 * time.Second)
 			tries--
 			continue

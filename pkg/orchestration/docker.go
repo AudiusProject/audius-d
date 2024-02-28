@@ -56,14 +56,16 @@ func runNode(
 	defer dockerClient.Close()
 
 	if isContainerRunning(dockerClient, host) {
-		logger.Infof("Audius container already running on %s", host)
+		logger.Infof("audius-d container already running on %s", host)
 		return nil
 	} else if isContainerNameInUse(dockerClient, host) {
-		logger.Infof("stopped container exists on %s, removing and starting with current config", host)
+		logger.Infof("stopped audius-d container exists on %s, removing and starting with current config", host)
 		if err := removeContainerByName(dockerClient, host); err != nil {
 			return logger.Error(err)
 		}
 	}
+
+	logger.Infof("\nStarting %s\n", host)
 
 	if audiusdTag == "" {
 		audiusdTag = "default"
@@ -166,6 +168,24 @@ func runNode(
 		return logger.Error("Failed to start container:", err)
 	}
 
+	// Wait for audius-d wrapper to be ready
+	ready := false
+	timeout := time.After(30 * time.Second)
+	for !ready {
+		select {
+		case <-timeout:
+			return logger.Error("Timeout waiting for audius-d wrapper container to be ready")
+		default:
+			inspect, err := dockerClient.ContainerInspect(context.Background(), createResponse.ID)
+			if err != nil {
+				return logger.Error("Could not get status of audius-d container:", err)
+			}
+			time.Sleep(3 * time.Second)
+			ready = inspect.State.Running
+			logger.Infof("audius-d wrapper status: %s", inspect.State.Status)
+		}
+	}
+
 	// generate the override.env file locally
 	// WARNING: NOT THREAD SAFE
 	localOverridePath := "./override.env"
@@ -192,6 +212,7 @@ func runNode(
 	if err != nil {
 		return logger.Error(err)
 	}
+	defer tarReader.Close()
 	if err := dockerClient.CopyToContainer(
 		context.Background(),
 		createResponse.ID,
@@ -219,10 +240,17 @@ func runNode(
 		return logger.Error(err)
 	}
 
-	// auto update hourly, starting 55 minutes from now (for randomness + prevent updates during CI)
-	currentTime := time.Now()
-	fiveMinutesAgo := currentTime.Add(-5 * time.Minute)
-	if err := audiusCli(dockerClient, host, "auto-upgrade", fmt.Sprintf("%d * * * *", fiveMinutesAgo.Minute())); err != nil {
+	// Configure auto update
+	var updateInterval string
+	if config.Version == "prerelease" && nconf.DeployOn == conf.Testnet {
+		// Stage nodes should update continuously
+		updateInterval = "*"
+	} else {
+		// Update hourly, starting 55 minutes from now (for randomness + prevent updates during CI)
+		fiveMinutesAgo := time.Now().Add(-5 * time.Minute).Minute()
+		updateInterval = fmt.Sprint(fiveMinutesAgo)
+	}
+	if err := audiusCli(dockerClient, host, "auto-upgrade", fmt.Sprintf("%s * * * *", updateInterval)); err != nil {
 		return logger.Error(err)
 	}
 	if err := dockerExec(dockerClient, host, "crond"); err != nil {

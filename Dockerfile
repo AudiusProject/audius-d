@@ -2,10 +2,9 @@ FROM docker:dind
 
 RUN apk add bash git curl libc-dev gcc python3 py3-pip python3-dev linux-headers postgresql-client redis
 
-VOLUME /var/k8s/creator-node-db
-VOLUME /var/k8s/mediorum
-VOLUME /var/k8s/discovery-provider-db
-VOLUME /var/k8s/discovery-provider-chain
+VOLUME ["/var/k8s/creator-node-db-15", "/var/k8s/mediorum", "/var/k8s/creator-node-backend"]
+VOLUME ["/var/k8s/discovery-provider-db", "/var/k8s/discovery-provider-chain"]
+VOLUME ["/var/k8s/identity-service-db"]
 
 WORKDIR /root
 RUN git clone https://github.com/AudiusProject/audius-docker-compose.git ./audius-docker-compose
