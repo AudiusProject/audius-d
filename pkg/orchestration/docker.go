@@ -270,7 +270,11 @@ func runNode(
 		network = "dev"
 	}
 	audiusCli(dockerClient, host, "set-network", network)
+	if err := dockerExec(dockerClient, host, "cp", fmt.Sprintf("./discovery-provider/chain/%s_spec_template.json", network), "./discovery-provider/chain/spec.json"); err != nil {
+		return logger.Error(err)
+	}
 
+	// launch the protocol stack
 	if err := audiusCli(dockerClient, host, "launch", "-y", adcDir); err != nil {
 		return logger.Error(err)
 	}
