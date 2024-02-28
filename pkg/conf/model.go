@@ -79,15 +79,19 @@ type NetworkConfig struct {
 	// "devnet" will automatically spin up local chains and identity service
 	DeployOn NetworkType `yaml:"deployOn"`
 
-	// TODO: What is the right place for these infra api creds
-	CloudflareAPIKey string `yaml:"cloudflareAPIKey"`
-	CloudflareZoneId string `yaml:"cloudflareZoneId"`
+	// Optional Infrastructure API credentials
+	Infra *Infra `yaml:"infra,omitempty"`
+}
 
-	AWSAccessKeyID     string `yaml:"awsAccessKeyID"`
-	AWSSecretAccessKey string `yaml:"awsSecretAccessKey"`
-	AWSRegion          string `yaml:"awsRegion"`
+type Infra struct {
+	CloudflareAPIKey string `yaml:"cloudflareAPIKey,omitempty"`
+	CloudflareZoneId string `yaml:"cloudflareZoneId,omitempty"`
 
-	PulumiUserName    string `yaml:"pulumiUserName"`
-	PulumiProjectName string `yaml:"pulumiProjectName"`
-	PulumiStackName   string `yaml:"pulumiStackName"`
+	AWSAccessKeyID     string `yaml:"awsAccessKeyID,omitempty"`
+	AWSSecretAccessKey string `yaml:"awsSecretAccessKey,omitempty"`
+	AWSRegion          string `yaml:"awsRegion,omitempty"`
+
+	PulumiUserName    string `yaml:"pulumiUserName,omitempty"`
+	PulumiProjectName string `yaml:"pulumiProjectName,omitempty"`
+	PulumiStackName   string `yaml:"pulumiStackName,omitempty"`
 }

@@ -246,3 +246,7 @@ func getConfigBaseDir() (string, error) {
 	}
 	return confDir, nil
 }
+
+func GetConfigBaseDir() (string, error) {
+	return getConfigBaseDir()
+}

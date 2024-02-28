@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/logger"
@@ -15,18 +16,38 @@ import (
 )
 
 var (
-	fqStackName   string
 	confCtxConfig *conf.ContextConfig
 )
 
 func init() {
 	var err error
 
-	// TODO: local pulumi stacks require this passphrase env var
-	// we are not using pulumi encrypted configs (as yet) so ideally we could remove this
-	err = os.Setenv("PULUMI_CONFIG_PASSPHRASE", "")
+	baseDir, err := conf.GetConfigBaseDir()
 	if err != nil {
-		fmt.Println("Error setting environment variable:", err)
+		logger.Error("Failed to retrieve config base dir. ", err)
+		return
+	}
+
+	envVars := map[string]string{
+		// local pulumi stacks require this passphrase env var
+		// we are not using pulumi secrets - so this is not a security risk
+		"PULUMI_CONFIG_PASSPHRASE": "",
+		// use a single ~/.audius/.pulumi for all pulumi state management files
+		// the .pulumi dir is created upon pulumi login below
+		"PULUMI_HOME": fmt.Sprintf("%s/.pulumi", baseDir),
+	}
+
+	err = setMultipleEnvVars(envVars)
+	if err != nil {
+		logger.Error("Error setting environment variables: %v", err)
+		return
+	}
+
+	cmd := exec.Command("pulumi", "login", fmt.Sprintf("file://%s", baseDir))
+	_, err = cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("Error executing pulumi login:", err)
+		return
 	}
 
 	confCtxConfig, err = conf.ReadOrCreateContextConfig()
@@ -35,31 +56,47 @@ func init() {
 		return
 	}
 
-	fqStackName = fmt.Sprintf("%s-%s-%s", confCtxConfig.Network.PulumiUserName, confCtxConfig.Network.PulumiProjectName, confCtxConfig.Network.PulumiStackName)
-	logger.Debug("pkg/infra init :: fqStackName: ", fqStackName)
+	if confCtxConfig.Network.Infra != nil {
+		if confCtxConfig.Network.Infra.PulumiUserName == "" ||
+			confCtxConfig.Network.Infra.PulumiProjectName == "" ||
+			confCtxConfig.Network.Infra.PulumiStackName == "" {
+			logger.Error("Incomplete Pulumi config. ", err)
+			return
+		}
+	}
+}
+
+func setMultipleEnvVars(vars map[string]string) error {
+	for key, value := range vars {
+		err := os.Setenv(key, value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func getStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack, error) {
-	s, err := auto.UpsertStackInlineSource(ctx, fqStackName, confCtxConfig.Network.PulumiProjectName, pulumiFunc)
+	stack, err := auto.UpsertStackInlineSource(ctx, confCtxConfig.Network.Infra.PulumiStackName, confCtxConfig.Network.Infra.PulumiProjectName, pulumiFunc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create or select stack: %w", err)
 	}
-	return &s, nil
+	return &stack, nil
 }
 
 func Update(ctx context.Context, preview bool) error {
 
 	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
 		// TODO: dns hostname is tied to audius sandbox
-		instanceName := fmt.Sprintf("%s-%s.sandbox", confCtxConfig.Network.PulumiProjectName, confCtxConfig.Network.PulumiStackName)
+		instanceName := fmt.Sprintf("%s-%s.sandbox", confCtxConfig.Network.Infra.PulumiProjectName, confCtxConfig.Network.Infra.PulumiStackName)
 		instance, privateKeyFilePath, err := CreateEC2Instance(pCtx, instanceName)
 		if err != nil {
 			return err
 		}
 
 		// TODO: refactor config checks
-		if confCtxConfig.Network.CloudflareAPIKey != "" && confCtxConfig.Network.CloudflareZoneId != "" {
-			err := ConfigureCloudflare(pCtx, instanceName, instance.PublicIp, confCtxConfig.Network.CloudflareAPIKey, confCtxConfig.Network.CloudflareZoneId)
+		if confCtxConfig.Network.Infra.CloudflareAPIKey != "" && confCtxConfig.Network.Infra.CloudflareZoneId != "" {
+			err := ConfigureCloudflare(pCtx, instanceName, instance.PublicIp, confCtxConfig.Network.Infra.CloudflareAPIKey, confCtxConfig.Network.Infra.CloudflareZoneId)
 			if err != nil {
 				return err
 			}
@@ -69,10 +106,6 @@ func Update(ctx context.Context, preview bool) error {
 		pulumi.All(instance.PublicIp).ApplyT(func(all []interface{}) error {
 			publicIp := all[0].(string)
 			err = WaitForUserDataCompletion(privateKeyFilePath, publicIp)
-			if err != nil {
-				return fmt.Errorf("%w", err)
-			}
-			err = RunAudiusD(privateKeyFilePath, publicIp)
 			if err != nil {
 				return fmt.Errorf("%w", err)
 			}
