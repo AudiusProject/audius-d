@@ -2,6 +2,7 @@ package infra
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/pulumi/pulumi-aws/sdk/v4/go/aws/s3"
@@ -17,17 +18,13 @@ var (
 )
 
 func awsCredentialsValid(networkConfig *conf.NetworkConfig) bool {
-	if networkConfig != nil || networkConfig.Infra != nil {
+	if networkConfig != nil && networkConfig.Infra != nil {
 		return networkConfig.Infra.AWSAccessKeyID != "" && networkConfig.Infra.AWSSecretAccessKey != "" && networkConfig.Infra.AWSRegion != ""
 	}
 	return false
 }
 
 func awsAuthProvider(pCtx *pulumi.Context) (*aws.Provider, error) {
-	if confCtxConfig == nil || confCtxConfig.Network.Infra == nil {
-		return nil, fmt.Errorf("configuration is incomplete or missing")
-	}
-
 	if awsCredentialsValid(&confCtxConfig.Network) {
 		provider, err := aws.NewProvider(pCtx, "aws", &aws.ProviderArgs{
 			AccessKey: pulumi.String(confCtxConfig.Network.Infra.AWSAccessKeyID),
@@ -42,8 +39,7 @@ func awsAuthProvider(pCtx *pulumi.Context) (*aws.Provider, error) {
 	return nil, fmt.Errorf("invalid AWS credentials")
 }
 
-func CreateEC2Instance(pCtx *pulumi.Context, provider *aws.Provider, instanceName string) (*ec2.Instance, string, error) {
-
+func awsCreateEC2Instance(pCtx *pulumi.Context, provider *aws.Provider, instanceName string) (*ec2.Instance, string, error) {
 	privateKeyFilePath, publicKeyPem, err := EnsureRSAKeyPair(instanceName)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to ensure RSA key pair: %w", err)
@@ -97,7 +93,7 @@ touch /home/ubuntu/user-data-done
 	return instance, privateKeyFilePath, nil
 }
 
-func CreateS3Bucket(pCtx *pulumi.Context, provider *aws.Provider, bucketName string) (*s3.Bucket, error) {
+func awsCreateS3Bucket(pCtx *pulumi.Context, provider *aws.Provider, bucketName string) (*s3.Bucket, error) {
 	bucket, err := s3.NewBucket(pCtx, bucketName, &s3.BucketArgs{
 		Bucket: pulumi.String(bucketName),
 	}, pulumi.Provider(provider))
@@ -109,4 +105,26 @@ func CreateS3Bucket(pCtx *pulumi.Context, provider *aws.Provider, bucketName str
 	pCtx.Export("bucketArn", bucket.Arn)
 
 	return bucket, nil
+}
+
+func waitForUserDataCompletion(privateKeyPath, publicIP string) error {
+	const timeout = 3 * time.Minute
+	const checkInterval = 10 * time.Second
+	const completionSignalCommand = "test -f /home/ubuntu/user-data-done && echo 'done' || echo 'not done'"
+
+	startTime := time.Now()
+	for {
+		if time.Since(startTime) > timeout {
+			return fmt.Errorf("timeout waiting for user data script to complete")
+		}
+		output, err := executeSSHCommand(privateKeyPath, publicIP, completionSignalCommand)
+		if err != nil {
+			fmt.Println("Error checking for user data completion:", err)
+		} else if output == "done\n" {
+			fmt.Println("User data script completed successfully.")
+			return nil
+		}
+		fmt.Println("Waiting for instance provisioning to complete...")
+		time.Sleep(checkInterval)
+	}
 }

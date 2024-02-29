@@ -85,44 +85,49 @@ func getStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack, erro
 
 func Update(ctx context.Context, preview bool) error {
 	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
-		// TODO: domain name config
-		instanceName := fmt.Sprintf("%s-%s.sandbox.audius.co", confCtxConfig.Network.Infra.PulumiProjectName, confCtxConfig.Network.Infra.PulumiStackName)
-		bucketName := fmt.Sprintf("mediorum--%s", instanceName)
-		//
-		var instance *ec2.Instance
-		if awsCredentialsValid(&confCtxConfig.Network) {
-			provider, err := awsAuthProvider(pCtx)
-			if err != nil {
-				return err
-			}
-			ec2Instance, privateKeyFilePath, err := CreateEC2Instance(pCtx, provider, instanceName)
-			if err != nil {
-				return err
-			}
-			instance = ec2Instance
-			ec2Instance.PublicIp.ApplyT(func(ip string) error {
-				// once we have an IP. block until provisioning completes.
-				if err := WaitForUserDataCompletion(privateKeyFilePath, ip); err != nil {
-					fmt.Printf("Error waiting for user data completion: %v\n", err)
+
+		for host, nodeConfig := range confCtxConfig.Nodes {
+			fmt.Printf("host: %s\nnodeConfig: %v\n", host, nodeConfig)
+			instanceName := host
+			bucketName := fmt.Sprintf("mediorum--%s", instanceName)
+			var instance *ec2.Instance
+
+			if awsCredentialsValid(&confCtxConfig.Network) {
+				provider, err := awsAuthProvider(pCtx)
+				if err != nil {
+					return err
 				}
-				return nil
-			})
-			_, err = CreateS3Bucket(pCtx, provider, bucketName)
-			if err != nil {
-				return err
+				ec2Instance, privateKeyFilePath, err := awsCreateEC2Instance(pCtx, provider, instanceName)
+				if err != nil {
+					return err
+				}
+				instance = ec2Instance
+				ec2Instance.PublicIp.ApplyT(func(ip string) error {
+					// once we have an IP. block until provisioning completes.
+					if err := waitForUserDataCompletion(privateKeyFilePath, ip); err != nil {
+						fmt.Printf("Error waiting for user data completion: %v\n", err)
+					}
+					return nil
+				})
+				_, err = awsCreateS3Bucket(pCtx, provider, bucketName)
+				if err != nil {
+					return err
+				}
 			}
-		}
-		if cloudflareCredentialsValid(&confCtxConfig.Network) {
-			provider, err := cloudflareAuthProvider(pCtx)
-			if err != nil {
-				return err
-			}
-			zoneId := confCtxConfig.Network.Infra.CloudflareZoneId
-			recordName := strings.Replace(instanceName, ".audius.co", "", 1)
-			recordIp := instance.PublicIp
-			err = CloudflareAddDNSRecord(pCtx, provider, zoneId, recordName, recordIp)
-			if err != nil {
-				return err
+			if cloudflareCredentialsValid(&confCtxConfig.Network) {
+				provider, err := cloudflareAuthProvider(pCtx)
+				if err != nil {
+					return err
+				}
+				domain := confCtxConfig.Network.Infra.CloudflareTLD
+				zoneId := confCtxConfig.Network.Infra.CloudflareZoneId
+				// example.sandbox.audius.co -> example.sandbox
+				recordName := strings.Replace(instanceName, fmt.Sprintf(".%s", domain), "", 1)
+				recordIp := instance.PublicIp
+				err = cloudflareAddDNSRecord(pCtx, provider, zoneId, recordName, recordIp)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		return nil

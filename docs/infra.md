@@ -32,6 +32,7 @@ network:
   infra:
     cloudflareAPIKey: key
     cloudflareZoneId: zoneid
+    cloudflareTld: audius.co
     awsAccessKeyID: id
     awsSecretAccessKey: secret
     awsRegion: us-east-2

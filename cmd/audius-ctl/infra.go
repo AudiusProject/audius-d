@@ -75,36 +75,6 @@ var (
 		},
 	}
 
-	infraSshCmd = &cobra.Command{
-		Use:   "ssh -- <command>",
-		Short: "SSH into the EC2 instance and execute commands",
-		Long:  `Use this command to SSH into the EC2 instance and execute commands.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
-			publicIP, err := infra.GetStackOutput(ctx, "instancePublicIp")
-			if err != nil {
-				return err
-			}
-			privateKeyFilePath, err := infra.GetStackOutput(ctx, "instancePrivateKeyFilePath")
-			if err != nil {
-				return err
-			}
-			command := "echo 'Please specify a command to run on the remote server.'"
-			if len(args) > 0 {
-				command = strings.Join(args, " ")
-			}
-
-			output, err := infra.ExecuteSSHCommand(privateKeyFilePath, publicIP, command)
-			if err != nil {
-				fmt.Printf("Error executing SSH command: %v\n", err)
-				return err
-			}
-
-			fmt.Println(output)
-			return nil
-		},
-	}
-
 	infraUpdateCmd = &cobra.Command{
 		Use:   "update",
 		Short: "Update (deploy) the current context",
@@ -116,5 +86,5 @@ var (
 )
 
 func init() {
-	infraCmd.AddCommand(infraCancelCmd, infraDestroyCmd, infraGetOutputCmd, infraPreviewCmd, infraSshCmd, infraUpdateCmd)
+	infraCmd.AddCommand(infraCancelCmd, infraDestroyCmd, infraGetOutputCmd, infraPreviewCmd, infraUpdateCmd)
 }

@@ -10,7 +10,7 @@ import (
 
 func cloudflareCredentialsValid(networkConfig *conf.NetworkConfig) bool {
 	if networkConfig != nil && networkConfig.Infra != nil {
-		return networkConfig.Infra.CloudflareAPIKey != "" && networkConfig.Infra.CloudflareZoneId != ""
+		return networkConfig.Infra.CloudflareAPIKey != "" && networkConfig.Infra.CloudflareZoneId != "" && networkConfig.Infra.CloudflareTLD != ""
 	}
 	return false
 }
@@ -28,8 +28,7 @@ func cloudflareAuthProvider(pCtx *pulumi.Context) (*cloudflare.Provider, error) 
 	return nil, fmt.Errorf("invalid CloudflareCredentials")
 }
 
-func CloudflareAddDNSRecord(pCtx *pulumi.Context, provider *cloudflare.Provider, zoneId string, name string, publicIp pulumi.StringOutput) error {
-
+func cloudflareAddDNSRecord(pCtx *pulumi.Context, provider *cloudflare.Provider, zoneId string, name string, publicIp pulumi.StringOutput) error {
 	record, err := cloudflare.NewRecord(pCtx, fmt.Sprintf("cf-record-%s", name), &cloudflare.RecordArgs{
 		Name:    pulumi.String(name),
 		Proxied: pulumi.Bool(true),

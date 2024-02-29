@@ -86,6 +86,7 @@ type NetworkConfig struct {
 type Infra struct {
 	CloudflareAPIKey string `yaml:"cloudflareAPIKey,omitempty"`
 	CloudflareZoneId string `yaml:"cloudflareZoneId,omitempty"`
+	CloudflareTLD    string `yaml:"cloudflareTld,omitempty"`
 
 	AWSAccessKeyID     string `yaml:"awsAccessKeyID,omitempty"`
 	AWSSecretAccessKey string `yaml:"awsSecretAccessKey,omitempty"`
