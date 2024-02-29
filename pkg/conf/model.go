@@ -91,8 +91,4 @@ type Infra struct {
 	AWSAccessKeyID     string `yaml:"awsAccessKeyID,omitempty"`
 	AWSSecretAccessKey string `yaml:"awsSecretAccessKey,omitempty"`
 	AWSRegion          string `yaml:"awsRegion,omitempty"`
-
-	PulumiUserName    string `yaml:"pulumiUserName,omitempty"`
-	PulumiProjectName string `yaml:"pulumiProjectName,omitempty"`
-	PulumiStackName   string `yaml:"pulumiStackName,omitempty"`
 }

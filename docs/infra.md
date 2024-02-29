@@ -36,7 +36,4 @@ network:
     awsAccessKeyID: id
     awsSecretAccessKey: secret
     awsRegion: us-east-2
-    pulumiUserName: endline
-    pulumiProjectName: audius-d
-    pulumiStackName: devnet
 ```

@@ -55,14 +55,6 @@ func init() {
 		logger.Error("Failed to retrieve context. ", err)
 		return
 	}
-	if confCtxConfig.Network.Infra != nil {
-		if confCtxConfig.Network.Infra.PulumiUserName == "" ||
-			confCtxConfig.Network.Infra.PulumiProjectName == "" ||
-			confCtxConfig.Network.Infra.PulumiStackName == "" {
-			logger.Error("Incomplete Pulumi config. ", err)
-			return
-		}
-	}
 }
 
 func setMultipleEnvVars(vars map[string]string) error {
@@ -76,7 +68,12 @@ func setMultipleEnvVars(vars map[string]string) error {
 }
 
 func getStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack, error) {
-	stack, err := auto.UpsertStackInlineSource(ctx, confCtxConfig.Network.Infra.PulumiStackName, confCtxConfig.Network.Infra.PulumiProjectName, pulumiFunc)
+	projectName := "audius-d"
+	stackName, err := conf.GetCurrentContextName()
+	if err != nil {
+		return nil, err
+	}
+	stack, err := auto.UpsertStackInlineSource(ctx, stackName, projectName, pulumiFunc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create or select stack: %w", err)
 	}
@@ -85,9 +82,7 @@ func getStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack, erro
 
 func Update(ctx context.Context, preview bool) error {
 	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
-
 		for host, nodeConfig := range confCtxConfig.Nodes {
-			fmt.Printf("host: %s\nnodeConfig: %v\n", host, nodeConfig)
 			instanceName := host
 			bucketName := fmt.Sprintf("mediorum--%s", instanceName)
 			var instance *ec2.Instance
@@ -109,9 +104,11 @@ func Update(ctx context.Context, preview bool) error {
 					}
 					return nil
 				})
-				_, err = awsCreateS3Bucket(pCtx, provider, bucketName)
-				if err != nil {
-					return err
+				if nodeConfig.Type == conf.Creator {
+					_, err = awsCreateS3Bucket(pCtx, provider, bucketName)
+					if err != nil {
+						return err
+					}
 				}
 			}
 			if cloudflareCredentialsValid(&confCtxConfig.Network) {
