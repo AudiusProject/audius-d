@@ -21,3 +21,21 @@ Available Commands:
   ssh         SSH into the EC2 instance and execute commands
   update      Update (deploy) the current context
 ```
+
+Configuration
+```
+# run audius-ctl config edit
+# add the `infra` section
+
+network:
+  deployOn: devnet
+  infra:
+    cloudflareAPIKey: key
+    cloudflareZoneId: zoneid
+    awsAccessKeyID: id
+    awsSecretAccessKey: secret
+    awsRegion: us-east-2
+    pulumiUserName: endline
+    pulumiProjectName: audius-d
+    pulumiStackName: devnet
+```

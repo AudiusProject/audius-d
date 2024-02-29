@@ -3,6 +3,8 @@ package infra
 import (
 	"fmt"
 
+	"github.com/AudiusProject/audius-d/pkg/conf"
+	"github.com/pulumi/pulumi-aws/sdk/v4/go/aws/s3"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ec2"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -14,28 +16,33 @@ var (
 	volumeSize   = 100
 )
 
-func authProvider(pCtx *pulumi.Context) (provider *aws.Provider, err error) {
-	if confCtxConfig == nil {
-		return nil, fmt.Errorf("confCtxConfig is nil")
+func awsCredentialsValid(networkConfig *conf.NetworkConfig) bool {
+	if networkConfig != nil || networkConfig.Infra != nil {
+		return networkConfig.Infra.AWSAccessKeyID != "" && networkConfig.Infra.AWSSecretAccessKey != "" && networkConfig.Infra.AWSRegion != ""
 	}
-	if confCtxConfig.Network.Infra.AWSAccessKeyID != "" && confCtxConfig.Network.Infra.AWSSecretAccessKey != "" && confCtxConfig.Network.Infra.AWSRegion != "" {
-		provider, err = aws.NewProvider(pCtx, "aws", &aws.ProviderArgs{
+	return false
+}
+
+func awsAuthProvider(pCtx *pulumi.Context) (*aws.Provider, error) {
+	if confCtxConfig == nil || confCtxConfig.Network.Infra == nil {
+		return nil, fmt.Errorf("configuration is incomplete or missing")
+	}
+
+	if awsCredentialsValid(&confCtxConfig.Network) {
+		provider, err := aws.NewProvider(pCtx, "aws", &aws.ProviderArgs{
 			AccessKey: pulumi.String(confCtxConfig.Network.Infra.AWSAccessKeyID),
 			SecretKey: pulumi.String(confCtxConfig.Network.Infra.AWSSecretAccessKey),
 			Region:    pulumi.String(confCtxConfig.Network.Infra.AWSRegion),
 		})
-		return provider, err
-	} else {
-		return nil, fmt.Errorf("invalid AWS credentials")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create AWS provider: %w", err)
+		}
+		return provider, nil
 	}
+	return nil, fmt.Errorf("invalid AWS credentials")
 }
 
-func CreateEC2Instance(pCtx *pulumi.Context, instanceName string) (*ec2.Instance, string, error) {
-
-	awsProvider, err := authProvider(pCtx)
-	if err != nil {
-		return nil, "", fmt.Errorf("unable to authenticate aws provider: %w", err)
-	}
+func CreateEC2Instance(pCtx *pulumi.Context, provider *aws.Provider, instanceName string) (*ec2.Instance, string, error) {
 
 	privateKeyFilePath, publicKeyPem, err := EnsureRSAKeyPair(instanceName)
 	if err != nil {
@@ -44,7 +51,7 @@ func CreateEC2Instance(pCtx *pulumi.Context, instanceName string) (*ec2.Instance
 
 	keyPair, err := ec2.NewKeyPair(pCtx, fmt.Sprintf("%s-keypair", instanceName), &ec2.KeyPairArgs{
 		PublicKey: pulumi.String(publicKeyPem),
-	}, pulumi.Provider(awsProvider))
+	}, pulumi.Provider(provider))
 	if err != nil {
 		return nil, privateKeyFilePath, fmt.Errorf("unable to create key pair: %w", err)
 	}
@@ -79,7 +86,7 @@ touch /home/ubuntu/user-data-done
 			VolumeSize:          pulumi.Int(volumeSize),
 			DeleteOnTermination: pulumi.Bool(true),
 		},
-	}, pulumi.Provider(awsProvider))
+	}, pulumi.Provider(provider))
 	if err != nil {
 		return nil, privateKeyFilePath, fmt.Errorf("unable to create EC2 instance: %w", err)
 	}
@@ -88,4 +95,18 @@ touch /home/ubuntu/user-data-done
 	pCtx.Export("instancePrivateKeyFilePath", pulumi.String(privateKeyFilePath))
 
 	return instance, privateKeyFilePath, nil
+}
+
+func CreateS3Bucket(pCtx *pulumi.Context, provider *aws.Provider, bucketName string) (*s3.Bucket, error) {
+	bucket, err := s3.NewBucket(pCtx, bucketName, &s3.BucketArgs{
+		Bucket: pulumi.String(bucketName),
+	}, pulumi.Provider(provider))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create S3 bucket: %w", err)
+	}
+
+	pCtx.Export("bucketName", bucket.Bucket)
+	pCtx.Export("bucketArn", bucket.Arn)
+
+	return bucket, nil
 }

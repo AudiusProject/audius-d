@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/AudiusProject/audius-d/pkg/infra"
@@ -32,6 +34,17 @@ var (
 		Use:   "destroy",
 		Short: "Destroy the current context",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Print("Are you sure you want to destroy? [y/N]: ")
+			reader := bufio.NewReader(os.Stdin)
+			response, err := reader.ReadString('\n')
+			if err != nil {
+				return err
+			}
+			response = strings.TrimSpace(response)
+			if strings.ToLower(response) != "y" {
+				fmt.Println("Destroy canceled.")
+				return nil
+			}
 			ctx := context.Background()
 			return infra.Destroy(ctx)
 		},
