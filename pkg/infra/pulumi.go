@@ -1,10 +1,12 @@
 package infra
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
@@ -43,10 +45,31 @@ func init() {
 		logger.Error("Error setting environment variables: %v", err)
 		return
 	}
-	cmd := exec.Command("pulumi", "login", fmt.Sprintf("file://%s", baseDir))
-	_, err = cmd.CombinedOutput()
+	err = pulumiLogin(baseDir)
 	if err != nil {
-		fmt.Println("Error executing pulumi login:", err)
+		if execErr, ok := err.(*exec.Error); ok && execErr.Err == exec.ErrNotFound {
+			confirmation, err := promptConfirmation(
+				"'audius-ctl infra' requires Pulumi (https://pulumi.io).\nPulumi is not installed. Would you like to install it now? [y/N]: ")
+			if err != nil {
+				logger.Error("Error reading confirmation:", err)
+				return
+			}
+			if confirmation {
+				if installErr := installPulumi(); installErr != nil {
+					logger.Error("Failed to install Pulumi: %v\n", installErr)
+				}
+				logger.Info("Pulumi installed successfully.")
+				if err := pulumiLogin(baseDir); err != nil {
+					logger.Error("Failed to login to Pulumi: %v\n", err)
+				}
+			} else {
+				logger.Info("Pulumi installation canceled.")
+			}
+			os.Exit(0)
+		} else {
+			logger.Error("Failed to execute command: %v\n", err)
+			return
+		}
 		return
 	}
 
@@ -55,6 +78,38 @@ func init() {
 		logger.Error("Failed to retrieve context. ", err)
 		return
 	}
+}
+
+func promptConfirmation(prompt string) (bool, error) {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print(prompt)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		return false, err
+	}
+	response = strings.TrimSpace(response)
+	return strings.ToLower(response) == "y" || strings.ToLower(response) == "yes", nil
+}
+
+func installPulumi() error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("brew", "install", "pulumi/tap/pulumi")
+	case "linux":
+		cmd = exec.Command("curl", "-fsSL", "https://get.pulumi.com", "|", "sh")
+	default:
+		return fmt.Errorf("automatic Pulumi installation is not supported on this OS")
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func pulumiLogin(baseDir string) error {
+	cmd := exec.Command("pulumi", "login", fmt.Sprintf("file://%s", baseDir))
+	_, err := cmd.CombinedOutput()
+	return err
 }
 
 func setMultipleEnvVars(vars map[string]string) error {
@@ -80,7 +135,7 @@ func getStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack, erro
 	return &stack, nil
 }
 
-func Update(ctx context.Context, preview bool) error {
+func Update(ctx context.Context, skipPreview bool) error {
 	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
 		for host, nodeConfig := range confCtxConfig.Nodes {
 			instanceName := host
@@ -98,9 +153,8 @@ func Update(ctx context.Context, preview bool) error {
 				}
 				instance = ec2Instance
 				ec2Instance.PublicIp.ApplyT(func(ip string) error {
-					// once we have an IP. block until provisioning completes.
 					if err := waitForUserDataCompletion(privateKeyFilePath, ip); err != nil {
-						fmt.Printf("Error waiting for user data completion: %v\n", err)
+						logger.Error("Error waiting for user data completion: %v\n", err)
 					}
 					return nil
 				})
@@ -118,7 +172,6 @@ func Update(ctx context.Context, preview bool) error {
 				}
 				domain := confCtxConfig.Network.Infra.CloudflareTLD
 				zoneId := confCtxConfig.Network.Infra.CloudflareZoneId
-				// example.sandbox.audius.co -> example.sandbox
 				recordName := strings.Replace(instanceName, fmt.Sprintf(".%s", domain), "", 1)
 				recordIp := instance.PublicIp
 				err = cloudflareAddDNSRecord(pCtx, provider, zoneId, recordName, recordIp)
@@ -133,11 +186,21 @@ func Update(ctx context.Context, preview bool) error {
 		return err
 	}
 
-	if preview {
+	if !skipPreview {
 		_, err = s.Preview(ctx, optpreview.ProgressStreams(os.Stdout))
-	} else {
-		_, err = s.Up(ctx, optup.ProgressStreams(os.Stdout))
+		if err != nil {
+			return fmt.Errorf("failed to run Update: %w", err)
+		}
+
+		fmt.Println("Do you want to proceed with the update? (y/N)")
+		var response string
+		fmt.Scanln(&response)
+		if response != "y" {
+			return nil
+		}
 	}
+
+	_, err = s.Up(ctx, optup.ProgressStreams(os.Stdout))
 	if err != nil {
 		return fmt.Errorf("failed to run Update: %w", err)
 	}
@@ -145,19 +208,30 @@ func Update(ctx context.Context, preview bool) error {
 	return nil
 }
 
-func Destroy(ctx context.Context) error {
+func Destroy(ctx context.Context, skipConfirmation bool) error {
+	if !skipConfirmation {
+		fmt.Print("Are you sure you want to destroy? [y/N]: ")
+		reader := bufio.NewReader(os.Stdin)
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			return fmt.Errorf("error reading confirmation response: %w", err)
+		}
+
+		if strings.TrimSpace(strings.ToLower(response)) != "y" {
+			fmt.Println("Destroy canceled.")
+			return nil
+		}
+	}
 	s, err := getStack(ctx, func(pCtx *pulumi.Context) error {
 		return nil
 	})
 	if err != nil {
 		return err
 	}
-
 	_, err = s.Destroy(ctx, optdestroy.ProgressStreams(os.Stdout))
 	if err != nil {
 		return fmt.Errorf("failed to run Destroy: %w", err)
 	}
-
 	return nil
 }
 
@@ -168,12 +242,10 @@ func Cancel(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
 	err = s.Cancel(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to run Cancel: %w", err)
 	}
-
 	return nil
 }
 

@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/AudiusProject/audius-d/pkg/infra"
 	"github.com/spf13/cobra"
@@ -34,19 +31,9 @@ var (
 		Use:   "destroy",
 		Short: "Destroy the current context",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Print("Are you sure you want to destroy? [y/N]: ")
-			reader := bufio.NewReader(os.Stdin)
-			response, err := reader.ReadString('\n')
-			if err != nil {
-				return err
-			}
-			response = strings.TrimSpace(response)
-			if strings.ToLower(response) != "y" {
-				fmt.Println("Destroy canceled.")
-				return nil
-			}
 			ctx := context.Background()
-			return infra.Destroy(ctx)
+			skipConfirmation, _ := cmd.Flags().GetBool("yes")
+			return infra.Destroy(ctx, skipConfirmation)
 		},
 	}
 
@@ -66,25 +53,19 @@ var (
 		},
 	}
 
-	infraPreviewCmd = &cobra.Command{
-		Use:   "preview",
-		Short: "Perform a dry-run update for the current context",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
-			return infra.Update(ctx, true)
-		},
-	}
-
 	infraUpdateCmd = &cobra.Command{
 		Use:   "update",
-		Short: "Update (deploy) the current context",
+		Short: "Update (deploy) the current context. Performs preview first, and asks for confirmation unless -y is used to auto-confirm.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-			return infra.Update(ctx, false)
+			skipPreview, _ := cmd.Flags().GetBool("yes")
+			return infra.Update(ctx, skipPreview)
 		},
 	}
 )
 
 func init() {
-	infraCmd.AddCommand(infraCancelCmd, infraDestroyCmd, infraGetOutputCmd, infraPreviewCmd, infraUpdateCmd)
+	infraCmd.AddCommand(infraCancelCmd, infraDestroyCmd, infraGetOutputCmd, infraUpdateCmd)
+	infraUpdateCmd.Flags().BoolP("yes", "y", false, "Automatically proceed with the update after preview")
+	infraDestroyCmd.Flags().BoolP("yes", "y", false, "Skip confirmation and destroy directly")
 }

@@ -9,20 +9,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AudiusProject/audius-d/pkg/conf"
-	"github.com/AudiusProject/audius-d/pkg/logger"
 	"golang.org/x/crypto/ssh"
 )
 
-func EnsureRSAKeyPair(instanceName string) (privateKeyFilePath, publicKeyPem string, err error) {
-
-	// TODO: pass baseDir as arg
-	baseDir, err := conf.GetConfigBaseDir()
-	if err != nil {
-		logger.Error("Failed to retrieve config base dir. ", err)
-		return
-	}
-
+func ensureRSAKeyPair(baseDir, instanceName string) (privateKeyFilePath, publicKeyPem string, err error) {
 	keyDir := filepath.Join(baseDir, ".pulumi", ".ssh")
 	if err = os.MkdirAll(keyDir, 0700); err != nil {
 		return "", "", fmt.Errorf("unable to create key directory: %w", err)

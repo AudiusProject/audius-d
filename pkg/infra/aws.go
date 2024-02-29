@@ -40,7 +40,12 @@ func awsAuthProvider(pCtx *pulumi.Context) (*aws.Provider, error) {
 }
 
 func awsCreateEC2Instance(pCtx *pulumi.Context, provider *aws.Provider, instanceName string) (*ec2.Instance, string, error) {
-	privateKeyFilePath, publicKeyPem, err := EnsureRSAKeyPair(instanceName)
+	baseDir, err := conf.GetConfigBaseDir()
+	if err != nil {
+		return nil, "", err
+	}
+
+	privateKeyFilePath, publicKeyPem, err := ensureRSAKeyPair(baseDir, instanceName)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to ensure RSA key pair: %w", err)
 	}
