@@ -43,7 +43,7 @@ func ReadOrCreateContextConfig() (*ContextConfig, error) {
 }
 
 func GetContextBaseDir() (string, error) {
-	confBaseDir, err := getConfigBaseDir()
+	confBaseDir, err := GetConfigBaseDir()
 	if err != nil {
 		return "", err
 	}
@@ -60,7 +60,7 @@ func GetContextBaseDir() (string, error) {
 
 func readOrCreateExecutionConfig() (ExecutionConfig, error) {
 	var execConf ExecutionConfig
-	confDir, err := getConfigBaseDir()
+	confDir, err := GetConfigBaseDir()
 	if err != nil {
 		return execConf, err
 	}
@@ -136,7 +136,7 @@ func UseContext(ctxName string) error {
 	if err != nil {
 		return err
 	}
-	confBaseDir, err := getConfigBaseDir()
+	confBaseDir, err := GetConfigBaseDir()
 	if err != nil {
 		return err
 	}
@@ -231,7 +231,7 @@ func createDefaultContextIfNotExists() error {
 	return nil
 }
 
-func getConfigBaseDir() (string, error) {
+func GetConfigBaseDir() (string, error) {
 	usr, err := user.Current()
 	if err != nil {
 		return "", err
@@ -245,8 +245,4 @@ func getConfigBaseDir() (string, error) {
 		return "", err
 	}
 	return confDir, nil
-}
-
-func GetConfigBaseDir() (string, error) {
-	return getConfigBaseDir()
 }
