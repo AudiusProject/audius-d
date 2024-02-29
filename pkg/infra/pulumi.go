@@ -25,7 +25,14 @@ var (
 
 func init() {
 	var err error
+	confCtxConfig, err = conf.ReadOrCreateContextConfig()
+	if err != nil {
+		logger.Error("Failed to retrieve context. ", err)
+		return
+	}
+}
 
+func pulumiInit() {
 	baseDir, err := conf.GetConfigBaseDir()
 	if err != nil {
 		logger.Error("Failed to retrieve config base dir. ", err)
@@ -70,12 +77,6 @@ func init() {
 			logger.Error("Failed to execute command: %v\n", err)
 			return
 		}
-		return
-	}
-
-	confCtxConfig, err = conf.ReadOrCreateContextConfig()
-	if err != nil {
-		logger.Error("Failed to retrieve context. ", err)
 		return
 	}
 }
@@ -123,6 +124,8 @@ func setMultipleEnvVars(vars map[string]string) error {
 }
 
 func getStack(ctx context.Context, pulumiFunc pulumi.RunFunc) (*auto.Stack, error) {
+	pulumiInit()
+
 	projectName := "audius-d"
 	stackName, err := conf.GetCurrentContextName()
 	if err != nil {
