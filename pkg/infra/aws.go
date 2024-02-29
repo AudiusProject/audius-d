@@ -13,7 +13,7 @@ import (
 
 var (
 	ami          = "ami-05fb0b8c1424f266b" // Ubuntu, 22.04 LTS, amd64 jammy image build on 2023-12-07
-	instanceType = "c5.xlarge"
+	instanceType = "c5.2xlarge"
 	volumeSize   = 100
 )
 

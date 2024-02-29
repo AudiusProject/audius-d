@@ -28,7 +28,7 @@ Run `audius-ctl config edit`. Add the infra section to your context config.
 
 ```yaml
 network:
-  deployOn: devnet
+  deployOn: mainnet
   infra:                             <------
     cloudflareAPIKey: my_cf_apikey   <------
     cloudflareZoneId: my_cf_zoneid   <------
@@ -39,8 +39,6 @@ network:
 nodes:
   audius-d-creator.example.com:
     type: creator
-    httpPort: 4000
-    httpsPort: 4001
     version: prerelease
     privateKey: 21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7cf58ab
     wallet: 0x0D38e653eC28bdea5A2296fD5940aaB2D0B8875c
@@ -53,6 +51,24 @@ To provision infrastructure for your context, run
 ```bash
 audius-ctl infra update [-y]
 ```
+
+To wire this up with audius-ctl (on your local machine), run the below script to add to your ssh config (defaults to `~/.ssh/config` if not specified).
+```bash
+./scripts/infra_ssh_config.sh ~/.ssh/config_personal
+```
+
+Now, startup the service
+```bash
+audius-ctl up
+```
+
+Visit your node
+```bash
+open https://$(audius-ctl infra output cloudflareRecordHostname)
+```
+
+
+### Cleanup
 
 To destroy all associated infra with your context, run
 ```bash
