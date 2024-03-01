@@ -30,11 +30,16 @@ Write the following:
 network:
   deployOn: mainnet
 nodes:
-  my.domain.example.com:
+  creator-1.example.com:
     type: creator
-    privateKey: abc123          # <--- YOUR PRIVATE KEY HERE
-    wallet: 0xABC123            # <--- YOUR WALLET HERE
-    rewardsWallet: 0xABC123     # <--- YOUR WALLET HERE
+    privateKey: abc123          # <--- UNIQUE PRIV KEY USED BY THIS NODE TO SIGN RESPONSES
+    wallet: 0xABC123            # <--- UNIQUE WALLET ADDRESS OF ABOVE PRIV KEY
+    rewardsWallet: 0xABC123     # <--- ADDRESS OF WALLET HOLDING STAKED TOKENS
+  discovery-1.example.com:
+    type: discovery
+    privateKey: abc123          # <--- UNIQUE PRIV KEY USED BY THIS NODE TO SIGN RESPONSES
+    wallet: 0xABC123            # <--- UNIQUE WALLET ADDRESS OF ABOVE PRIV KEY
+    rewardsWallet: 0xABC123     # <--- ADDRESS OF WALLET HOLDING STAKED TOKENS
 ```
 
 This assumes you own a server at my.domain.example.com which has your ssh key and docker installed.
@@ -48,7 +53,7 @@ audius-ctl up
 Tear down the node
 
 ```bash
-audius-ctl down my.domain.example.com
+audius-ctl down creator-1.example.com
 ```
 
 ## Migrate from audius-docker-compose

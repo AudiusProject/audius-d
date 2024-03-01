@@ -78,4 +78,17 @@ type NetworkConfig struct {
 	// Choose "devnet", "testnet", or "mainnet"
 	// "devnet" will automatically spin up local chains and identity service
 	DeployOn NetworkType `yaml:"deployOn"`
+
+	// Optional Infrastructure API credentials
+	Infra *Infra `yaml:"infra,omitempty"`
+}
+
+type Infra struct {
+	CloudflareAPIKey string `yaml:"cloudflareAPIKey,omitempty"`
+	CloudflareZoneId string `yaml:"cloudflareZoneId,omitempty"`
+	CloudflareTLD    string `yaml:"cloudflareTld,omitempty"`
+
+	AWSAccessKeyID     string `yaml:"awsAccessKeyID,omitempty"`
+	AWSSecretAccessKey string `yaml:"awsSecretAccessKey,omitempty"`
+	AWSRegion          string `yaml:"awsRegion,omitempty"`
 }
