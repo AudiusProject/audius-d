@@ -55,6 +55,9 @@ audius-ctl infra update [-y]
 To wire this up with audius-ctl (on your local machine), run the below script to add to your ssh config (defaults to `~/.ssh/config` if not specified).
 ```bash
 ./scripts/infra_ssh_config.sh ~/.ssh/config_personal
+
+# also make the key readonly by the owner
+chmod 0400 $(audius-ctl infra output instancePrivateKeyFilePath)
 ```
 
 Now, startup the service

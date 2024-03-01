@@ -74,11 +74,52 @@ sudo usermod -aG docker ubuntu
 touch /home/ubuntu/user-data-done
 `
 
+	secGroup, err := ec2.NewSecurityGroup(pCtx, fmt.Sprintf("%s-secgroup", instanceName), &ec2.SecurityGroupArgs{
+		Description: pulumi.String("Allow HTTP, HTTPS, and SSH access"),
+		Ingress: ec2.SecurityGroupIngressArray{
+			ec2.SecurityGroupIngressArgs{
+				Protocol:    pulumi.String("tcp"),
+				FromPort:    pulumi.Int(80),
+				ToPort:      pulumi.Int(80),
+				CidrBlocks:  pulumi.StringArray{pulumi.String("0.0.0.0/0")},
+				Description: pulumi.String("Allow HTTP"),
+			},
+			ec2.SecurityGroupIngressArgs{
+				Protocol:    pulumi.String("tcp"),
+				FromPort:    pulumi.Int(443),
+				ToPort:      pulumi.Int(443),
+				CidrBlocks:  pulumi.StringArray{pulumi.String("0.0.0.0/0")},
+				Description: pulumi.String("Allow HTTPS"),
+			},
+			ec2.SecurityGroupIngressArgs{
+				Protocol:    pulumi.String("tcp"),
+				FromPort:    pulumi.Int(22),
+				ToPort:      pulumi.Int(22),
+				CidrBlocks:  pulumi.StringArray{pulumi.String("0.0.0.0/0")},
+				Description: pulumi.String("Allow SSH"),
+			},
+		},
+		Egress: ec2.SecurityGroupEgressArray{
+			ec2.SecurityGroupEgressArgs{
+				Protocol:   pulumi.String("-1"),
+				FromPort:   pulumi.Int(0),
+				ToPort:     pulumi.Int(0),
+				CidrBlocks: pulumi.StringArray{pulumi.String("0.0.0.0/0")},
+			},
+		},
+	}, pulumi.Provider(provider))
+	if err != nil {
+		return nil, privateKeyFilePath, fmt.Errorf("unable to create security group: %w", err)
+	}
+
 	instance, err := ec2.NewInstance(pCtx, fmt.Sprintf("%s-ec2-instance", instanceName), &ec2.InstanceArgs{
 		Ami:          pulumi.String(ami),
 		InstanceType: pulumi.String(instanceType),
 		UserData:     pulumi.String(userData),
 		KeyName:      keyPair.KeyName,
+		SecurityGroups: pulumi.StringArray{
+			secGroup.Name,
+		},
 		Tags: pulumi.StringMap{
 			"Name": pulumi.String(instanceName),
 		},
