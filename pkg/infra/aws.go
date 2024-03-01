@@ -24,9 +24,10 @@ func awsCredentialsValid(networkConfig *conf.NetworkConfig) bool {
 	return false
 }
 
-func awsAuthProvider(pCtx *pulumi.Context) (*aws.Provider, error) {
+func awsAuthProvider(pCtx *pulumi.Context, uid string) (*aws.Provider, error) {
 	if awsCredentialsValid(&confCtxConfig.Network) {
-		provider, err := aws.NewProvider(pCtx, "aws", &aws.ProviderArgs{
+		// TODO: we could use a single aws provider for all node operations i.e. remove need for uid
+		provider, err := aws.NewProvider(pCtx, fmt.Sprintf("aws-%s", uid), &aws.ProviderArgs{
 			AccessKey: pulumi.String(confCtxConfig.Network.Infra.AWSAccessKeyID),
 			SecretKey: pulumi.String(confCtxConfig.Network.Infra.AWSSecretAccessKey),
 			Region:    pulumi.String(confCtxConfig.Network.Infra.AWSRegion),
@@ -45,6 +46,8 @@ func awsCreateEC2Instance(pCtx *pulumi.Context, provider *aws.Provider, instance
 		return nil, "", err
 	}
 
+	// TODO: as of now, we are creating independent keys for every host in the context
+	// we could and probably should use one key per context set of nodes
 	privateKeyFilePath, publicKeyPem, err := ensureRSAKeyPair(baseDir, instanceName)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to ensure RSA key pair: %w", err)
@@ -133,8 +136,8 @@ touch /home/ubuntu/user-data-done
 		return nil, privateKeyFilePath, fmt.Errorf("unable to create EC2 instance: %w", err)
 	}
 
-	pCtx.Export("instancePublicIp", instance.PublicIp)
-	pCtx.Export("instancePrivateKeyFilePath", pulumi.String(privateKeyFilePath))
+	pCtx.Export(fmt.Sprintf("%s-instance-ip", instanceName), instance.PublicIp)
+	pCtx.Export(fmt.Sprintf("%s-instance-pk", instanceName), pulumi.String(privateKeyFilePath))
 
 	return instance, privateKeyFilePath, nil
 }
@@ -146,9 +149,6 @@ func awsCreateS3Bucket(pCtx *pulumi.Context, provider *aws.Provider, bucketName 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create S3 bucket: %w", err)
 	}
-
-	pCtx.Export("bucketName", bucket.Bucket)
-	pCtx.Export("bucketArn", bucket.Arn)
 
 	return bucket, nil
 }

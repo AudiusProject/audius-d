@@ -15,9 +15,10 @@ func cloudflareCredentialsValid(networkConfig *conf.NetworkConfig) bool {
 	return false
 }
 
-func cloudflareAuthProvider(pCtx *pulumi.Context) (*cloudflare.Provider, error) {
+func cloudflareAuthProvider(pCtx *pulumi.Context, uid string) (*cloudflare.Provider, error) {
 	if cloudflareCredentialsValid(&confCtxConfig.Network) {
-		provider, err := cloudflare.NewProvider(pCtx, "cloudflareProvider", &cloudflare.ProviderArgs{
+		// TODO: we could use a single cf provider for all dns operations i.e. remove need for uid
+		provider, err := cloudflare.NewProvider(pCtx, fmt.Sprintf("cf-%s", uid), &cloudflare.ProviderArgs{
 			ApiToken: pulumi.StringPtr(confCtxConfig.Network.Infra.CloudflareAPIKey),
 		})
 		if err != nil {
@@ -28,7 +29,7 @@ func cloudflareAuthProvider(pCtx *pulumi.Context) (*cloudflare.Provider, error) 
 	return nil, fmt.Errorf("invalid CloudflareCredentials")
 }
 
-func cloudflareAddDNSRecord(pCtx *pulumi.Context, provider *cloudflare.Provider, zoneId string, name string, publicIp pulumi.StringOutput) error {
+func cloudflareAddDNSRecord(pCtx *pulumi.Context, provider *cloudflare.Provider, zoneId string, name string, publicIp pulumi.StringOutput, instanceName string) error {
 	record, err := cloudflare.NewRecord(pCtx, fmt.Sprintf("cf-record-%s", name), &cloudflare.RecordArgs{
 		Name:    pulumi.String(name),
 		Proxied: pulumi.Bool(true),
@@ -41,8 +42,8 @@ func cloudflareAddDNSRecord(pCtx *pulumi.Context, provider *cloudflare.Provider,
 		return fmt.Errorf("failed to create cloudflare record: %w", err)
 	}
 
-	pCtx.Export("cloudflareRecordHostname", record.Hostname)
-	pCtx.Export("cloudflareRecordValue", record.Value)
+	pCtx.Export(fmt.Sprintf("%s-cf-record-hostname", instanceName), record.Hostname)
+	pCtx.Export(fmt.Sprintf("%s-cf-record-value", instanceName), record.Value)
 
 	return nil
 }

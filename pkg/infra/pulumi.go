@@ -72,6 +72,9 @@ func pulumiInit() {
 			} else {
 				logger.Info("Pulumi installation canceled.")
 			}
+			// TODO: i would prefer not to exit 0 after a successful pulumi install
+			// yet there is a nil pointer bug in here somewhere that i do not have time to fix rn
+			// re running the update command after an install works consistently
 			os.Exit(0)
 		} else {
 			logger.Error("Failed to execute command: %v\n", err)
@@ -146,7 +149,7 @@ func Update(ctx context.Context, skipPreview bool) error {
 			var instance *ec2.Instance
 
 			if awsCredentialsValid(&confCtxConfig.Network) {
-				provider, err := awsAuthProvider(pCtx)
+				provider, err := awsAuthProvider(pCtx, host)
 				if err != nil {
 					return err
 				}
@@ -169,7 +172,7 @@ func Update(ctx context.Context, skipPreview bool) error {
 				}
 			}
 			if cloudflareCredentialsValid(&confCtxConfig.Network) {
-				provider, err := cloudflareAuthProvider(pCtx)
+				provider, err := cloudflareAuthProvider(pCtx, host)
 				if err != nil {
 					return err
 				}
@@ -177,7 +180,8 @@ func Update(ctx context.Context, skipPreview bool) error {
 				zoneId := confCtxConfig.Network.Infra.CloudflareZoneId
 				recordName := strings.Replace(instanceName, fmt.Sprintf(".%s", domain), "", 1)
 				recordIp := instance.PublicIp
-				err = cloudflareAddDNSRecord(pCtx, provider, zoneId, recordName, recordIp)
+				// TODO: instance name only needed for consistent pulumi output keys
+				err = cloudflareAddDNSRecord(pCtx, provider, zoneId, recordName, recordIp, instanceName)
 				if err != nil {
 					return err
 				}
