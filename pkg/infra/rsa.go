@@ -58,6 +58,10 @@ func generateRSAKey(instanceName, keyDir string) (privateKeyFilePath, publicKeyP
 	}
 	defer privateFile.Close()
 
+	if err := os.Chmod(privateKeyFilePath, 0400); err != nil {
+		return "", "", fmt.Errorf("unable to set private key file permissions: %w", err)
+	}
+
 	privatePem := pem.EncodeToMemory(&pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),

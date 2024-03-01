@@ -207,9 +207,16 @@ func Update(ctx context.Context, skipPreview bool) error {
 		}
 	}
 
-	_, err = s.Up(ctx, optup.ProgressStreams(os.Stdout))
+	upResult, err := s.Up(ctx, optup.ProgressStreams(os.Stdout))
 	if err != nil {
 		return fmt.Errorf("failed to run Update: %w", err)
+	}
+
+	// After a successful Up, proceed with the SSH config update
+	for host, _ := range confCtxConfig.Nodes {
+		pk, _ := upResult.Outputs[fmt.Sprintf("%s-instance-pk", host)].Value.(string)
+		ip, _ := upResult.Outputs[fmt.Sprintf("%s-instance-ip", host)].Value.(string)
+		updateSSHConfig(host, pk, ip)
 	}
 
 	return nil
