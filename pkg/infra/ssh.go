@@ -64,14 +64,14 @@ func updateSSHConfig(hostname, identityFile, ip string) error {
 
 	updated, err := processSSHConfig(configPath, hostname, identityFile, ip)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to process %s: %v", configPath, err)
 	}
 
 	if updated {
 		fmt.Println("SSH config updated successfully.")
 		err = addHostKeyToKnownHosts(ip)
 		if err != nil {
-			fmt.Errorf("unable to add key to known_hosts: %v", err)
+			return fmt.Errorf("unable to add key to known_hosts: %v", err)
 		}
 	} else {
 		fmt.Println("No updates made to SSH config.")

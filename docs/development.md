@@ -24,6 +24,12 @@ Create new contexts
 audius-ctl config create-context devnet -f ./configs/templates/devnet.yaml
 ```
 
+#### Build macos version with statusbar feature (Experimental)
+
+```bash
+make audius-ctl-arm-mac
+```
+
 ### Devnet
 
 Devnet uses a local nginx container on 80/443 to act as a layer 7 load balancer. Hence we need to add the hosts so we may intelligently route on localhost.

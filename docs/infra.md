@@ -39,11 +39,20 @@ network:
 nodes:
   audius-d-creator.example.com:
     type: creator
-    version: prerelease
     privateKey: 21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7cf58ab
     wallet: 0x0D38e653eC28bdea5A2296fD5940aaB2D0B8875c
     rewardsWallet: 0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d
+  audius-d-discovery.example.com:
+    type: discovery
+    privateKey: d09ba371c359f10f22ccda12fd26c598c7921bda3220c9942174562bc6a36fe8
+    wallet: 0x73EB6d82CFB20bA669e9c178b718d770C49BB52f
+    rewardsWallet: 0x73EB6d82CFB20bA669e9c178b718d770C49BB52f
 ```
+
+Under each node you may optionally set the `version` directive. Valid values are:
+- `prerelease` the audius-docker-compose `stage` branch
+- `current` the audius-docker-compose `main` branch
+- `my-branch` custom audius-docker-compose branch
 
 ### Deploy
 
@@ -57,9 +66,9 @@ Now, startup the service
 audius-ctl up
 ```
 
-Visit your node
+Check health
 ```bash
-open https://$(audius-ctl infra output cloudflareRecordHostname)
+audius-ctl status
 ```
 
 
