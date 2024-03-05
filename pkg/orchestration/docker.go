@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
@@ -47,7 +48,6 @@ func runNode(
 	host string,
 	config conf.NodeConfig,
 	nconf conf.NetworkConfig,
-	override map[string]string,
 	audiusdTag string,
 ) error {
 	dockerClient, err := getDockerClient(host)
@@ -195,8 +195,14 @@ func runNode(
 		}
 	}
 
+	privateKey, err := normalizedPrivateKey(host, config.PrivateKey)
+	if err != nil {
+		return logger.Error(err)
+	}
+	config.PrivateKey = privateKey
+	override := config.ToOverrideEnv(host, nconf)
 	// generate the override.env file locally
-	// WARNING: NOT THREAD SAFE
+	// WARNING: not thread safe due to constant filename
 	localOverridePath := "./override.env"
 	if err := godotenv.Write(override, localOverridePath); err != nil {
 		return logger.Error(err)
@@ -240,6 +246,8 @@ func runNode(
 	switch config.Version {
 	case "", "current":
 		branch = "main"
+	case "edge":
+		branch = "foundation"
 	case "prerelease":
 		branch = "stage"
 	default:
@@ -251,12 +259,16 @@ func runNode(
 
 	// Configure auto update
 	var updateInterval string
+	rand.Seed(time.Now().UnixNano())
 	if config.Version == "prerelease" && nconf.DeployOn == conf.Testnet {
 		// Stage nodes should update continuously, slightly staggered
-		rand.Seed(time.Now().UnixNano())
 		updateInterval = fmt.Sprintf("%d-59/5", rand.Intn(5))
+	} else if config.Version == "edge" {
+		// Frequent, staggerd release of foundation and other canary nodes
+		updateInterval = fmt.Sprintf("%d-59/25", rand.Intn(25))
 	} else {
-		// Update hourly, starting 55 minutes from now (for randomness + prevent updates during CI)
+		// Hourly release for everything else
+		// starting 55 minutes from now (for randomness + prevent updates during CI)
 		fiveMinutesAgo := time.Now().Add(-5 * time.Minute).Minute()
 		updateInterval = fmt.Sprint(fiveMinutesAgo)
 	}
@@ -458,11 +470,28 @@ func dirExistsOnHost(host, dir string) (bool, error) {
 			return false, err
 		}
 	} else {
-		if err = execRemote(host, fmt.Sprintf("[ -d %s ]", dir)); err != nil {
-			logger.Infof("Error is %s", err.Error())
+		if err = execRemote(host, os.Stdout, os.Stderr, fmt.Sprintf("[ -d %s ]", dir)); err != nil {
 			return false, nil
 		} else {
 			return true, nil
 		}
 	}
+}
+
+func normalizedPrivateKey(host, privateKeyConfigValue string) (string, error) {
+	privateKey := privateKeyConfigValue
+	if strings.HasPrefix(privateKeyConfigValue, "/") {
+		// get key value from file on host
+		outBuf := new(bytes.Buffer)
+		errBuf := new(bytes.Buffer)
+		if err := execRemote(host, outBuf, errBuf, "cat", privateKeyConfigValue); err != nil {
+			return "", logger.Error(errBuf.String(), err)
+		}
+		privateKey = strings.TrimSpace(outBuf.String())
+	}
+	privateKey = strings.TrimPrefix(privateKey, "0x")
+	if len(privateKey) != 64 {
+		return "", logger.Error("Invalid private key")
+	}
+	return privateKey, nil
 }

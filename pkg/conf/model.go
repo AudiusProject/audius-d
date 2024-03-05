@@ -21,9 +21,24 @@ func NewContextConfig() *ContextConfig {
 
 // base structure that all server types need
 type NodeConfig struct {
-	Type NodeType `yaml:"type"`
+	// *** Required fields ***
 
-	// (Optional) Specify non-standard ports for http traffic
+	Type NodeType `yaml:"type"`
+	// The delegate owner key can either be directly specified or an
+	// absolute path to a file on the HOST machine (not your local machine) containing the key
+	PrivateKey    string `yaml:"privateKey"`
+	Wallet        string `yaml:"wallet"`
+	RewardsWallet string `yaml:"rewardsWallet"`
+	// One of "current", "prerelease", or an audius-docker-compose git branch (for dev purposes)
+	// "current" corresponds to main adc branch
+	// "prelease" corresponds to stage
+	// defaults to "current" behavior if omitted
+	Version string `yaml:"version,omitempty"`
+
+	// *** Optional fields ***
+
+	EthWallet string `yaml:"ethWallet,omitempty"`
+	// Specify non-standard ports for http traffic
 	HttpPort  uint `yaml:"httpPort,omitempty"`
 	HttpsPort uint `yaml:"httpsPort,omitempty"`
 
@@ -32,25 +47,14 @@ type NodeConfig struct {
 	//      on the host ports 5433 and 9201 respectively
 	HostPorts string `yaml:"hostPorts,omitempty"`
 
-	// One of "current", "prerelease", or an audius-docker-compose git branch (for dev purposes)
-	// "current" corresponds to main adc branch
-	// "prelease" corresponds to stage
-	// defaults to "current" behavior if omitted
-	Version string `yaml:"version,omitempty"`
-
-	PrivateKey    string `yaml:"privateKey"`
-	Wallet        string `yaml:"wallet"`
-	RewardsWallet string `yaml:"rewardsWallet"`
-	EthWallet     string `yaml:"ethWallet,omitempty"`
-
-	// (Optional) Remote content storage
+	// Remote content storage
 	StorageUrl         string `yaml:"storageUrl,omitempty"`
 	StorageCredentials string `yaml:"storageCredentials,omitempty"`
 
-	// (Optional) Postgres db url for remote db and/or custom password
+	// Postgres db url for remote db and/or custom password
 	DbUrl string `yaml:"dbUrl,omitempty"`
 
-	// (Optional) Stores any as-yet unstructured configuration
+	// Stores any as-yet unstructured configuration
 	// (for compatibility with audius-docker-compose migrations)
 	OverrideConfig map[string]string `yaml:"overrideConfig,omitempty"`
 }

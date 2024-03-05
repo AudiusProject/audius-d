@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 
@@ -46,12 +47,10 @@ func RunAudiusNodes(nodes map[string]conf.NodeConfig, network conf.NetworkConfig
 	}
 
 	for host, nodeConfig := range nodes {
-		override := nodeConfig.ToOverrideEnv(host, network)
 		if err := runNode(
 			host,
 			nodeConfig,
 			network,
-			override,
 			audiusdTagOverride,
 		); err != nil {
 			logger.Warnf("Error encountered starting node %s: %s", host, err.Error())
@@ -80,9 +79,9 @@ func execLocal(command string, args ...string) error {
 	return cmd.Run()
 }
 
-func execRemote(host string, command string, args ...string) error {
+func execRemote(host string, stdout io.Writer, stderr io.Writer, command string, args ...string) error {
 	cmd := exec.Command("ssh", append([]string{host, command}, args...)...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 	return cmd.Run()
 }
