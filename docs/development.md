@@ -24,10 +24,10 @@ Create new contexts
 audius-ctl config create-context devnet -f ./configs/templates/devnet.yaml
 ```
 
-#### Build macos version with statusbar feature (Experimental)
+#### Build osx version with statusbar feature (Experimental)
 
 ```bash
-make audius-ctl-arm-mac
+make audius-ctl-arm-osx
 ```
 
 ### Devnet

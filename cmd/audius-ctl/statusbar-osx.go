@@ -1,5 +1,5 @@
-//go:build mac
-// +build mac
+//go:build osx
+// +build osx
 
 package main
 
@@ -10,8 +10,8 @@ import (
 
 var sbCmd = &cobra.Command{
 	Use:   "statusbar",
-	Short: "Run mac status bar",
-	RunE: func(cmd *cobra.Command, args []string) {
-		statusbar.RunStatusBar()
+	Short: "Run osx status bar",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return statusbar.RunStatusBar()
 	},
 }

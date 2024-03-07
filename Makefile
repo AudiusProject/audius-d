@@ -21,9 +21,9 @@ bin/audius-ctl-x86_64: $(SRC)
 	@echo "Building x86 audius-ctl..."
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-x86_64 ./cmd/audius-ctl
 
-bin/audius-ctl-arm64-mac: $(SRC)
-	@echo "Building arm audius-ctl..."
-	GOOS=darwin GOARCH=arm64 go build -tags mac -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm64 ./cmd/audius-ctl
+bin/audius-ctl-arm64-osx: $(SRC)
+	@echo "Building osx arm audius-ctl..."
+	GOOS=darwin GOARCH=arm64 go build -tags osx -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm64-osx ./cmd/audius-ctl
 
 .PHONY: release-audius-ctl audius-ctl-production-build
 release-audius-ctl:
