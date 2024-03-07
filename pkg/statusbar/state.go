@@ -42,50 +42,20 @@ func (ac *AudiusContext) MenuItem(selectedctx string) menuet.MenuItem {
 				},
 			}
 
-			creators := []menuet.MenuItem{{
+			nodes := []menuet.MenuItem{{
 				Type: menuet.Separator,
 			}}
 
-			for name, creator := range ac.CreatorNodes {
-				creatorCtx := CreatorContext{
-					creator,
+			for name, node := range ac.ContextConfig.Nodes {
+				creatorCtx := NodeContext{
+					node,
 					name,
 				}
 				item := creatorCtx.MenuItem()
-				creators = append(creators, item)
+				nodes = append(nodes, item)
 			}
 
-			items = append(items, creators...)
-
-			discovery := []menuet.MenuItem{{
-				Type: menuet.Separator,
-			}}
-
-			for name, discoveryNode := range ac.DiscoveryNodes {
-				discoveryCtx := DiscoveryContext{
-					discoveryNode,
-					name,
-				}
-				item := discoveryCtx.MenuItem()
-				discovery = append(discovery, item)
-			}
-
-			items = append(items, discovery...)
-
-			identity := []menuet.MenuItem{{
-				Type: menuet.Separator,
-			}}
-
-			for name, identityService := range ac.IdentityService {
-				identityCtx := IdentityContext{
-					identityService,
-					name,
-				}
-				item := identityCtx.MenuItem()
-				identity = append(identity, item)
-			}
-
-			items = append(items, identity...)
+			items = append(items, nodes...)
 
 			return items
 		},
@@ -93,42 +63,12 @@ func (ac *AudiusContext) MenuItem(selectedctx string) menuet.MenuItem {
 	return item
 }
 
-type CreatorContext struct {
-	conf.CreatorConfig
+type NodeContext struct {
+	conf.NodeConfig
 	containerName string
 }
 
-func (cc *CreatorContext) MenuItem() menuet.MenuItem {
-	item := menuet.MenuItem{
-		Text: cc.containerName,
-		Clicked: func() {
-			// restart node here
-		},
-	}
-	return item
-}
-
-type DiscoveryContext struct {
-	conf.DiscoveryConfig
-	containerName string
-}
-
-func (cc *DiscoveryContext) MenuItem() menuet.MenuItem {
-	item := menuet.MenuItem{
-		Text: cc.containerName,
-		Clicked: func() {
-			// restart node here
-		},
-	}
-	return item
-}
-
-type IdentityContext struct {
-	conf.IdentityConfig
-	containerName string
-}
-
-func (cc *IdentityContext) MenuItem() menuet.MenuItem {
+func (cc *NodeContext) MenuItem() menuet.MenuItem {
 	item := menuet.MenuItem{
 		Text: cc.containerName,
 		Clicked: func() {
@@ -141,7 +81,7 @@ func (cc *IdentityContext) MenuItem() menuet.MenuItem {
 func defaultState() {
 	menuet.App().Children = func() []menuet.MenuItem {
 		return []menuet.MenuItem{
-			{Text: contexts},
+			{Text: "contexts"},
 		}
 	}
 }
@@ -149,7 +89,7 @@ func defaultState() {
 func updateContexts(ctxs []string, selected string) {
 	var items []menuet.MenuItem
 	for _, ctx := range ctxs {
-		fullCtx, _ := conf.ReadContext(ctx)
+		fullCtx, _ := conf.ReadOrCreateContextConfig()
 		ac := AudiusContext{
 			*fullCtx,
 			ctx,
@@ -161,8 +101,8 @@ func updateContexts(ctxs []string, selected string) {
 	menuet.App().Children = func() []menuet.MenuItem {
 		return []menuet.MenuItem{
 			{
-				Text:       "🟢 audius-d is running",
-				FontWeight: menuet.WeightBold,
+				Text: "🟢 audius-d is running",
+				// FontWeight: menuet.WeightBold,
 			},
 			{
 				Type: menuet.Separator,
@@ -187,8 +127,18 @@ func updateContexts(ctxs []string, selected string) {
 				Type: menuet.Separator,
 			},
 			{
-				Text:     contexts,
+				Text:     "contexts",
 				Children: func() []menuet.MenuItem { return items },
+			},
+			{
+				Type: menuet.Separator,
+			},
+			{
+				Text: "current context status",
+				// Children: {
+				// 	Text: "🟢 audius-d is running",
+				// 	// FontWeight: menuet.WeightBold,
+				// },
 			},
 		}
 	}
@@ -202,6 +152,6 @@ func asyncUpdateContexts() {
 		selectedctx, _ := conf.GetCurrentContextName()
 
 		updateContexts(ctxs, selectedctx)
-		time.Sleep(250 * time.Millisecond)
+		time.Sleep(2000 * time.Millisecond)
 	}
 }

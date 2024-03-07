@@ -21,11 +21,11 @@ func NewContextConfig() *ContextConfig {
 
 // base structure that all server types need
 type NodeConfig struct {
-	// port that will be exposed via audius-docker-compose
-	// i.e. what you would curl in a http://{host}:{port}/health_check
-	Type      NodeType `yaml:"type"`
-	HttpPort  uint     `yaml:"httpPort,omitempty"`
-	HttpsPort uint     `yaml:"httpsPort,omitempty"`
+	Type NodeType `yaml:"type"`
+
+	// i.e. https://{host}:{httpsPort}/health_check
+	HttpPort  uint `yaml:"httpPort,omitempty"`
+	HttpsPort uint `yaml:"httpsPort,omitempty"`
 
 	// One of "current", "prerelease", or an audius-docker-compose git branch
 	// "current" corresponds to main adc branch

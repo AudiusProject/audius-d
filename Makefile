@@ -23,7 +23,7 @@ bin/audius-ctl-x86_64: $(SRC)
 
 bin/audius-ctl-arm64-mac: $(SRC)
 	@echo "Building arm audius-ctl..."
-	GOOS=darwin GOARCH=arm64 go build -tags mac -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm64 ./cmd/audius-ctl
+	GOOS=darwin GOARCH=arm64 go build -tags mac -ldflags "$(VERSION_LDFLAG) $(LDFLAGS)" -o bin/audius-ctl-arm64-mac ./cmd/audius-ctl
 
 .PHONY: release-audius-ctl audius-ctl-production-build
 release-audius-ctl:
