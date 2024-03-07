@@ -1,5 +1,5 @@
-//go:build mac
-// +build mac
+//go:build osx
+// +build osx
 
 package statusbar
 

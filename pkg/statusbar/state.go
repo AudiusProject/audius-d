@@ -1,5 +1,5 @@
-//go:build mac
-// +build mac
+//go:build osx
+// +build osx
 
 package statusbar
 
@@ -102,7 +102,6 @@ func updateContexts(ctxs []string, selected string) {
 		return []menuet.MenuItem{
 			{
 				Text: "🟢 audius-d is running",
-				// FontWeight: menuet.WeightBold,
 			},
 			{
 				Type: menuet.Separator,
@@ -112,6 +111,14 @@ func updateContexts(ctxs []string, selected string) {
 				FontWeight: menuet.WeightRegular,
 				Clicked: func() {
 					url := "https://dashboard.audius.org"
+					exec.Command("open", url).Start()
+				},
+			},
+			{
+				Text:       "Healthz",
+				FontWeight: menuet.WeightRegular,
+				Clicked: func() {
+					url := "https://healthz.audius.co"
 					exec.Command("open", url).Start()
 				},
 			},
@@ -129,16 +136,6 @@ func updateContexts(ctxs []string, selected string) {
 			{
 				Text:     "contexts",
 				Children: func() []menuet.MenuItem { return items },
-			},
-			{
-				Type: menuet.Separator,
-			},
-			{
-				Text: "current context status",
-				// Children: {
-				// 	Text: "🟢 audius-d is running",
-				// 	// FontWeight: menuet.WeightBold,
-				// },
 			},
 		}
 	}

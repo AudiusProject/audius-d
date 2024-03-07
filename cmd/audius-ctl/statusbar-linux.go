@@ -1,18 +1,19 @@
-//go:build osx
-// +build osx
+//go:build !osx
+// +build !osx
 
 package main
 
 import (
-	"github.com/AudiusProject/audius-d/pkg/statusbar"
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
 var sbCmd = &cobra.Command{
 	Use:   "statusbar",
-	Short: "Run osx status bar",
+	Short: "Run status bar [n/a]",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		statusbar.RunStatusBar()
+		fmt.Println("statusbar command not available in this build")
 		return nil
 	},
 }
