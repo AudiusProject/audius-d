@@ -12,7 +12,6 @@ var sbCmd = &cobra.Command{
 	Use:   "statusbar",
 	Short: "Run osx status bar",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		statusbar.RunStatusBar()
-		return nil
+		return statusbar.RunStatusBar()
 	},
 }
