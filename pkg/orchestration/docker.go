@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -243,8 +244,9 @@ func runNode(
 	// Configure auto update
 	var updateInterval string
 	if config.Version == "prerelease" && nconf.DeployOn == conf.Testnet {
-		// Stage nodes should update continuously
-		updateInterval = "*"
+		// Stage nodes should update continuously, slightly staggered
+		rand.Seed(time.Now().UnixNano())
+		updateInterval = fmt.Sprintf("%d-59/5", rand.Intn(5))
 	} else {
 		// Update hourly, starting 55 minutes from now (for randomness + prevent updates during CI)
 		fiveMinutesAgo := time.Now().Add(-5 * time.Minute).Minute()
