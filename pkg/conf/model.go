@@ -27,6 +27,11 @@ type NodeConfig struct {
 	HttpPort  uint `yaml:"httpPort,omitempty"`
 	HttpsPort uint `yaml:"httpsPort,omitempty"`
 
+	// A string of additional port bindings to allow exposing docker-in-docker containers to the host
+	// e.g. "5433:5432,9201:9200" would expose the postgres and elastic search dind containers
+	//      on the host ports 5433 and 9201 respectively
+	HostPorts string `yaml:"hostPorts,omitempty"`
+
 	// One of "current", "prerelease", or an audius-docker-compose git branch
 	// "current" corresponds to main adc branch
 	// "prelease" corresponds to stage

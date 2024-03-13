@@ -115,7 +115,11 @@ func runNode(
 	}
 	httpPorts := fmt.Sprintf("%d:%d", port, port)
 	httpsPorts := fmt.Sprintf("%d:%d", tlsPort, tlsPort)
-	portSet, portBindings, err := nat.ParsePortSpecs([]string{httpPorts, httpsPorts})
+	allPorts := []string{httpPorts, httpsPorts}
+	if config.HostPorts != "" {
+		allPorts = append(allPorts, strings.Split(config.HostPorts, ",")...)
+	}
+	portSet, portBindings, err := nat.ParsePortSpecs(allPorts)
 	if err != nil {
 		return logger.Error(err)
 	}
