@@ -116,6 +116,10 @@ func runNode(
 	httpPorts := fmt.Sprintf("%d:%d", port, port)
 	httpsPorts := fmt.Sprintf("%d:%d", tlsPort, tlsPort)
 	allPorts := []string{httpPorts, httpsPorts}
+	if config.Type == conf.Discovery {
+		// Required for chain peering and discovery
+		allPorts = append(allPorts, "30300:30300", "30300:30300/udp")
+	}
 	if config.HostPorts != "" {
 		allPorts = append(allPorts, strings.Split(config.HostPorts, ",")...)
 	}
