@@ -32,6 +32,10 @@ func (config *NodeConfig) ToOverrideEnv(host string, nc NetworkConfig) map[strin
 		}
 
 	case Discovery:
+		if config.DbUrl != "" {
+			overrideEnv["audius_db_url"] = config.DbUrl
+			overrideEnv["audius_db_url_read_replica"] = config.DbUrl
+		}
 		overrideEnv["audius_delegate_owner_wallet"] = config.Wallet
 		overrideEnv["audius_delegate_private_key"] = config.PrivateKey
 		overrideEnv["audius_discprov_url"] = "https://" + host
