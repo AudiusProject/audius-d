@@ -23,7 +23,7 @@ func NewContextConfig() *ContextConfig {
 type NodeConfig struct {
 	Type NodeType `yaml:"type"`
 
-	// i.e. https://{host}:{httpsPort}/health_check
+	// (Optional) Specify non-standard ports for http traffic
 	HttpPort  uint `yaml:"httpPort,omitempty"`
 	HttpsPort uint `yaml:"httpsPort,omitempty"`
 
@@ -32,11 +32,10 @@ type NodeConfig struct {
 	//      on the host ports 5433 and 9201 respectively
 	HostPorts string `yaml:"hostPorts,omitempty"`
 
-	// One of "current", "prerelease", or an audius-docker-compose git branch
+	// One of "current", "prerelease", or an audius-docker-compose git branch (for dev purposes)
 	// "current" corresponds to main adc branch
 	// "prelease" corresponds to stage
-	// empty string defaults to "current" behavior
-	// anything else is the adc branch (for dev purposes)
+	// defaults to "current" behavior if omitted
 	Version string `yaml:"version,omitempty"`
 
 	PrivateKey    string `yaml:"privateKey"`
@@ -44,11 +43,14 @@ type NodeConfig struct {
 	RewardsWallet string `yaml:"rewardsWallet"`
 	EthWallet     string `yaml:"ethWallet,omitempty"`
 
-	// content storage
+	// (Optional) Remote content storage
 	StorageUrl         string `yaml:"storageUrl,omitempty"`
 	StorageCredentials string `yaml:"storageCredentials,omitempty"`
 
-	// Stores any as-yet unstructured configuration
+	// (Optional) Postgres db url for remote db and/or custom password
+	DbUrl string `yaml:"dbUrl,omitempty"`
+
+	// (Optional) Stores any as-yet unstructured configuration
 	// (for compatibility with audius-docker-compose migrations)
 	OverrideConfig map[string]string `yaml:"overrideConfig,omitempty"`
 }
