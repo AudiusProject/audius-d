@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -195,7 +194,7 @@ func runNode(
 		}
 	}
 
-	privateKey, err := normalizedPrivateKey(host, config.PrivateKey)
+	privateKey, err := NormalizedPrivateKey(host, config.PrivateKey)
 	if err != nil {
 		return logger.Error(err)
 	}
@@ -442,56 +441,16 @@ func getDockerClient(host string) (*client.Client, error) {
 	}
 }
 
-func resolvesToLocalhost(host string) (bool, error) {
-	ips, err := net.LookupHost(host)
-	if err != nil {
-		return false, logger.Errorf("Cannot resolve host %s: %s", host, err.Error())
-	}
-
-	for _, ip := range ips {
-		if ip == "127.0.0.1" || ip == "::1" {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
 func dirExistsOnHost(host, dir string) (bool, error) {
-	isLocalhost, err := resolvesToLocalhost(host)
-	if err != nil {
-		return false, err
-	} else if isLocalhost {
-		_, err := os.Stat(dir)
-		if err == nil {
-			return true, nil
-		} else if os.IsNotExist(err) {
-			return false, nil
-		} else {
-			return false, err
-		}
+	outBuf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	if err := execOnHost(host, outBuf, errBuf, fmt.Sprintf("[ -d %s ] || echo 'existing volume dir not found'", dir)); err != nil {
+		return false, logger.Error(errBuf.String(), err)
 	} else {
-		if err = execRemote(host, os.Stdout, os.Stderr, fmt.Sprintf("[ -d %s ]", dir)); err != nil {
+		if strings.Contains(outBuf.String(), "existing volume dir not found") {
 			return false, nil
 		} else {
 			return true, nil
 		}
 	}
-}
-
-func normalizedPrivateKey(host, privateKeyConfigValue string) (string, error) {
-	privateKey := privateKeyConfigValue
-	if strings.HasPrefix(privateKeyConfigValue, "/") {
-		// get key value from file on host
-		outBuf := new(bytes.Buffer)
-		errBuf := new(bytes.Buffer)
-		if err := execRemote(host, outBuf, errBuf, "cat", privateKeyConfigValue); err != nil {
-			return "", logger.Error(errBuf.String(), err)
-		}
-		privateKey = strings.TrimSpace(outBuf.String())
-	}
-	privateKey = strings.TrimPrefix(privateKey, "0x")
-	if len(privateKey) != 64 {
-		return "", logger.Error("Invalid private key")
-	}
-	return privateKey, nil
 }
