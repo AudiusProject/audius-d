@@ -444,7 +444,7 @@ func getDockerClient(host string) (*client.Client, error) {
 func dirExistsOnHost(host, dir string) (bool, error) {
 	outBuf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)
-	if err := execOnHost(host, outBuf, errBuf, fmt.Sprintf("[ -d %s ] || echo 'existing volume dir not found'", dir)); err != nil {
+	if err := execOnHost(host, outBuf, errBuf, "sh", "-c", fmt.Sprintf("test -d %s || echo 'existing volume dir not found'", dir)); err != nil {
 		return false, logger.Error(errBuf.String(), err)
 	} else {
 		if strings.Contains(outBuf.String(), "existing volume dir not found") {
