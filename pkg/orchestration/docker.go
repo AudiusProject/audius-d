@@ -2,10 +2,10 @@ package orchestration
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
-	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -47,7 +47,6 @@ func runNode(
 	host string,
 	config conf.NodeConfig,
 	nconf conf.NetworkConfig,
-	override map[string]string,
 	audiusdTag string,
 ) error {
 	dockerClient, err := getDockerClient(host)
@@ -195,8 +194,16 @@ func runNode(
 		}
 	}
 
+	if config.Type != conf.Identity {
+		privateKey, err := NormalizedPrivateKey(host, config.PrivateKey)
+		if err != nil {
+			return logger.Error(err)
+		}
+		config.PrivateKey = privateKey
+	}
+	override := config.ToOverrideEnv(host, nconf)
 	// generate the override.env file locally
-	// WARNING: NOT THREAD SAFE
+	// WARNING: not thread safe due to constant filename
 	localOverridePath := "./override.env"
 	if err := godotenv.Write(override, localOverridePath); err != nil {
 		return logger.Error(err)
@@ -240,6 +247,8 @@ func runNode(
 	switch config.Version {
 	case "", "current":
 		branch = "main"
+	case "edge":
+		branch = "foundation"
 	case "prerelease":
 		branch = "stage"
 	default:
@@ -251,12 +260,16 @@ func runNode(
 
 	// Configure auto update
 	var updateInterval string
+	rand.Seed(time.Now().UnixNano())
 	if config.Version == "prerelease" && nconf.DeployOn == conf.Testnet {
 		// Stage nodes should update continuously, slightly staggered
-		rand.Seed(time.Now().UnixNano())
 		updateInterval = fmt.Sprintf("%d-59/5", rand.Intn(5))
+	} else if config.Version == "edge" {
+		// Frequent, staggerd release of foundation and other canary nodes
+		updateInterval = fmt.Sprintf("%d-59/25", rand.Intn(25))
 	} else {
-		// Update hourly, starting 55 minutes from now (for randomness + prevent updates during CI)
+		// Hourly release for everything else
+		// starting 55 minutes from now (for randomness + prevent updates during CI)
 		fiveMinutesAgo := time.Now().Add(-5 * time.Minute).Minute()
 		updateInterval = fmt.Sprint(fiveMinutesAgo)
 	}
@@ -430,39 +443,17 @@ func getDockerClient(host string) (*client.Client, error) {
 	}
 }
 
-func resolvesToLocalhost(host string) (bool, error) {
-	ips, err := net.LookupHost(host)
-	if err != nil {
-		return false, logger.Errorf("Cannot resolve host %s: %s", host, err.Error())
-	}
-
-	for _, ip := range ips {
-		if ip == "127.0.0.1" || ip == "::1" {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
 func dirExistsOnHost(host, dir string) (bool, error) {
-	isLocalhost, err := resolvesToLocalhost(host)
-	if err != nil {
-		return false, err
-	} else if isLocalhost {
-		_, err := os.Stat(dir)
-		if err == nil {
-			return true, nil
-		} else if os.IsNotExist(err) {
+	outBuf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	if err := execOnHost(host, outBuf, errBuf, "test", "-d", dir); err != nil {
+		if strings.Contains(err.Error(), "exit status 1") {
+			logger.Infof("%s does not exist on host", dir)
 			return false, nil
 		} else {
-			return false, err
-		}
-	} else {
-		if err = execRemote(host, fmt.Sprintf("[ -d %s ]", dir)); err != nil {
-			logger.Infof("Error is %s", err.Error())
-			return false, nil
-		} else {
-			return true, nil
+			return false, logger.Error(errBuf.String(), err)
 		}
 	}
+	logger.Infof("%s exists on host", dir)
+	return true, nil
 }

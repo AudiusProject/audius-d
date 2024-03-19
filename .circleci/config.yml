@@ -92,6 +92,11 @@ jobs:
             cd ~/audius-d
             IMAGE_TAG="$(sha1sum ./Dockerfile | awk '{print $1}')"
             audius-ctl config create-context devnet -f configs/templates/devnet.yaml
+            # move private key to file
+            audius-ctl config dump | grep 'privateKey:' | head -n1 | awk '{print $2}' > /tmp/private_key
+            # replace private key value with file
+            audius-ctl config dump | sed -E '0,/privateKey/{s#privateKey: [a-zA-Z0-9]+#privateKey: /tmp/private_key#}' | audius-ctl config create-context devnet -f - 
+
             audius-ctl devnet
             audius-ctl register
             audius-ctl up --await-healthy --audius-d-version $IMAGE_TAG
