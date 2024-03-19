@@ -194,11 +194,13 @@ func runNode(
 		}
 	}
 
-	privateKey, err := NormalizedPrivateKey(host, config.PrivateKey)
-	if err != nil {
-		return logger.Error(err)
+	if config.Type != conf.Identity {
+		privateKey, err := NormalizedPrivateKey(host, config.PrivateKey)
+		if err != nil {
+			return logger.Error(err)
+		}
+		config.PrivateKey = privateKey
 	}
-	config.PrivateKey = privateKey
 	override := config.ToOverrideEnv(host, nconf)
 	// generate the override.env file locally
 	// WARNING: not thread safe due to constant filename
