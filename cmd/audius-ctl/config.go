@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/logger"
@@ -47,9 +49,10 @@ var (
 	}
 
 	editCmd = &cobra.Command{
-		Use:   "edit [context]",
-		Short: "edit the current or specified configuration in an external editor",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "edit [context]",
+		Short:             "edit the current or specified configuration in an external editor",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: contextCompletionFunction,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctxName, err := conf.GetCurrentContextName()
 			if err != nil {
@@ -149,9 +152,10 @@ var (
 		},
 	}
 	useContextCmd = &cobra.Command{
-		Use:   "use-context <context>",
-		Short: "Switch to a different context",
-		Args:  cobra.ExactArgs(1),
+		Use:               "use-context <context>",
+		Short:             "Switch to a different context",
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: contextCompletionFunction,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := conf.UseContext(args[0])
 			if err != nil {
@@ -164,9 +168,10 @@ var (
 		},
 	}
 	deleteContextCmd = &cobra.Command{
-		Use:   "delete-context <context>",
-		Short: "Delete a context",
-		Args:  cobra.ExactArgs(1),
+		Use:               "delete-context <context>",
+		Short:             "Delete a context",
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: contextCompletionFunction,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := conf.DeleteContext(args[0]); err != nil {
 				return logger.Error("Failed to delete context:", err)
@@ -182,6 +187,28 @@ func init() {
 	createContextCmd.Flags().StringVarP(&confFileTemplate, "templatefile", "f", "", "'-f <filename>' to copy context from a template file or use '-f -' to read from stdin")
 	dumpCmd.Flags().StringVarP(&dumpOutfile, "outfile", "o", "", "-o <outfile")
 	configCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, editCmd, migrateContextCmd)
+}
+
+func contextCompletionFunction(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return getAvailableContextsWithPrefix(toComplete), cobra.ShellCompDirectiveNoFileComp
+}
+
+func getAvailableContextsWithPrefix(prefix string) []string {
+	ctxs, err := conf.GetContexts()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		return nil
+	}
+	matches := make([]string, 0)
+	for _, ctx := range ctxs {
+		if strings.HasPrefix(ctx, prefix) {
+			matches = append(matches, ctx)
+		}
+	}
+	return matches
 }
 
 func EditConfig(contextName string) error {
