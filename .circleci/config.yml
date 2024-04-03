@@ -106,6 +106,13 @@ jobs:
             cd ~/audius-d
             audius-ctl status
       - run:
+          name: Test restart node
+          command: |
+            cd ~/audius-d
+            IMAGE_TAG="$(sha1sum ./Dockerfile | awk '{print $1}')"
+            audius-ctl restart discovery-1.devnet.audius-d -w -f --audius-d-version $IMAGE_TAG
+            audius-ctl status
+      - run:
           name: Teardown
           command: |
             cd ~/audius-d
