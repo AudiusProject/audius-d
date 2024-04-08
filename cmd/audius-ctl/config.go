@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/logger"
@@ -187,28 +185,6 @@ func init() {
 	createContextCmd.Flags().StringVarP(&confFileTemplate, "templatefile", "f", "", "'-f <filename>' to copy context from a template file or use '-f -' to read from stdin")
 	dumpCmd.Flags().StringVarP(&dumpOutfile, "outfile", "o", "", "-o <outfile")
 	configCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, editCmd, migrateContextCmd)
-}
-
-func contextCompletionFunction(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-	return getAvailableContextsWithPrefix(toComplete), cobra.ShellCompDirectiveNoFileComp
-}
-
-func getAvailableContextsWithPrefix(prefix string) []string {
-	ctxs, err := conf.GetContexts()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		return nil
-	}
-	matches := make([]string, 0)
-	for _, ctx := range ctxs {
-		if strings.HasPrefix(ctx, prefix) {
-			matches = append(matches, ctx)
-		}
-	}
-	return matches
 }
 
 func EditConfig(contextName string) error {
