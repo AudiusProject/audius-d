@@ -91,29 +91,6 @@ func readOrCreateContext() (*conf.ContextConfig, error) {
 	return ctx_config, nil
 }
 
-func hostsCompletionFunction(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	hosts, err := getAvailableHostsWithPrefix(toComplete)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-	return hosts, cobra.ShellCompDirectiveNoFileComp
-}
-
-func getAvailableHostsWithPrefix(prefix string) ([]string, error) {
-	ctx, err := readOrCreateContext()
-	if err != nil {
-		return nil, logger.Error("Could not get current context:", err)
-	}
-	hosts := make([]string, 0)
-	for host, _ := range ctx.Nodes {
-		if strings.HasPrefix(host, prefix) {
-			hosts = append(hosts, host)
-		}
-	}
-	return hosts, nil
-}
-
 func filterNodesFromContext(desired []string, ctx *conf.ContextConfig) (map[string]conf.NodeConfig, error) {
 	result := make(map[string]conf.NodeConfig)
 	for _, desiredHost := range desired {

@@ -153,9 +153,23 @@ jobs:
             audius-ctl config dump -o "$tmpfile"
             grep 'deployOn: testnet' "$tmpfile"
       - run:
+          name: test autocompletions
+          command: |
+            audius-ctl config use-context test
+            audius-ctl config dump
+            echo checking autocomplete for contexts
+            audius-ctl __complete config use-context t | grep test
+            echo checking autocomplete for discovery provider
+            audius-ctl __complete up di | grep 'discovery-1.devnet.audius-d'
+            echo checking autocomplete for creator
+            audius-ctl __complete up cr | grep 'creator-1.devnet.audius-d'
+            echo checking autocomplete for identity service
+            audius-ctl __complete up id | grep 'identity.devnet.audius-d'
+      - run:
           name: test delete context
           command: |
             audius-ctl config delete-context test-modified
+            audius-ctl config delete-context test
             audius-ctl config  # should resort to default
             audius-ctl config current-context | grep 'default'
       - run:

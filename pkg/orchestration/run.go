@@ -93,6 +93,22 @@ func NormalizedPrivateKey(host, privateKeyConfigValue string) (string, error) {
 	return privateKey, nil
 }
 
+func ShellIntoNode(host string) error {
+	var cmd *exec.Cmd
+	isLocalhost, err := resolvesToLocalhost(host)
+	if err != nil {
+		return logger.Error("Error determining origin of host:", err)
+	} else if isLocalhost {
+		cmd = exec.Command("docker", "exec", "-it", host, "/bin/bash")
+	} else {
+		cmd = exec.Command("ssh", "-t", host, "docker", "exec", "-it", host, "/bin/bash")
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
+}
+
 func execLocal(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
 	cmd.Stdout = os.Stdout
