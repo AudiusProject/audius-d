@@ -38,6 +38,7 @@ type NodeConfig struct {
 	// *** Optional fields ***
 
 	EthWallet string `yaml:"ethWallet,omitempty"`
+
 	// Specify non-standard ports for http traffic
 	HttpPort  uint `yaml:"httpPort,omitempty"`
 	HttpsPort uint `yaml:"httpsPort,omitempty"`
@@ -57,6 +58,9 @@ type NodeConfig struct {
 	// Stores any as-yet unstructured configuration
 	// (for compatibility with audius-docker-compose migrations)
 	OverrideConfig map[string]string `yaml:"overrideConfig,omitempty"`
+
+	// Path (on host machine) to env file containing additional private configuration
+	RemoteConfigFile string `yaml:"remoteConfigFile,omitempty"`
 }
 
 func NewNodeConfig(nodeType NodeType) NodeConfig {
