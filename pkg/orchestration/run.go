@@ -125,7 +125,7 @@ func ShellIntoNode(host string) error {
 	} else if isLocalhost {
 		cmd = exec.Command("docker", "exec", "-it", host, "/bin/bash")
 	} else {
-		cmd = exec.Command("ssh", "-t", host, "docker", "exec", "-it", host, "/bin/bash")
+		cmd = exec.Command("ssh", "-o", "ConnectTimeout=10", "-t", host, "docker", "exec", "-it", host, "/bin/bash")
 	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
