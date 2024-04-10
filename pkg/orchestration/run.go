@@ -12,6 +12,7 @@ import (
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/AudiusProject/audius-d/pkg/register"
+	"github.com/joho/godotenv"
 )
 
 func StartDevnet(_ *conf.ContextConfig) error {
@@ -91,6 +92,29 @@ func NormalizedPrivateKey(host, privateKeyConfigValue string) (string, error) {
 		return "", logger.Error("Invalid private key")
 	}
 	return privateKey, nil
+}
+
+// Append misc configuration stored on remote host.
+// This is a provisional feature to allow private config to remain on
+// the host instead of in audius-d configs.
+func appendRemoteConfig(host string, config map[string]string, remoteConfigPath string) error {
+	if remoteConfigPath == "" {
+		return nil
+	} else {
+		outBuf := new(bytes.Buffer)
+		errBuf := new(bytes.Buffer)
+		if err := execOnHost(host, outBuf, errBuf, "cat", remoteConfigPath); err != nil {
+			return logger.Error(errBuf.String(), err)
+		}
+		miscConfig, err := godotenv.Parse(outBuf)
+		if err != nil {
+			return logger.Error("Could not parse remote configuration:", err)
+		}
+		for k, v := range miscConfig {
+			config[k] = v
+		}
+		return nil
+	}
 }
 
 func ShellIntoNode(host string) error {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/AudiusProject/audius-d/pkg/orchestration"
 	"github.com/spf13/cobra"
 )
@@ -12,6 +13,13 @@ var (
 		ValidArgsFunction: hostsCompletionFunction,
 		Args:              cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, err := readOrCreateContext()
+			if err != nil {
+				return logger.Error("Could not get current context:", err)
+			}
+			if _, ok := ctx.Nodes[args[0]]; !ok {
+				return logger.Errorf("No host named '%s' in the current context.", args[0])
+			}
 			return orchestration.ShellIntoNode(args[0])
 		},
 	}
