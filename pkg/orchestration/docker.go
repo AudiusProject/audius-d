@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -40,6 +41,8 @@ var (
 			"/var/k8s/identity-service-db",
 		},
 	}
+
+	semverRegex = regexp.MustCompile(`\d+\.\d+\.\d+`)
 )
 
 // deploys a server node generically
@@ -257,10 +260,30 @@ func runNode(
 	case "prerelease":
 		branch = "stage"
 	default:
-		branch = config.Version
+		if semverRegex.MatchString(config.Version) {
+			branch = "main"
+		} else {
+			branch = config.Version // TODO: remove when adc repo is deprecated
+		}
 	}
 	logger.Debugf("Using branch %s", branch)
 	if err := audiusCli(dockerClient, host, "pull-reset", branch); err != nil {
+		return logger.Error(err)
+	}
+
+	// Configure tag (will replace branch configuration)
+	var tag string
+	switch config.Version {
+	case "prerelease", "edge", "current":
+		tag = config.Version
+	case "":
+		tag = "current"
+	default:
+		if semverRegex.MatchString(config.Version) {
+			tag = config.Version
+		}
+	}
+	if err := audiusCli(dockerClient, host, "set-tag", "-y", tag); err != nil {
 		return logger.Error(err)
 	}
 
