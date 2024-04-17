@@ -95,11 +95,11 @@ jobs:
             # move private key to file
             audius-ctl config dump | grep 'privateKey:' | head -n1 | awk '{print $2}' > /tmp/private_key
             # replace private key value with file
-            audius-ctl config dump | sed -E '0,/privateKey/{s#privateKey: [a-zA-Z0-9]+#privateKey: /tmp/private_key#}' | audius-ctl config create-context devnet -f - 
+            audius-ctl  config dump | sed -E '0,/privateKey/{s#privateKey: [a-zA-Z0-9]+#privateKey: /tmp/private_key#}' | audius-ctl config create-context devnet -f - 
 
-            audius-ctl devnet
-            audius-ctl register
-            audius-ctl up --await-healthy --audius-d-version $IMAGE_TAG
+            audius-ctl --debug devnet
+            audius-ctl --debug register
+            audius-ctl --debug up --await-healthy --audius-d-version $IMAGE_TAG
       - run:
           name: Test network status
           command: |
@@ -110,13 +110,13 @@ jobs:
           command: |
             cd ~/audius-d
             IMAGE_TAG="$(sha1sum ./Dockerfile | awk '{print $1}')"
-            audius-ctl restart discovery-1.devnet.audius-d -w -f --audius-d-version $IMAGE_TAG
+            audius-ctl --debug restart discovery-1.devnet.audius-d -w -f --audius-d-version $IMAGE_TAG
             audius-ctl status
       - run:
           name: Teardown
           command: |
             cd ~/audius-d
-            audius-ctl down -af
+            audius-ctl --debug down -af
 
   test-config-subcommands:
     docker:

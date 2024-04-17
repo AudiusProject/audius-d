@@ -6,6 +6,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -14,12 +15,14 @@ Simplistic logger for audius-d.
 */
 
 var (
-	stdoutLogger *log.Logger
-	stderrLogger *slog.Logger
+	fileLogger  *slog.Logger
+	cliLogger   *slog.Logger
+	cliLevelVar = slog.LevelVar{}
+	logFilepath = filepath.Join(os.TempDir(), "audius-d.log")
 
 	cliHandlerOpts = slog.HandlerOptions{
 		AddSource: false,
-		Level:     slog.LevelInfo,
+		Level:     &cliLevelVar,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.MessageKey {
 				return a
@@ -28,45 +31,63 @@ var (
 			}
 		},
 	}
+	logfileHandlerOpts = slog.HandlerOptions{
+		AddSource: false,
+		Level:     slog.LevelDebug,
+	}
 )
 
 func init() {
 	// configure loggers
-	stdoutLogger = log.New(os.Stdout, "", 0)
-	stderrLogger = slog.New(
+
+	cliLogger = slog.New(
 		NewCliHandler(slog.NewTextHandler(os.Stderr, &cliHandlerOpts)),
 	)
-}
-
-func Out(v ...any) {
-	stdoutLogger.Print(v...)
+	file, err := os.OpenFile(logFilepath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("Could not open log file '%s': %s", logFilepath, err.Error())
+	}
+	fileLogger = slog.New(slog.NewTextHandler(file, &logfileHandlerOpts))
 }
 
 func Info(msg string, v ...any) {
-	stderrLogger.Info(msg, v...)
+	fileLogger.Info(msg, v...)
+	cliLogger.Info(msg, v...)
 }
 
 func Infof(format string, v ...any) {
 	fmsg := fmt.Sprintf(format, v...)
-	stderrLogger.Info(fmsg)
+	fileLogger.Info(fmsg)
+	cliLogger.Info(fmsg)
 }
 
 func Debug(msg string, v ...any) {
-	stderrLogger.Debug(msg, v...)
+	fileLogger.Debug(msg, v...)
+	cliLogger.Debug(msg, v...)
+}
+
+func Debugf(format string, v ...any) {
+	fmsg := fmt.Sprintf(format, v...)
+	fileLogger.Debug(fmsg)
+	cliLogger.Debug(fmsg)
 }
 
 func Warn(msg string, v ...any) {
-	stderrLogger.Warn(msg, v...)
+	fileLogger.Warn(msg, v...)
+	cliLogger.Warn(msg, v...)
 }
 
 func Warnf(format string, v ...any) {
 	fmsg := fmt.Sprintf(format, v...)
-	stderrLogger.Warn(fmsg)
+	fileLogger.Warn(fmsg)
+	cliLogger.Warn(fmsg)
 }
 
 func Errorf(format string, v ...any) error {
 	emsg := fmt.Sprintf(format, v...)
-	return Error(emsg)
+	fileLogger.Error(emsg)
+	cliLogger.Error(emsg)
+	return errors.New(emsg)
 }
 
 // you can return this log as well
@@ -83,6 +104,15 @@ func Error(values ...any) error {
 		}
 	}
 	message := strings.Join(messages, " ")
-	stderrLogger.Error(message)
+	fileLogger.Error(message)
+	cliLogger.Error(message)
 	return errors.New(message)
+}
+
+func GetLogFilepath() string {
+	return logFilepath
+}
+
+func SetCliLogLevel(l slog.Level) {
+	cliLevelVar.Set(l)
 }

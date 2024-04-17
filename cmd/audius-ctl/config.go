@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -40,7 +41,7 @@ var (
 				if err != nil {
 					return logger.Error("Failed to dump config:", err)
 				}
-				logger.Out(str)
+				fmt.Println(str)
 			}
 			return nil
 		},
@@ -118,7 +119,7 @@ var (
 			if err := conf.MigrateAudiusDockerCompose(args[0], args[1]); err != nil {
 				return logger.Error("audius-docker-compose migration failed:", err)
 			}
-			logger.Info("audius-docker-compose migration successful 🎉")
+			fmt.Fprintf(os.Stderr, "audius-docker-compose migration successful 🎉\n")
 			useContextCmd.RunE(cmd, args)
 			return nil
 		},
@@ -131,7 +132,7 @@ var (
 			if err != nil {
 				return logger.Error("Failed to retrieve current context:", err)
 			}
-			logger.Out(ctx)
+			fmt.Println(ctx)
 			return nil
 		},
 	}
@@ -144,7 +145,7 @@ var (
 				return logger.Error("Failed to retrieve current context:", err)
 			}
 			for _, ctx := range ctxs {
-				logger.Out(ctx)
+				fmt.Println(ctx)
 			}
 			return nil
 		},
@@ -160,8 +161,7 @@ var (
 				return logger.Error("Failed to set context:", err)
 
 			}
-			logger.Out(args[0])
-			logger.Infof("Context set to %s", args[0])
+			fmt.Fprintf(os.Stderr, "Context set to %s\n", args[0])
 			return nil
 		},
 	}
@@ -174,8 +174,7 @@ var (
 			if err := conf.DeleteContext(args[0]); err != nil {
 				return logger.Error("Failed to delete context:", err)
 			}
-			logger.Out(args[0])
-			logger.Infof("Context %s deleted.", args[0])
+			fmt.Fprintf(os.Stderr, "Context %s deleted.\n", args[0])
 			return nil
 		},
 	}
@@ -206,8 +205,8 @@ func EditConfig(contextName string) error {
 
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
-		logger.Info("Please set $EDITOR in your shell profile to your preferred text editor.")
-		logger.Info("Defaulting to nano")
+		fmt.Fprintf(os.Stderr, "Please set $EDITOR in your shell profile to your preferred text editor.\n")
+		fmt.Fprintf(os.Stderr, "Defaulting to nano\n")
 		editor = "nano"
 	}
 
