@@ -58,6 +58,8 @@ func RunAudiusNodes(nodes map[string]conf.NodeConfig, network conf.NetworkConfig
 			audiusdTagOverride,
 		); err != nil {
 			logger.Warnf("Error encountered starting node %s: %s", host, err.Error())
+		} else {
+			logger.Infof("Finished spinning up %s", host)
 		}
 	}
 
@@ -68,6 +70,7 @@ func RunAudiusNodes(nodes map[string]conf.NodeConfig, network conf.NetworkConfig
 
 func RunDownNodes(nodes map[string]conf.NodeConfig) {
 	for host := range nodes {
+		logger.Infof("Spinning down %s...", host)
 		if err := downDockerNode(host); err != nil {
 			logger.Warnf("Error encountered spinning down %s: %s", host, err.Error())
 		} else {

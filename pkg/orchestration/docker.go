@@ -142,7 +142,7 @@ func runNode(
 		containerConfig.Env = []string{"HOST_DOCKER_INTERNAL=172.100.0.1"}
 	}
 
-	// pull audius-d
+	logger.Info("Pulling audius-d image...")
 	pullResp, err := dockerClient.ImagePull(context.Background(), containerConfig.Image, types.ImagePullOptions{})
 	if err != nil {
 		return logger.Error("Failed to pull image:", err)
@@ -150,7 +150,7 @@ func runNode(
 	defer pullResp.Close()
 	scanner := bufio.NewScanner(pullResp)
 	for scanner.Scan() {
-		logger.Info(scanner.Text())
+		logger.Debug(scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		return logger.Error("Error ImagePull output:", err)
@@ -190,9 +190,11 @@ func runNode(
 			}
 			time.Sleep(3 * time.Second)
 			ready = inspect.State.Running
-			logger.Infof("audius-d wrapper status: %s", inspect.State.Status)
+			logger.Debugf("audius-d wrapper status: %s", inspect.State.Status)
 		}
 	}
+
+	logger.Info("Configuring audius node...")
 
 	if config.Type != conf.Identity {
 		privateKey, err := NormalizedPrivateKey(host, config.PrivateKey)
@@ -243,6 +245,8 @@ func runNode(
 		return logger.Error(err)
 	}
 
+	logger.Info("Ensuring orchestration config is up to date...")
+
 	// Configure branch
 	var branch string
 	switch config.Version {
@@ -255,6 +259,7 @@ func runNode(
 	default:
 		branch = config.Version
 	}
+	logger.Debugf("Using branch %s", branch)
 	if err := audiusCli(dockerClient, host, "pull-reset", branch); err != nil {
 		return logger.Error(err)
 	}
@@ -296,6 +301,7 @@ func runNode(
 	audiusCli(dockerClient, host, "set-network", network)
 
 	// launch the protocol stack
+	logger.Info("Launching the protocol stack (first time may take a while)...")
 	if err := audiusCli(dockerClient, host, "launch", "-y", adcDir); err != nil {
 		return logger.Error(err)
 	}
@@ -408,7 +414,7 @@ func dockerExec(dockerClient *client.Client, host string, cmds ...string) error 
 	defer execResp.Close()
 	scanner := bufio.NewScanner(execResp.Reader)
 	for scanner.Scan() {
-		logger.Info(scanner.Text())
+		logger.Debug(scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		return logger.Error("Error reading command output:", err)
@@ -449,12 +455,12 @@ func dirExistsOnHost(host, dir string) (bool, error) {
 	errBuf := new(bytes.Buffer)
 	if err := execOnHost(host, outBuf, errBuf, "test", "-d", dir); err != nil {
 		if strings.Contains(err.Error(), "exit status 1") {
-			logger.Infof("%s does not exist on host", dir)
+			logger.Debugf("%s does not exist on host", dir)
 			return false, nil
 		} else {
 			return false, logger.Error(errBuf.String(), err)
 		}
 	}
-	logger.Infof("%s exists on host", dir)
+	logger.Debugf("%s exists on host", dir)
 	return true, nil
 }
