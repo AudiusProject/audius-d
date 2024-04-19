@@ -268,7 +268,7 @@ func runNode(
 	}
 	logger.Debugf("Using branch %s", branch)
 	if err := audiusCli(dockerClient, host, "pull-reset", branch); err != nil {
-		return logger.Error(err)
+		return logger.Error("Failed to pull latest orchestration config:", err)
 	}
 
 	// Configure tag (will replace branch configuration)
@@ -284,7 +284,7 @@ func runNode(
 		}
 	}
 	if err := audiusCli(dockerClient, host, "set-tag", "-y", tag); err != nil {
-		return logger.Error(err)
+		return logger.Error("Failed to set version tag for protocol stack:", err)
 	}
 
 	// Configure auto update
@@ -321,12 +321,14 @@ func runNode(
 	default:
 		network = "dev"
 	}
-	audiusCli(dockerClient, host, "set-network", network)
+	if err := audiusCli(dockerClient, host, "set-network", network); err != nil {
+		return logger.Error("Failed setting network configuration:", err)
+	}
 
 	// launch the protocol stack
 	logger.Info("Launching the protocol stack (first time may take a while)...")
-	if err := audiusCli(dockerClient, host, "launch", "-y", adcDir); err != nil {
-		return logger.Error(err)
+	if err := audiusCli(dockerClient, host, "launch", "-y", "--auto-seed", adcDir); err != nil {
+		return logger.Error("Failed to launch node:", err)
 	}
 
 	return nil
@@ -441,6 +443,17 @@ func dockerExec(dockerClient *client.Client, host string, cmds ...string) error 
 	}
 	if err := scanner.Err(); err != nil {
 		return logger.Error("Error reading command output:", err)
+	}
+
+	execInspect, err := dockerClient.ContainerExecInspect(context.Background(), resp.ID)
+	if err != nil {
+		return err
+	}
+	if execInspect.Running {
+		return logger.Errorf("Docker exec process still running with id %d", execInspect.Pid)
+	}
+	if execInspect.ExitCode != 0 {
+		return logger.Errorf("Docker exec process returned non-zero exit code %d", execInspect.ExitCode)
 	}
 
 	return nil
