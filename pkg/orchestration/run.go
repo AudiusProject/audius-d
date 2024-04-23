@@ -58,6 +58,7 @@ func RunAudiusNodes(nodes map[string]conf.NodeConfig, network conf.NetworkConfig
 			audiusdTagOverride,
 		); err != nil {
 			logger.Warnf("Error encountered starting node %s: %s", host, err.Error())
+			logger.Warnf("View full debug log at %s", logger.GetLogFilepath())
 		} else {
 			logger.Infof("Finished spinning up %s", host)
 		}

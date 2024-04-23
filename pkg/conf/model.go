@@ -13,7 +13,7 @@ type ContextConfig struct {
 func NewContextConfig() *ContextConfig {
 	return &ContextConfig{
 		Network: NetworkConfig{
-			DeployOn: Devnet,
+			DeployOn: Mainnet,
 		},
 		Nodes: make(map[string]NodeConfig),
 	}
