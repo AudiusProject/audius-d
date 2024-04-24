@@ -101,29 +101,6 @@ var (
 			return nil
 		},
 	}
-	migrateContextCmd = &cobra.Command{
-		Use:   "migrate-context <name> <path>",
-		Short: "create an audius-d configuration based of an existing audius-docker-compose instance",
-		Long: `
-		Create an audius-d configuration based of an existing audius-docker-compose instance.
-		
-		Requires two arguments, the name of the context where the instance will land. 
-		A path to an existing audius-docker-compose installation.
-
-		Examples:
-		"audius-ctl config migrate-context my-creator-node ~/audius-docker-compose"
-		"audius-ctl config migrate-context my-discprov-7 ../audius-docker-compose"
-		`,
-		Args: cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := conf.MigrateAudiusDockerCompose(args[0], args[1]); err != nil {
-				return logger.Error("audius-docker-compose migration failed:", err)
-			}
-			fmt.Fprintf(os.Stderr, "audius-docker-compose migration successful 🎉\n")
-			useContextCmd.RunE(cmd, args)
-			return nil
-		},
-	}
 	currentContextCmd = &cobra.Command{
 		Use:   "current-context",
 		Short: "Show the currently enabled context",
@@ -183,7 +160,7 @@ var (
 func init() {
 	createContextCmd.Flags().StringVarP(&confFileTemplate, "templatefile", "f", "", "'-f <filename>' to copy context from a template file or use '-f -' to read from stdin")
 	dumpCmd.Flags().StringVarP(&dumpOutfile, "outfile", "o", "", "-o <outfile")
-	configCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, editCmd, migrateContextCmd)
+	configCmd.AddCommand(dumpCmd, createContextCmd, currentContextCmd, getContextsCmd, useContextCmd, deleteContextCmd, editCmd)
 }
 
 func EditConfig(contextName string) error {

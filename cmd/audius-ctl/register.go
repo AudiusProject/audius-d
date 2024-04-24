@@ -12,7 +12,7 @@ import (
 
 var registerCmd = &cobra.Command{
 	Use:   "register",
-	Short: "Register nodes on ethereum (only works for local devnet)",
+	Short: "(EXPERIMENTAL) Register nodes on ethereum (only works for local devnet)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx_config, err := conf.ReadOrCreateContextConfig()
 		if err != nil {

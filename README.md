@@ -24,7 +24,7 @@ On your local computer
 audius-ctl config edit
 ```
 
-Write the following:
+Write the following
 
 ```yaml
 network:
@@ -42,27 +42,27 @@ nodes:
     rewardsWallet: 0xABC123     # <--- ADDRESS OF WALLET HOLDING STAKED TOKENS
 ```
 
-This assumes you own a server at my.domain.example.com which has your ssh key and docker installed.
+You MUST:
+* own servers at the specified hostnames
+* have docker installed on your server(s)
+* have simple ssh access to your server(s) (see [SSH Configuration](./docs/ssh.md))
 
-Stand up the node
+Stand up the node(s)
 
 ```bash
 audius-ctl up
 ```
 
-Tear down the node
+Restart a node
+
+```bash
+audius-ctl restart discovery-1.example.com
+```
+
+Tear down a node
 
 ```bash
 audius-ctl down creator-1.example.com
-```
-
-## Migrate from audius-docker-compose
-
-Already running audius via [audius-docker-compose](https://github.com/AudiusProject/audius-docker-compose)?
-Use the below to create an audius-ctl [context](./docs/development.md#contexts) based on your audius-docker-compose environment configuration.
-
-```bash
-audius-ctl config migrate-context default path/to/audius-docker-compose
 ```
 
 ## Contributing
