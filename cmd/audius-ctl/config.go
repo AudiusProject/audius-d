@@ -53,13 +53,31 @@ var (
 		Args:              cobra.MaximumNArgs(1),
 		ValidArgsFunction: contextCompletionFunction,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctxName, err := conf.GetCurrentContextName()
-			if err != nil {
-				return logger.Error(err)
-			}
+			var ctxName string
 			if len(args) > 0 {
 				ctxName = args[0]
+				ctxs, err := conf.GetContexts()
+				if err != nil {
+					return logger.Error("Error getting available contexts:", err)
+				}
+				contains := false
+				for _, ctx := range ctxs {
+					if ctx == ctxName {
+						contains = true
+						break
+					}
+				}
+				if !contains {
+					return logger.Errorf("No context named '%s'. Use 'audius-ctl config create-context %s'", ctxName, ctxName)
+				}
+			} else {
+				var err error
+				ctxName, err = conf.GetCurrentContextName()
+				if err != nil {
+					return logger.Error(err)
+				}
 			}
+
 			if err := EditConfig(ctxName); err != nil {
 				return logger.Error(err)
 			}
