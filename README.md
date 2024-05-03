@@ -4,6 +4,8 @@ Run your own node.
 
 ## Installation
 
+Install audius-ctl on your local computer
+
 ```bash
 curl -sSL https://install.audius.org | sh
 ```
@@ -15,8 +17,6 @@ rm -f $(which audius-ctl)
 ```
 
 ## Run a Node
-
-#### Content Node 
 
 On your local computer
 
@@ -43,7 +43,6 @@ nodes:
 ```
 
 You MUST:
-* own servers at the specified hostnames
 * have docker installed on your server(s)
 * have simple ssh access to your server(s) (see [SSH Configuration](./docs/ssh.md))
 
