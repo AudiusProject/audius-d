@@ -29,15 +29,16 @@ type NodeConfig struct {
 	PrivateKey    string `yaml:"privateKey"`
 	Wallet        string `yaml:"wallet"`
 	RewardsWallet string `yaml:"rewardsWallet"`
-	// One of "current", "prerelease", or an audius-docker-compose git branch (for dev purposes)
-	// "current" corresponds to main adc branch
-	// "prelease" corresponds to stage
-	// defaults to "current" behavior if omitted
-	Version string `yaml:"version,omitempty"`
 
 	// *** Optional fields ***
 
-	EthWallet string `yaml:"ethWallet,omitempty"`
+	// The version of the audius protocol to run (defaults to "current" behavior if omitted)
+	// "current"  - Run the latest tested release
+	// "edge"     - Run the latest release
+	// "prelease" - Run the most recent unreleased build
+	// "x.x.x"    - Run the specified version, e.g. "0.6.87"
+	// <other>    - (For development) run using the specified audius-docker-compose branch
+	Version string `yaml:"version,omitempty"`
 
 	// Specify non-standard ports for http traffic
 	HttpPort  uint `yaml:"httpPort,omitempty"`

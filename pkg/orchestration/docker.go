@@ -191,7 +191,7 @@ func runNode(
 			if err != nil {
 				return logger.Error("Could not get status of audius-d container:", err)
 			}
-			time.Sleep(3 * time.Second)
+			time.Sleep(5 * time.Second)
 			ready = inspect.State.Running
 			logger.Debugf("audius-d wrapper status: %s", inspect.State.Status)
 		}
@@ -269,6 +269,12 @@ func runNode(
 	logger.Debugf("Using branch %s", branch)
 	if err := audiusCli(dockerClient, host, "pull-reset", branch); err != nil {
 		return logger.Error("Failed to pull latest orchestration config:", err)
+	}
+
+	// Stop any running containers left over from an unclean shutdown
+	logger.Debug("Shutting down any auto-restarted containers")
+	if err := audiusCli(dockerClient, host, "down"); err != nil {
+		logger.Warnf("Warning: skipping error encountered while preparing environment: %s", err.Error())
 	}
 
 	// Configure tag (will replace branch configuration)
@@ -400,9 +406,11 @@ func downDockerNode(host string) error {
 	}
 	defer dockerClient.Close()
 
+	logger.Info("Spinning down internal services for a clean shutdown...")
 	if err := audiusCli(dockerClient, host, "down"); err != nil {
-		logger.Warnf("Failed to spin down internal services on host %s: %s", host, err.Error())
+		logger.Warnf("Warning: could not spin down internal services on host %s: %s", host, err.Error())
 	}
+	logger.Info("Spinning down wrapper container...")
 	if err := removeContainerByName(dockerClient, host); err != nil {
 		return logger.Error(err)
 	}
