@@ -7,7 +7,7 @@ nodes:
     httpsPort: 7001
     version: prerelease
   creator-1.devnet.audius-d:
-    type: creator
+    type: content
     httpPort: 4000
     httpsPort: 4001
     version: prerelease

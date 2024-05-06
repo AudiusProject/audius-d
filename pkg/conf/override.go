@@ -17,7 +17,7 @@ func (config *NodeConfig) ToOverrideEnv(host string, nc NetworkConfig) map[strin
 	}
 
 	switch config.Type {
-	case Creator:
+	case Content:
 		overrideEnv["creatorNodeEndpoint"] = "https://" + host
 		overrideEnv["delegateOwnerWallet"] = config.Wallet
 		overrideEnv["delegatePrivateKey"] = config.PrivateKey

@@ -49,7 +49,7 @@ func CheckNodeHealth(ctxConfig *conf.ContextConfig) ([]HealthCheckResponse, erro
 		switch config.Type {
 		case conf.Identity:
 			hosts = append(hosts, []string{host, ".healthy"})
-		case conf.Creator:
+		case conf.Content:
 			hosts = append(hosts, []string{host, ".data.healthy"})
 		case conf.Discovery:
 			hosts = append(hosts, []string{host, ".data.discovery_provider_healthy"})

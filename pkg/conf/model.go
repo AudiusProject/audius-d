@@ -84,7 +84,7 @@ const (
 type NodeType string
 
 const (
-	Creator   NodeType = "creator"
+	Content   NodeType = "content"
 	Discovery NodeType = "discovery"
 	Identity  NodeType = "identity"
 )
