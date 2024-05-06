@@ -40,11 +40,11 @@ var (
 		Short:             "Fully turn down and then turn up audius-d.",
 		ValidArgsFunction: hostsCompletionFunction,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := runDownNodes(downAll, downForce, args); err != nil {
+			if err := restartNodes(downAll, downForce, awaitHealthy, args); err != nil {
 				// assumes err is returned due to cancellation or bad arguments because run down failures are skipped.
 				return err
 			}
-			return runUpNodes(awaitHealthy, audiusdTag, args)
+			return nil
 		},
 	}
 	devnetCmd = &cobra.Command{
@@ -162,7 +162,11 @@ func runDownNodes(all bool, force bool, hosts []string) error {
 		return logger.Error("Aborted")
 	}
 
-	orchestration.RunDownNodes(nodesToRunDown)
+	for host := range nodesToRunDown {
+		if err := orchestration.RunDownNode(host); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: skipping error encountered while spinning down %s: %s", host, err.Error())
+		}
+	}
 	return nil
 }
 
@@ -181,5 +185,50 @@ func runUpNodes(waitForHealthy bool, audiusdTag string, hosts []string) error {
 		}
 	}
 	orchestration.RunAudiusNodes(nodesToRunUp, ctx.Network, waitForHealthy, audiusdTag)
+	return nil
+}
+
+func restartNodes(all, force, waitForHealthy bool, hosts []string) error {
+	if all && len(hosts) > 0 {
+		return logger.Error("Cannot combine specific nodes with flag --all/-a.")
+	} else if !all && len(hosts) == 0 {
+		return logger.Error("Must specify which nodes to take down or use --all/-a.")
+	}
+
+	ctx, err := readOrCreateContext()
+	if err != nil {
+		return logger.Error("Could not get current context:", err)
+	}
+	var nodesToRestart map[string]conf.NodeConfig
+	if all {
+		nodesToRestart = ctx.Nodes
+	} else {
+		nodesToRestart, err = filterNodesFromContext(hosts, ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	infoString := "This will restart the following nodes in order:"
+	for host := range nodesToRestart {
+		infoString += fmt.Sprintf("\n%s", host)
+	}
+	fmt.Fprintf(os.Stderr, "%s\n", infoString)
+
+	if !force && !askForConfirmation("Are you sure you want to continue?") {
+		return logger.Error("Aborted")
+	}
+
+	for host, config := range nodesToRestart {
+		if err := orchestration.RunDownNode(host); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: skipping error encountered while spinning down %s: %s", host, err.Error())
+		}
+		orchestration.RunAudiusNodes(
+			map[string]conf.NodeConfig{host: config},
+			ctx.Network,
+			waitForHealthy,
+			audiusdTag,
+		)
+	}
 	return nil
 }

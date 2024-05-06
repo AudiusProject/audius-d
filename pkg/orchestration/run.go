@@ -69,14 +69,13 @@ func RunAudiusNodes(nodes map[string]conf.NodeConfig, network conf.NetworkConfig
 	}
 }
 
-func RunDownNodes(nodes map[string]conf.NodeConfig) {
-	for host := range nodes {
-		logger.Infof("Spinning down %s...", host)
-		if err := downDockerNode(host); err != nil {
-			logger.Warnf("Error encountered spinning down %s: %s", host, err.Error())
-		} else {
-			logger.Infof("Node %s spun down.", host)
-		}
+func RunDownNode(host string) error {
+	logger.Infof("Spinning down %s...", host)
+	if err := downDockerNode(host); err != nil {
+		return logger.Error(err)
+	} else {
+		logger.Infof("Node %s spun down.", host)
+		return nil
 	}
 }
 
