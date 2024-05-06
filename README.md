@@ -30,8 +30,8 @@ Write the following
 network:
   deployOn: mainnet
 nodes:
-  creator-1.example.com:
-    type: creator
+  content-1.example.com:
+    type: content
     privateKey: abc123          # <--- UNIQUE PRIV KEY USED BY THIS NODE TO SIGN RESPONSES
     wallet: 0xABC123            # <--- UNIQUE WALLET ADDRESS OF ABOVE PRIV KEY
     rewardsWallet: 0xABC123     # <--- ADDRESS OF WALLET HOLDING STAKED TOKENS
@@ -61,7 +61,7 @@ audius-ctl restart discovery-1.example.com
 Tear down a node
 
 ```bash
-audius-ctl down creator-1.example.com
+audius-ctl down content-1.example.com
 ```
 
 ## Contributing

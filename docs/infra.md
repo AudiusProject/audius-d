@@ -37,8 +37,8 @@ network:
     awsSecretAccessKey: my_secret    <------
     awsRegion: us-east-2             <------
 nodes:
-  audius-d-creator.example.com:
-    type: creator
+  audius-d-content.example.com:
+    type: content
     privateKey: 21118f9a6de181061a2abd549511105adb4877cf9026f271092e6813b7cf58ab
     wallet: 0x0D38e653eC28bdea5A2296fD5940aaB2D0B8875c
     rewardsWallet: 0xb3c66e682Bf9a85F6800c769AC5A05c18C3F331d
