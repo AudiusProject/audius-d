@@ -164,7 +164,7 @@ func Update(ctx context.Context, skipPreview bool) error {
 					}
 					return nil
 				})
-				if nodeConfig.Type == conf.Creator {
+				if nodeConfig.Type == conf.Content {
 					_, err = awsCreateS3Bucket(pCtx, provider, bucketName)
 					if err != nil {
 						return err

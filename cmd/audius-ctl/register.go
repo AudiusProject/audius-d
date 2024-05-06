@@ -19,7 +19,7 @@ var registerCmd = &cobra.Command{
 			return logger.Error("Failed to retrieve context:", err)
 		}
 		for host, nodeConfig := range ctx_config.Nodes {
-			if nodeConfig.Type != conf.Creator {
+			if nodeConfig.Type != conf.Content {
 				continue
 			}
 			privateKey, err := orchestration.NormalizedPrivateKey(host, nodeConfig.PrivateKey)

@@ -26,7 +26,7 @@ import (
 
 var (
 	internalVolumes = map[conf.NodeType][]string{
-		conf.Creator: []string{
+		conf.Content: []string{
 			"/var/k8s/mediorum",
 			"/var/k8s/creator-node-backend",
 			"/var/k8s/creator-node-db-15",
@@ -218,7 +218,7 @@ func runNode(
 	// copy the override.env file to the server and then into the wrapper container
 	var adcDir string
 	switch config.Type {
-	case conf.Creator:
+	case conf.Content:
 		adcDir = "creator-node"
 	case conf.Discovery:
 		adcDir = "discovery-provider"

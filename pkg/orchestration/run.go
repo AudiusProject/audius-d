@@ -32,7 +32,7 @@ func RunAudiusNodes(nodes map[string]conf.NodeConfig, network conf.NetworkConfig
 
 		// register all content nodes
 		for host, nodeConfig := range nodes {
-			if nodeConfig.Type != conf.Creator {
+			if nodeConfig.Type != conf.Content {
 				continue
 			}
 			err := register.RegisterNode(
@@ -45,7 +45,7 @@ func RunAudiusNodes(nodes map[string]conf.NodeConfig, network conf.NetworkConfig
 				nodeConfig.PrivateKey,
 			)
 			if err != nil {
-				logger.Warnf("Failed to register creator node: %s", err)
+				logger.Warnf("Failed to register content node: %s", err)
 			}
 		}
 	}
