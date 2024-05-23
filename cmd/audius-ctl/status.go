@@ -2,45 +2,251 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"sort"
+	"sync"
+	"time"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
-	"github.com/AudiusProject/audius-d/pkg/logger"
-	"github.com/AudiusProject/audius-d/pkg/test"
+	"github.com/AudiusProject/audius-d/pkg/health"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
 )
 
+type hcResult struct {
+	Host          string
+	HealthSummary health.NodeHealthSummary
+	Error         error
+}
+
+type diskUsage struct {
+	sizeBytes uint64
+	usedBytes uint64
+}
+
+const (
+	nodeCol int = iota
+	typeCol
+	upCol
+	healthyCol
+	chainCol
+	dbCol
+	diskCol
+	uptimeCol
+	commentCol
+)
+
+const (
+	diskUsageWarningThreshold float64 = 0.80
+	diskUsageErrorThreshold   float64 = 0.90
+	dbSizeWarningThreshold    uint64  = 2
+)
+
 var (
-	testCmd = &cobra.Command{
-		Use:          "status",
-		Short:        "test audius-d connectivity",
+	noStatus  = "n/a"
+	statusCmd = &cobra.Command{
+		Use:          "status [host ...]",
+		Short:        "Check health of configured nodes",
 		SilenceUsage: true, // do not print --help text on failed node health
-		Args:         cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctxConfig, err := conf.ReadOrCreateContextConfig()
-			if err != nil {
-				return logger.Error("Failed to retrieve context. ", err)
-			}
-
-			responses, err := test.CheckNodeHealth(ctxConfig)
 			if err != nil {
 				return err
 			}
 
-			var encounteredError bool
-			for _, response := range responses {
-				if response.Error != nil {
-					fmt.Printf("%-50s Error: %v\n", response.Host, response.Error)
-					encounteredError = true
-				} else {
-					fmt.Printf("%-50s %t\n", response.Host, response.Result)
+			var nodesToCheck map[string]conf.NodeConfig
+			if len(args) == 0 {
+				nodesToCheck = ctxConfig.Nodes
+			} else {
+				nodesToCheck, err = filterNodesFromContext(args, ctxConfig)
+				if err != nil {
+					return err
 				}
 			}
 
-			if encounteredError {
-				return fmt.Errorf("\none or more health checks failed")
+			var wg sync.WaitGroup
+			resultsChan := make(chan hcResult, len(nodesToCheck))
+			for host, config := range nodesToCheck {
+				wg.Add(1)
+				go func(h string, c conf.NodeConfig) {
+					defer wg.Done()
+					result, err := health.CheckNodeHealth(h, c)
+					resultsChan <- hcResult{
+						Host:          h,
+						HealthSummary: result,
+						Error:         err,
+					}
+				}(host, config)
 			}
 
-			return nil
+			go func() {
+				wg.Wait()
+				close(resultsChan)
+			}()
+
+			var results []hcResult
+			for r := range resultsChan {
+				results = append(results, r)
+			}
+			sort.Slice(results, func(i, j int) bool {
+				return results[i].Host < results[j].Host
+			})
+			return writeResultsToTable(results)
 		},
 	}
 )
+
+func writeResultsToTable(results []hcResult) error {
+	t := table.NewWriter()
+	t.SetStyle(table.StyleColoredMagentaWhiteOnBlack)
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Node", "Type", "Up", "Healthy", "Chain", "DB", "Disk", "Uptime", "Comment"})
+
+	healthTransformer := text.Transformer(func(val interface{}) string {
+		if fmt.Sprint(val) == "true" || fmt.Sprint(val) == "healthy" {
+			return text.FgGreen.Sprint(val)
+		} else if fmt.Sprint(val) == "n/a" || fmt.Sprint(val) == "<nil>" {
+			return text.FgHiBlack.Sprint(val)
+		} else {
+			return text.FgRed.Sprint(val)
+		}
+	})
+	dbSizeTransformer := text.Transformer(func(val interface{}) string {
+		if fmt.Sprint(val) == "n/a" || fmt.Sprint(val) == "<nil>" {
+			return text.FgHiBlack.Sprint(val)
+		}
+
+		ival, ok := val.(uint64)
+		if !ok {
+			return text.FgRed.Sprint("NaN")
+		}
+		gb := ival / 1024 / 1024 / 1024
+		result := fmt.Sprintf("%d GB", gb)
+		if gb > dbSizeWarningThreshold {
+			return text.FgWhite.Sprint(result)
+		} else {
+			return text.FgRed.Sprint(result)
+		}
+	})
+	diskSizeTransformer := text.Transformer(func(val interface{}) string {
+		if fmt.Sprint(val) == "n/a" || fmt.Sprint(val) == "<nil>" {
+			return text.FgHiBlack.Sprint(val)
+		}
+
+		du, ok := val.(diskUsage)
+		if !ok {
+			return text.FgRed.Sprint("NaN")
+		}
+		ugb := du.usedBytes / 1024 / 1024 / 1024
+		sgb := du.sizeBytes / 1024 / 1024 / 1024
+		result := fmt.Sprintf("%d/%d GB", ugb, sgb)
+		ratio := float64(ugb) / float64(sgb)
+		if ratio < diskUsageWarningThreshold {
+			return text.FgWhite.Sprint(result)
+		} else if ratio < diskUsageErrorThreshold {
+			return text.FgYellow.Sprint(result)
+		} else {
+			return text.FgRed.Sprint(result)
+		}
+	})
+	uptimeTransformer := text.Transformer(func(val interface{}) string {
+		if fmt.Sprint(val) == "n/a" || fmt.Sprint(val) == "<nil>" {
+			return text.FgHiBlack.Sprint(val)
+		}
+
+		dur, ok := val.(time.Duration)
+		if !ok {
+			return text.FgRed.Sprint("NaN")
+		}
+		return text.FgWhite.Sprint(dur.Round(time.Second))
+	})
+
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{
+			Name:        "Up",
+			Transformer: healthTransformer,
+		}, {
+			Name:        "Healthy",
+			Transformer: healthTransformer,
+		}, {
+			Name:        "Chain",
+			Transformer: healthTransformer,
+		}, {
+			Name:        "DB",
+			Transformer: dbSizeTransformer,
+		}, {
+			Name:        "Disk",
+			Transformer: diskSizeTransformer,
+		}, {
+			Name:        "Uptime",
+			Transformer: uptimeTransformer,
+		}, {
+			Name:        "Comment",
+			Transformer: healthTransformer,
+		},
+	})
+
+	var unhealthyNode bool
+	for _, res := range results {
+		row := table.Row{
+			res.Host,
+			res.HealthSummary.Type,
+			res.HealthSummary.Up,
+			noStatus,
+			noStatus,
+			noStatus,
+			noStatus,
+			noStatus,
+			res.Error,
+		}
+		if !res.HealthSummary.Healthy {
+			unhealthyNode = true
+		}
+		if !res.HealthSummary.Up {
+			t.AppendRow(row)
+			continue
+		}
+
+		row[healthyCol] = res.HealthSummary.Healthy
+		if res.HealthSummary.Type == conf.Identity {
+			t.AppendRow(row)
+			continue
+		}
+
+		row[dbCol] = res.HealthSummary.DatabaseSizeBytes
+		row[diskCol] = diskUsage{
+			usedBytes: res.HealthSummary.DiskSpaceUsedBytes,
+			sizeBytes: res.HealthSummary.DiskSpaceSizeBytes,
+		}
+		row[uptimeCol] = time.Now().Sub(res.HealthSummary.BootTime)
+
+		if res.HealthSummary.Type == conf.Discovery {
+			var chainStatus string
+			if res.HealthSummary.ChainHealthy {
+				if !res.HealthSummary.ChainPortOpen {
+					chainStatus = "Port 30300 unreachable"
+				} else {
+					chainStatus = "healthy"
+				}
+			} else {
+				chainStatus = "unhealthy"
+			}
+			row[chainCol] = chainStatus
+			if res.Error == nil && len(res.HealthSummary.Errors) != 0 {
+				row[commentCol] = res.HealthSummary.Errors
+			}
+			t.AppendRow(row)
+		} else {
+			t.AppendRow(row)
+			continue
+		}
+	}
+
+	t.Render()
+	if unhealthyNode {
+		return fmt.Errorf("One or more health checks failed")
+	}
+
+	return nil
+}
