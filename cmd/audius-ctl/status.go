@@ -9,6 +9,7 @@ import (
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/health"
+	"github.com/AudiusProject/audius-d/pkg/logger"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
@@ -46,8 +47,9 @@ const (
 )
 
 var (
-	noStatus  = "n/a"
-	statusCmd = &cobra.Command{
+	noStatus     = "n/a"
+	ignoreHealth bool
+	statusCmd    = &cobra.Command{
 		Use:          "status [host ...]",
 		Short:        "Check health of configured nodes",
 		SilenceUsage: true, // do not print --help text on failed node health
@@ -94,10 +96,29 @@ var (
 			sort.Slice(results, func(i, j int) bool {
 				return results[i].Host < results[j].Host
 			})
-			return writeResultsToTable(results)
+
+			err = writeResultsToTable(results)
+			if ctxConfig.Network.DeployOn == conf.Devnet {
+				devnetHealth := health.CheckDevnetHealth()
+				foundUnhealthy := false
+				for _, h := range devnetHealth.Hosts {
+					if !h.Healthy {
+						foundUnhealthy = true
+					}
+					fmt.Printf("%s %t\n", h.Host, h.Healthy)
+				}
+				if err == nil && foundUnhealthy {
+					err = logger.Error("Unhealthy devnet")
+				}
+			}
+			return err
 		},
 	}
 )
+
+func init() {
+	statusCmd.Flags().BoolVarP(&ignoreHealth, "ignore-health", "i", false, "Return non-zero only if nodes aren't up, ignoring health")
+}
 
 func writeResultsToTable(results []hcResult) error {
 	t := table.NewWriter()
@@ -223,12 +244,13 @@ func writeResultsToTable(results []hcResult) error {
 			noStatus,
 			res.Error,
 		}
-		if !res.HealthSummary.Healthy {
-			unhealthyNode = true
-		}
 		if !res.HealthSummary.Up {
+			unhealthyNode = true
 			t.AppendRow(row)
 			continue
+		}
+		if !res.HealthSummary.Healthy && !ignoreHealth {
+			unhealthyNode = true
 		}
 
 		row[healthyCol] = res.HealthSummary.Healthy
@@ -247,6 +269,9 @@ func writeResultsToTable(results []hcResult) error {
 			row[ipCol] = "matched"
 		} else {
 			row[ipCol] = "unmatched/error"
+		}
+		if res.Error == nil && len(res.HealthSummary.Errors) != 0 {
+			row[commentCol] = res.HealthSummary.Errors
 		}
 
 		if res.HealthSummary.Type == conf.Discovery {
@@ -267,10 +292,6 @@ func writeResultsToTable(results []hcResult) error {
 				wsStatus = "healthy"
 			}
 			row[websocketCol] = wsStatus
-
-			if res.Error == nil && len(res.HealthSummary.Errors) != 0 {
-				row[commentCol] = res.HealthSummary.Errors
-			}
 
 			t.AppendRow(row)
 		} else {

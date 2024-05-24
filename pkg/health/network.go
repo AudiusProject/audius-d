@@ -168,7 +168,6 @@ func getDiscoveryNodeHealth(host string, config conf.NodeConfig) (NodeHealthSumm
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
 	conn, _, err := websocket.Dial(ctx, fmt.Sprintf("ws://%s/comms/debug/ws", host), nil)
-	defer conn.CloseNow()
 	if err != nil {
 		healthSummary.WebsocketHealthy = false
 		logger.Error("Could not reach websocket:", err)
