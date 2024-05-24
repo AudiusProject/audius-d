@@ -31,6 +31,8 @@ const (
 	upCol
 	healthyCol
 	chainCol
+	websocketCol
+	ipCol
 	dbCol
 	diskCol
 	uptimeCol
@@ -101,14 +103,27 @@ func writeResultsToTable(results []hcResult) error {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleColoredMagentaWhiteOnBlack)
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Node", "Type", "Up", "Healthy", "Chain", "DB", "Disk", "Uptime", "Comment"})
+	t.AppendHeader(table.Row{
+		"Node",
+		"Type",
+		"Up",
+		"Healthy",
+		"Chain",
+		"Websocket",
+		"Client IP",
+		"DB",
+		"Disk",
+		"Uptime",
+		"Comment",
+	})
 
 	healthTransformer := text.Transformer(func(val interface{}) string {
-		if fmt.Sprint(val) == "true" || fmt.Sprint(val) == "healthy" {
+		switch fmt.Sprint(val) {
+		case "true", "healthy", "matched":
 			return text.FgGreen.Sprint(val)
-		} else if fmt.Sprint(val) == "n/a" || fmt.Sprint(val) == "<nil>" {
+		case "n/a", "<nil>":
 			return text.FgHiBlack.Sprint(val)
-		} else {
+		default:
 			return text.FgRed.Sprint(val)
 		}
 	})
@@ -173,6 +188,12 @@ func writeResultsToTable(results []hcResult) error {
 			Name:        "Chain",
 			Transformer: healthTransformer,
 		}, {
+			Name:        "Websocket",
+			Transformer: healthTransformer,
+		}, {
+			Name:        "Client IP",
+			Transformer: healthTransformer,
+		}, {
 			Name:        "DB",
 			Transformer: dbSizeTransformer,
 		}, {
@@ -193,6 +214,8 @@ func writeResultsToTable(results []hcResult) error {
 			res.Host,
 			res.HealthSummary.Type,
 			res.HealthSummary.Up,
+			noStatus,
+			noStatus,
 			noStatus,
 			noStatus,
 			noStatus,
@@ -220,6 +243,11 @@ func writeResultsToTable(results []hcResult) error {
 			sizeBytes: res.HealthSummary.DiskSpaceSizeBytes,
 		}
 		row[uptimeCol] = time.Now().Sub(res.HealthSummary.BootTime)
+		if res.HealthSummary.IPCheck {
+			row[ipCol] = "matched"
+		} else {
+			row[ipCol] = "unmatched/error"
+		}
 
 		if res.HealthSummary.Type == conf.Discovery {
 			var chainStatus string
@@ -233,9 +261,17 @@ func writeResultsToTable(results []hcResult) error {
 				chainStatus = "unhealthy"
 			}
 			row[chainCol] = chainStatus
+
+			wsStatus := "unreachable"
+			if res.HealthSummary.WebsocketHealthy {
+				wsStatus = "healthy"
+			}
+			row[websocketCol] = wsStatus
+
 			if res.Error == nil && len(res.HealthSummary.Errors) != 0 {
 				row[commentCol] = res.HealthSummary.Errors
 			}
+
 			t.AppendRow(row)
 		} else {
 			t.AppendRow(row)

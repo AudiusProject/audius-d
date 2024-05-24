@@ -2,6 +2,7 @@ package health
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,12 +12,14 @@ import (
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
 	"github.com/AudiusProject/audius-d/pkg/logger"
+	"nhooyr.io/websocket"
 )
 
 var (
 	httpClient = &http.Client{
 		Timeout: time.Second * 3,
 	}
+	cachedIpAddress string
 )
 
 const (
@@ -56,6 +59,16 @@ type identityHealthCheckResponse struct {
 	Healthy bool `json:"healthy,omitempty"`
 }
 
+type ipCheckResponse struct {
+	Data string `json:"data,omitempty"`
+}
+
+type ipApiResponse struct {
+	IP     string `json:"ip,omitempty"`
+	Error  bool   `json:"error,omitempty"`
+	Reason string `json:"reason,omitempty"`
+}
+
 type DevnetHost struct {
 	Host    string
 	Healthy bool
@@ -75,6 +88,8 @@ type NodeHealthSummary struct {
 	DiskSpaceUsedBytes uint64
 	DiskSpaceSizeBytes uint64
 	BootTime           time.Time
+	WebsocketHealthy   bool
+	IPCheck            bool
 	Errors             []string
 }
 
@@ -150,6 +165,23 @@ func getDiscoveryNodeHealth(host string, config conf.NodeConfig) (NodeHealthSumm
 		chainResp.Body.Close()
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	defer cancel()
+	conn, _, err := websocket.Dial(ctx, fmt.Sprintf("ws://%s/comms/debug/ws", host), nil)
+	defer conn.CloseNow()
+	if err != nil {
+		healthSummary.WebsocketHealthy = false
+		logger.Error("Could not reach websocket:", err)
+	} else {
+		conn.Close(websocket.StatusNormalClosure, "")
+		healthSummary.WebsocketHealthy = true
+	}
+
+	healthSummary.IPCheck, err = checkIP(host)
+	if err != nil {
+		healthSummary.Errors = append(healthSummary.Errors, err.Error())
+	}
+
 	return healthSummary, nil
 }
 
@@ -176,6 +208,11 @@ func getContentNodeHealth(host string, config conf.NodeConfig) (NodeHealthSummar
 	healthSummary.DiskSpaceUsedBytes = healthResponse.Data.MediorumPathUsed
 	healthSummary.DiskSpaceSizeBytes = healthResponse.Data.MediorumPathSize
 	healthSummary.BootTime = healthResponse.Data.StartedAt
+	healthSummary.IPCheck, err = checkIP(host)
+	if err != nil {
+		healthSummary.Errors = append(healthSummary.Errors, err.Error())
+	}
+
 	return healthSummary, nil
 }
 
@@ -223,4 +260,47 @@ func requestWithRetries(endpoint string, postData []byte) (*http.Response, error
 		return resp, logger.Errorf("Unreachable after %d retries", retries)
 	}
 	return resp, nil
+}
+
+func checkIP(host string) (bool, error) {
+	resp, err := requestWithRetries(fmt.Sprintf("https://%s/ip_check", host), nil)
+	if err != nil {
+		return false, logger.Error("Could not query client IP from node:", err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, logger.Error("Could not read IP response body:", err)
+	}
+
+	ipResponse := ipCheckResponse{}
+	if err := json.Unmarshal(body, &ipResponse); err != nil {
+		return false, logger.Error("Failed to parse IP response:", err)
+	}
+
+	if cachedIpAddress == "" {
+		apiResp, err := requestWithRetries("https://ipapi.co/json", nil)
+		if err != nil {
+			return false, logger.Error("Could not query IP from ipapi.co:", err)
+		}
+		defer apiResp.Body.Close()
+		body, err = io.ReadAll(apiResp.Body)
+		if err != nil {
+			return false, logger.Error("Could not read ipapi.co response body:", err)
+		}
+
+		apiResponse := ipApiResponse{}
+		if err := json.Unmarshal(body, &apiResponse); err != nil {
+			return false, logger.Error("Failed to parse ipapi.co response:", err)
+		}
+		if apiResponse.Error {
+			return false, logger.Errorf("Error from ipapi.co: %s", apiResponse.Reason)
+		}
+		cachedIpAddress = apiResponse.IP
+	}
+	if cachedIpAddress != ipResponse.Data {
+		return false, logger.Errorf("IP mismatch: ipapi.co '%s' vs %s '%s'", cachedIpAddress, host, ipResponse.Data)
+	} else {
+		return true, nil
+	}
 }
