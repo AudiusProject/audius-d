@@ -49,9 +49,8 @@ type NodeConfig struct {
 	//      on the host ports 5433 and 9201 respectively
 	HostPorts string `yaml:"hostPorts,omitempty"`
 
-	// Remote content storage
-	StorageUrl         string `yaml:"storageUrl,omitempty"`
-	StorageCredentials string `yaml:"storageCredentials,omitempty"`
+	// Configure remote blob storage (S3, GCS, Azure)
+	Storage StorageConfig `yaml:"storage,omitempty"`
 
 	// Postgres db url for remote db and/or custom password
 	DbUrl string `yaml:"dbUrl,omitempty"`
@@ -62,6 +61,29 @@ type NodeConfig struct {
 
 	// Path (on host machine) to env file containing additional private configuration
 	RemoteConfigFile string `yaml:"remoteConfigFile,omitempty"`
+}
+
+type StorageConfig struct {
+	/* Format:
+	s3://<your_bucket_name>      (AWS)
+	gs://<your_bucket_name>      (GCS)
+	azblob://<your_bucket_name>  (AZURE)
+	*/
+	StorageUrl string `yaml:"storageUrl,omitempty"`
+
+	// S3
+	AwsAccessKeyId     string `yaml:"awsAccessKeyId,omitempty"`
+	AwsSecretAccessKey string `yaml:"awsSecretAccessKey,omitempty"`
+	AwsRegion          string `yaml:"awsRegion,omitempty"`
+
+	// Azure
+	AzureStorageAccount string `yaml:"azureStorageAccount,omitempty"`
+	AzureStorageKey     string `yaml:"azureStorageKey,omitempty"`
+
+	// GCS
+	// Path on host machine to json file containing gcs credentials
+	// (Note: currently must be under /var/k8s/mediorum)
+	GoogleApplicationCredentials string `yaml:"googleApplicationCredentials,omitempty"`
 }
 
 func NewNodeConfig(nodeType NodeType) NodeConfig {

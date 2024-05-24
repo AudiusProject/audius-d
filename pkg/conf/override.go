@@ -24,11 +24,18 @@ func (config *NodeConfig) ToOverrideEnv(host string, nc NetworkConfig) map[strin
 		overrideEnv["spOwnerWallet"] = config.RewardsWallet
 		overrideEnv["ethOwnerWallet"] = config.RewardsWallet
 
-		if config.StorageUrl != "" {
-			overrideEnv["AUDIUS_STORAGE_DRIVER_URL"] = config.StorageUrl
-		}
-		if config.StorageCredentials != "" {
-			overrideEnv["GOOGLE_APPLICATION_CREDENTIALS"] = config.StorageCredentials
+		if config.Storage.StorageUrl != "" {
+			overrideEnv["AUDIUS_STORAGE_DRIVER_URL"] = config.Storage.StorageUrl
+			if config.Storage.GoogleApplicationCredentials != "" {
+				overrideEnv["GOOGLE_APPLICATION_CREDENTIALS"] = config.Storage.GoogleApplicationCredentials
+			} else if config.Storage.AwsAccessKeyId != "" {
+				overrideEnv["AWS_ACCESS_KEY_ID"] = config.Storage.AwsAccessKeyId
+				overrideEnv["AWS_SECRET_ACCESS_KEY"] = config.Storage.AwsSecretAccessKey
+				overrideEnv["AWS_REGION"] = config.Storage.AwsRegion
+			} else if config.Storage.AzureStorageAccount != "" {
+				overrideEnv["AZURE_STORAGE_ACCOUNT"] = config.Storage.AzureStorageAccount
+				overrideEnv["AZURE_STORAGE_KEY"] = config.Storage.AzureStorageKey
+			}
 		}
 
 	case Discovery:
