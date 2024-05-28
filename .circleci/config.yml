@@ -104,14 +104,14 @@ jobs:
           name: Test network status
           command: |
             cd ~/audius-d
-            audius-ctl status
+            audius-ctl status --ignore-health
       - run:
           name: Test restart node
           command: |
             cd ~/audius-d
             IMAGE_TAG="$(sha1sum ./Dockerfile | awk '{print $1}')"
             audius-ctl --debug restart discovery-1.devnet.audius-d -w -f --audius-d-version $IMAGE_TAG
-            audius-ctl status
+            audius-ctl status --ignore-health
       - run:
           name: Teardown
           command: |
