@@ -61,6 +61,8 @@ type NodeConfig struct {
 
 	// Path (on host machine) to env file containing additional private configuration
 	RemoteConfigFile string `yaml:"remoteConfigFile,omitempty"`
+
+	PluginsConfig map[PluginName]map[string]string `yaml:"plugins,omitempty"`
 }
 
 type StorageConfig struct {
@@ -128,3 +130,8 @@ type Infra struct {
 	AWSSecretAccessKey string `yaml:"awsSecretAccessKey,omitempty"`
 	AWSRegion          string `yaml:"awsRegion,omitempty"`
 }
+
+
+// name of the plugin that should match with it's docker profile
+// this will be used with the REGISTER_PLUGINS env var
+type PluginName = string
