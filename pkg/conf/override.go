@@ -1,5 +1,7 @@
 package conf
 
+import "strings"
+
 /** Mappings of toml config to override .env for each node type. */
 
 func (config *NodeConfig) ToOverrideEnv(host string, nc NetworkConfig) map[string]string {
@@ -53,6 +55,17 @@ func (config *NodeConfig) ToOverrideEnv(host string, nc NetworkConfig) map[strin
 	for k, v := range config.OverrideConfig {
 		overrideEnv[k] = v
 	}
+
+	// register plugins and pass their configs into
+	// override .env
+	plugins := []string{}
+	for p, pconf := range config.PluginsConfig {
+		plugins = append(plugins, p)
+		for c, v := range pconf {
+			overrideEnv[c] = v
+		}
+	}
+	overrideEnv["REGISTERED_PLUGINS"] = strings.Join(plugins, ",")
 
 	return overrideEnv
 }
