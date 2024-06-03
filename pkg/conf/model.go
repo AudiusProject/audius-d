@@ -83,6 +83,9 @@ type StorageConfig struct {
 	AzureStorageKey     string `yaml:"azureStorageKey,omitempty"`
 
 	// GCS
+	// The name of the json file containing your google application credentials,
+	// e.g. 'google-application-credentials.json' (exclude the path)
+	// Put this file in /var/k8s/mediorum/ on the host machine
 	GoogleApplicationCredentials string `yaml:"googleApplicationCredentials,omitempty"`
 }
 
