@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/AudiusProject/audius-d/pkg/conf"
@@ -19,7 +20,8 @@ var (
 	httpClient = &http.Client{
 		Timeout: time.Second * 3,
 	}
-	cachedIpAddress string
+	cachedIpAddress     string
+	cachedIpAddressLock sync.Mutex
 )
 
 const (
@@ -63,10 +65,8 @@ type ipCheckResponse struct {
 	Data string `json:"data,omitempty"`
 }
 
-type ipApiResponse struct {
-	IP     string `json:"ip,omitempty"`
-	Error  bool   `json:"error,omitempty"`
-	Reason string `json:"reason,omitempty"`
+type ipifyResponse struct {
+	IP string `json:"ip,omitempty"`
 }
 
 type DevnetHost struct {
@@ -277,29 +277,45 @@ func checkIP(host string) (bool, error) {
 		return false, logger.Error("Failed to parse IP response:", err)
 	}
 
-	if cachedIpAddress == "" {
-		apiResp, err := requestWithRetries("https://ipapi.co/json", nil)
+	myIp := getCachedIpAddress()
+	if myIp == "" {
+		myIp, err = setCachedIpAddress()
 		if err != nil {
-			return false, logger.Error("Could not query IP from ipapi.co:", err)
+			return false, err
 		}
-		defer apiResp.Body.Close()
-		body, err = io.ReadAll(apiResp.Body)
-		if err != nil {
-			return false, logger.Error("Could not read ipapi.co response body:", err)
-		}
-
-		apiResponse := ipApiResponse{}
-		if err := json.Unmarshal(body, &apiResponse); err != nil {
-			return false, logger.Error("Failed to parse ipapi.co response:", err)
-		}
-		if apiResponse.Error {
-			return false, logger.Errorf("Error from ipapi.co: %s", apiResponse.Reason)
-		}
-		cachedIpAddress = apiResponse.IP
 	}
-	if cachedIpAddress != ipResponse.Data {
-		return false, logger.Errorf("IP mismatch: ipapi.co '%s' vs %s '%s'", cachedIpAddress, host, ipResponse.Data)
+
+	if myIp != ipResponse.Data {
+		return false, logger.Errorf("IP mismatch: api.ipify.org '%s' vs %s '%s'", myIp, host, ipResponse.Data)
 	} else {
 		return true, nil
 	}
+}
+
+func getCachedIpAddress() string {
+	cachedIpAddressLock.Lock()
+	defer cachedIpAddressLock.Unlock()
+	return cachedIpAddress
+}
+
+func setCachedIpAddress() (string, error) {
+	cachedIpAddressLock.Lock()
+	defer cachedIpAddressLock.Unlock()
+	logger.Warn("Doing a requestWithRetries for ipify")
+	apiResp, err := requestWithRetries("https://api.ipify.org?format=json", nil)
+	if err != nil {
+		return "", logger.Error("Could not query IP from api.ipify.org:", err)
+	}
+	defer apiResp.Body.Close()
+	body, err := io.ReadAll(apiResp.Body)
+	if err != nil {
+		return "", logger.Error("Could not read api.ipify.org response body:", err)
+	}
+
+	apiResponse := ipifyResponse{}
+	if err := json.Unmarshal(body, &apiResponse); err != nil {
+		return "", logger.Error("Failed to parse ipify.org response:", err)
+	}
+	cachedIpAddress = apiResponse.IP
+	return cachedIpAddress, nil
 }
