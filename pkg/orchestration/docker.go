@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -151,12 +152,8 @@ func runNode(
 		return logger.Error("Failed to pull image:", err)
 	}
 	defer pullResp.Close()
-	scanner := bufio.NewScanner(pullResp)
-	for scanner.Scan() {
-		logger.Debug(scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return logger.Error("Error ImagePull output:", err)
+	if err := readAndLogCommandOutput(bufio.NewReader(pullResp)); err != nil {
+		return logger.Error("Error reading ImagePull output:", err)
 	}
 
 	// create wrapper container
@@ -445,11 +442,7 @@ func dockerExec(dockerClient *client.Client, host string, cmds ...string) error 
 		return err
 	}
 	defer execResp.Close()
-	scanner := bufio.NewScanner(execResp.Reader)
-	for scanner.Scan() {
-		logger.Debug(scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
+	if err := readAndLogCommandOutput(execResp.Reader); err != nil {
 		return logger.Error("Error reading command output:", err)
 	}
 
@@ -507,4 +500,30 @@ func dirExistsOnHost(host, dir string) (bool, error) {
 	}
 	logger.Debugf("%s exists on host", dir)
 	return true, nil
+}
+
+func readAndLogCommandOutput(output *bufio.Reader) error {
+	for {
+		line, isPrefix, err := output.ReadLine()
+		if err == io.EOF {
+			if len(line) > 0 {
+				logger.Debug(string(line)) // Print the last line if it doesn't end with a newline
+			}
+			break
+		} else if err != nil {
+			return err
+		}
+
+		fullLine := make([]byte, len(line))
+		copy(fullLine, line)
+		for isPrefix {
+			line, isPrefix, err = output.ReadLine()
+			if err != nil && err != io.EOF {
+				return err
+			}
+			fullLine = append(fullLine, line...)
+		}
+		logger.Debug(string(fullLine))
+	}
+	return nil
 }
