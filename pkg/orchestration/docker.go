@@ -32,11 +32,13 @@ var (
 			"/var/k8s/creator-node-backend",
 			"/var/k8s/creator-node-db-15",
 			"/var/k8s/bolt",
+			"/var/k8s/audius-core",
 		},
 		conf.Discovery: []string{
 			"/var/k8s/discovery-provider-db",
 			"/var/k8s/discovery-provider-chain",
 			"/var/k8s/bolt",
+			"/var/k8s/core",
 		},
 		conf.Identity: []string{
 			"/var/k8s/identity-service-db",
