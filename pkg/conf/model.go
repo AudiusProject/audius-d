@@ -44,6 +44,10 @@ type NodeConfig struct {
 	HttpPort  uint `yaml:"httpPort,omitempty"`
 	HttpsPort uint `yaml:"httpsPort,omitempty"`
 
+	// Specify non-standard ports for core traffic
+	CorePortP2P uint `yaml:"corePortP2P,omitempty"`
+	CorePortRPC uint `yaml:"corePortRPC,omitempty"`
+
 	// A string of additional port bindings to allow exposing docker-in-docker containers to the host
 	// e.g. "5433:5432,9201:9200" would expose the postgres and elastic search dind containers
 	//      on the host ports 5433 and 9201 respectively
@@ -91,10 +95,12 @@ type StorageConfig struct {
 
 func NewNodeConfig(nodeType NodeType) NodeConfig {
 	return NodeConfig{
-		Type:      nodeType,
-		HttpPort:  80,
-		HttpsPort: 443,
-		Version:   "current",
+		Type:        nodeType,
+		HttpPort:    80,
+		HttpsPort:   443,
+		CorePortP2P: 26656,
+		CorePortRPC: 26657,
+		Version:     "current",
 	}
 }
 
@@ -133,7 +139,6 @@ type Infra struct {
 	AWSSecretAccessKey string `yaml:"awsSecretAccessKey,omitempty"`
 	AWSRegion          string `yaml:"awsRegion,omitempty"`
 }
-
 
 // name of the plugin that should match with it's docker profile
 // this will be used with the REGISTER_PLUGINS env var
