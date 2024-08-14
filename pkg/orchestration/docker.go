@@ -27,20 +27,20 @@ import (
 
 var (
 	internalVolumes = map[conf.NodeType][]string{
-		conf.Content: []string{
+		conf.Content: {
 			"/var/k8s/mediorum",
 			"/var/k8s/creator-node-backend",
 			"/var/k8s/creator-node-db-15",
 			"/var/k8s/bolt",
 			"/var/k8s/audius-core",
 		},
-		conf.Discovery: []string{
+		conf.Discovery: {
 			"/var/k8s/discovery-provider-db",
 			"/var/k8s/discovery-provider-chain",
 			"/var/k8s/bolt",
 			"/var/k8s/core",
 		},
-		conf.Identity: []string{
+		conf.Identity: {
 			"/var/k8s/identity-service-db",
 		},
 	}
@@ -83,7 +83,7 @@ func runNode(
 	hostConfig := &container.HostConfig{
 		Privileged: true,
 		Mounts: []mount.Mount{
-			mount.Mount{
+			{
 				Type:   mount.TypeVolume,
 				Source: fmt.Sprintf("audius-d-%s", host),
 				Target: "/var/lib/docker",
@@ -128,6 +128,17 @@ func runNode(
 	if config.HostPorts != "" {
 		allPorts = append(allPorts, strings.Split(config.HostPorts, ",")...)
 	}
+
+	if config.CorePortP2P == 0 {
+		config.CorePortP2P = 26656
+	}
+
+	if config.CorePortRPC == 0 {
+		config.CorePortRPC = 26657
+	}
+
+	allPorts = append(allPorts, fmt.Sprintf("%d:26656", config.CorePortP2P), fmt.Sprintf("%d:26657", config.CorePortRPC))
+
 	portSet, portBindings, err := nat.ParsePortSpecs(allPorts)
 	if err != nil {
 		return logger.Error(err)
