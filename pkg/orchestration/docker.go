@@ -128,6 +128,10 @@ func runNode(
 	if config.HostPorts != "" {
 		allPorts = append(allPorts, strings.Split(config.HostPorts, ",")...)
 	}
+
+	// expose ports for core, p2p and rpc respectively
+	allPorts = append(allPorts, "26656:26656", "26657:26657")
+
 	portSet, portBindings, err := nat.ParsePortSpecs(allPorts)
 	if err != nil {
 		return logger.Error(err)
