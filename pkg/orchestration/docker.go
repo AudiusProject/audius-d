@@ -38,7 +38,7 @@ var (
 			"/var/k8s/discovery-provider-db",
 			"/var/k8s/discovery-provider-chain",
 			"/var/k8s/bolt",
-			"/var/k8s/core",
+			"/var/k8s/audius-core",
 		},
 		conf.Identity: {
 			"/var/k8s/identity-service-db",
