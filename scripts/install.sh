@@ -2,15 +2,22 @@
 
 set -eo pipefail
 
-ARCH=$(uname -m)
+OS="$(uname -s)"
+ARCH="$(uname -m)"
 BINARY_NAME="audius-ctl-${ARCH}"
-
-if ! [ -f "bin/$BINARY_NAME" ]; then
-    echo "No build artifact '$BINARY_NAME' in bin/"
-    echo "Please run 'make' first"
-    exit 1
+if [ "$OS" = "Darwin" ]; then
+    BINARY_NAME="${BINARY_NAME}-macos"
 fi
 
+# Choose the best available pre-build binary
+if ! [ -f "bin/$BINARY_NAME" ] && ! [ -f "bin/audius-ctl-native" ]; then
+    echo "No build artifact in bin/, Please run 'make' first"
+    exit 1
+elif ! [ -f "bin/$BINARY_NAME" ] && [ -f "bin/audius-ctl-native" ]; then
+    BINARY_NAME="audius-ctl-native"
+fi
+
+# choose the best target directory
 if [ -w /usr/local/bin ]; then
     TARGET_DIR="/usr/local/bin"
 elif echo "$PATH" | grep -q "$HOME/.local/bin"; then
@@ -23,6 +30,7 @@ else
     exit 1
 fi
 
+# install
 cp "bin/$BINARY_NAME" "$TARGET_DIR/audius-ctl"
 
 echo "$BINARY_NAME has been installed to $TARGET_DIR/audius-ctl"

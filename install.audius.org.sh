@@ -5,9 +5,13 @@
 
 set -e
 
-# Determine architecture
-ARCH=$(uname -m)
+OS="$(uname -s)"
+ARCH="$(uname -m)"
 BINARY_NAME="audius-ctl-${ARCH}"
+if [ "$OS" = "Darwin" ]; then
+    BINARY_NAME="${BINARY_NAME}-macos"
+fi
+
 BINARY_URL="https://github.com/AudiusProject/audius-d/releases/latest/download/${BINARY_NAME}"
 
 # Try to determine the target directory

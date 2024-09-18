@@ -6,13 +6,17 @@ if [[ -n $(git status -s) ]]; then
   exit 1
 fi
 
-if ! [ -f bin/audius-ctl-x86_64 ] || ! [ -f bin/audius-ctl-arm64 ]; then
+if ! [ -f bin/audius-ctl-x86_64 ] || ! [ -f bin/audius-ctl-arm64 ] || ! [ -f bin/audius-ctl-x86_64-macos ] || ! [ -f bin/audius-ctl-arm64-macos ]; then
   echo 'Please run `make audius-ctl-production-build` before attempting to release'
   exit 1
 fi
 
+OS="$(uname -s)"
 ARCH=$(uname -m)
 BINARY_NAME="audius-ctl-${ARCH}"
+if [ "$OS" = "Darwin" ]; then
+    BINARY_NAME="${BINARY_NAME}-macos"
+fi
 release_version="$(bin/$BINARY_NAME --version)"
 
 if ! echo $release_version | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" >/dev/null; then

@@ -1,9 +1,6 @@
 #!/bin/bash
 set -eo pipefail
 
-ARCH=$(uname -m)
-BINARY_NAME="audius-ctl-${ARCH}"
+make "bin/audius-ctl-native" | { grep -vE '^make\: .* is up to date\.$' || true; }
 
-make "bin/${BINARY_NAME}" | { grep -vE '^make\: .* is up to date\.$' || true; }
-
-./bin/$BINARY_NAME "$@"
+./bin/audius-ctl-native "$@"
