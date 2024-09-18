@@ -74,6 +74,8 @@ jobs:
           paths:
             - bin/audius-ctl-arm64
             - bin/audius-ctl-x86_64
+            - bin/audius-ctl-arm64-macos
+            - bin/audius-ctl-x86_64-macos
 
   test-audius-d-devnet:
     machine:
