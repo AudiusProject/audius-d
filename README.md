@@ -1,5 +1,13 @@
 # audius-d
 
+# 🚨 Project Moved
+
+> **Notice:** The project has moved to the [Audius Protocol monorepo ](https://github.com/AudiusProject/audius-protocol) as part of ongoing work to consolidate audius tooling.
+> Visit [the Audius docs](https://docs.audius.org/node-operator/setup/installation) for up-to-date info on installation and usage.
+
+![Moved](https://img.shields.io/badge/status-moved-red)
+
+
 Run your own node.
 
 ## Installation
