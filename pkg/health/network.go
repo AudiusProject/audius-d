@@ -301,7 +301,6 @@ func getCachedIpAddress() string {
 func setCachedIpAddress() (string, error) {
 	cachedIpAddressLock.Lock()
 	defer cachedIpAddressLock.Unlock()
-	logger.Warn("Doing a requestWithRetries for ipify")
 	apiResp, err := requestWithRetries("https://api.ipify.org?format=json", nil)
 	if err != nil {
 		return "", logger.Error("Could not query IP from api.ipify.org:", err)
